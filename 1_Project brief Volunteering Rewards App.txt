@@ -1,0 +1,141 @@
+Project brief
+
+Project ID	: SOI-2024-2420-0008
+Project title	: Volunteering Rewards App
+Proposed by	: Leonard Gan
+Domain		: Application Development (includes mobile app)
+Programme	: PTDSE; DDDD; DTECH
+Skill required	: Web Application
+Resources Required: IDE for web application
+
+
+
+Project title: Volunteering Rewards App
+Domain: Application Development (includes mobile app)
+Skill required: Web Application
+
+Motivation and Benefits: 
+- We can encourage Singaporeans to perform volunteering activities by rewarding their efforts. 
+(e.g. performing a beach cleanup or taking the elderly for a morning walk)
+- These volunteers earn points by scanning QR-Code after the volunteering activity. 
+- When they have accumulated sufficient points, they can redeem these points for coupons from participating outlets. 
+- Benefits of making this app is to encourage Singaporeans to get into the act of volunteering. 
+- Distribution of rewards made via mobile devices would save time and manpower cost, and give the volunteer a wide range of rewards.
+
+Project Details: 
+- Volunteers scan the QR code markers to gain reward points. 
+- When the user has accumulated sufficient points, he/she can redeem the coupon from a list of participating stores. 
+- These coupons have a validity period and are issued in a fixed quantity. 
+- When the user uses the coupon, he/she inform the cashier of the coupon’s 6-digit PIN. 
+- The cashier enters the 6-digit PIN into the web app coupon verification. 
+- Upon successful coupon verification, the cashier issues the item.
+
+Deliverables:
+•  Application Development (includes mobile app).
+•  Presentation slides with project details.
+
+-----------------------------------------------------------------------------
+
+work out the following:
+
+1) GUI of mobile app for the Volunteer (user)
+2) GUI of web app for the Events Organizer
+3) GUI of mobile app for On-site Controller
+4) GUI of web app for Admin
+
+-----------------------------------------------------------------------------
+
+
+Capstone project deadline: 14 Aug 2026
+
+
+(A) ---- Capstone project submission items in the Project Report:
+1 - Test Plan
+2 - User Documentation
+3 - Technical Documentation
+
+Which separated in the following:
+
+- Use Case Diagram
+- Use Case Specification
+- ERD
+
+- Gantt Chart
+- Detail individual task breakdown
+
+- User Guide
+- Technical / System Guide
+- Low and high fidelity wireframes
+- Website or App Mock-up
+
+- Final implementation of the project / Product
+- Source codes (to be deposited in GitHub as well)
+- Media files, if any
+- Other deliverables as requested by your supervisor
+  
+
+(B) ---- Planned Events and Deliverables required by Supervisor
+
+- Project Kickoff meeting ( Before start of project)
+	Aligned project scope, timeline & approach, Refined Product Backlog   
+
+- Sprint Planning (Start of every Sprint)
+	Sprint Backlog, Refined Product Backlog
+
+- Standup Meeting (Every FYP day)
+	Updated Sprint Backlog, Impediment Log
+
+- Sprint Review (End of every Sprint)
+	Updated Sprint Backlog, Product increment
+
+- Sprint Retrospective (End of alternate Sprint)
+	Internal feedback session
+
+
+(C) ---- Final Evaluation Presentation Slides
+
+
+-----------------------------------------------------------------------------
+
+Deliverables：
+
+1. Capstone Project Final Submission (Team)
+- Test Plan
+- User Documentation
+- Technical Documentation
+
+2. PPT Slides for Final Evaluation (Individual)
+
+-----------------------------------------------------------------------------
+
+
+Planned Events and Deliverables required by Supervisor
+
+1) Project Kickoff Meeting Before start of project
+Aligned project scope
+timeline & approach
+Refined Product Backlog                      
+
+2) Sprint Planning for Start of every Sprint
+Sprint Backlog
+Refined Product Backlog
+
+3) Standup Meeting in Every FYP day
+Updated Sprint Backlog
+Impediment Log
+           
+4) Sprint Review for End of every Sprint
+Updated Sprint Backlog
+Product increment
+
+5) Sprint Retrospective for End of alternate Sprint
+Internal feedback session
+
+Estimated Schedule by Suppervisor:
+13/4 ~ 4/5	Sprint 1
+5/5 ~ 25/5	Sprint 2
+26/5 ~ 15/6	Sprint 3
+16/6 ~ 6/7	Sprint 4
+7/7 ~ 27/7	Sprint 5
+28/7 ~ 17/8	Sprint 6
+
