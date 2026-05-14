@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redemption History — Dbase Controller</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="index.html">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+    <span>Dbase<span>Controller</span></span>
+  </a>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <a class="nav-item" href="index.html" data-nav="dashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Dashboard
+      </a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Management</div>
+      <a class="nav-item" href="users.html" data-nav="users">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users
+        <span class="badge">2,847</span>
+      </a>
+      <a class="nav-item" href="reward-system.html" data-nav="reward-system">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/></svg>
+        Reward System
+      </a>
+      <a class="nav-item" href="coupons.html" data-nav="coupons">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4"/><path d="M20 6H4"/><path d="M20 18H4"/><circle cx="8" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="10" cy="18" r="1" fill="currentColor"/></svg>
+        Coupons / PIN Codes
+      </a>
+      <a class="nav-item" href="merchants.html" data-nav="merchants">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Merchants
+      </a>
+      <a class="nav-item" href="event-organisers.html" data-nav="event-organisers">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M8 16V8l4-4 4 4v8"/><path d="M8 16h8"/><path d="M12 12v4"/></svg>
+        Event Organisers
+        <span class="badge">12</span>
+      </a>
+      <a class="nav-item" href="qr-codes.html" data-nav="qr-codes">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="4" height="4"/><path d="M3 20v-2"/><path d="M7 18v2"/><path d="M18 14v.01"/></svg>
+        QR Codes
+      </a>
+      <a class="nav-item" href="campaigns.html" data-nav="campaigns">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="M8.5 8.5A4.96 4.96 0 0 0 7 12a4.96 4.96 0 0 0 1.5 3.5"/><path d="M13.5 13.5A4.96 4.96 0 0 0 15 12a4.96 4.96 0 0 0-1.5-3.5"/><path d="M18.5 18.5A9.9 9.9 0 0 0 21 12a9.9 9.9 0 0 0-2.5-6.5"/><path d="M5.5 5.5A9.9 9.9 0 0 0 3 12a9.9 9.9 0 0 0 2.5 6.5"/></svg>
+        Campaigns
+      </a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">History</div>
+      <a class="nav-item active" href="redemptions.html" data-nav="redemptions">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Redemption History
+      </a>
+      <a class="nav-item" href="events.html" data-nav="events">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+        Event Participation
+      </a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">Dbase Controller v2.1 · System Operator</div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+    </button>
+  </div>
+  <div class="topbar-search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" placeholder="Search users, merchants, campaigns…" id="globalSearch">
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-btn" aria-label="Notifications">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span class="dot"></span>
+    </button>
+    <div class="admin-avatar">
+      <div class="avatar-circle">SO</div>
+      <span class="admin-name">Sys Operator</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>Redemption History</h1>
+      <div class="sub">18,210 total redemptions · 1,342 today</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-ghost" onclick="showToast('Export started — CSV download')">Export CSV</button>
+      <button class="btn btn-ghost" onclick="showToast('Generating PDF report…')">Generate Report</button>
+    </div>
+  </div>
+
+  <div class="metrics" style="margin-bottom:28px">
+    <div class="metric-card">
+      <div class="metric-label">Total Redemptions</div>
+      <div class="metric-value">18,210</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">This Week</div>
+      <div class="metric-value">2,840</div>
+      <div class="metric-trend up">+8% vs last week</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Avg Points Used</div>
+      <div class="metric-value">1,850</div>
+      <div class="sub">Per redemption</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Points Redeemed</div>
+      <div class="metric-value">33.7M</div>
+      <div class="sub">All time</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-body">
+      <div class="filter-bar" style="margin-bottom:0">
+        <input type="date" value="2026-04-14" style="min-width:150px">
+        <input type="date" value="2026-05-14" style="min-width:150px">
+        <input type="text" placeholder="Search user or coupon…" style="min-width:180px">
+        <select style="min-width:130px">
+          <option>All merchants</option>
+          <option>Cafe Mornings</option>
+          <option>Urban Retail</option>
+          <option>Sky Cinema</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="showToast('Filters applied')">Apply</button>
+        <span class="results" style="margin-left:auto">Showing 15 of 18,210</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date & Time</th><th>User</th><th>Coupon Code</th><th>Points Used</th><th>Value</th><th>Merchant</th><th>Campaign</th></tr></thead>
+        <tbody>
+          <tr><td>14 May, 10:32</td><td>alex@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">4829-10</td><td class="mono">1,200</td><td>$5.00</td><td>Cafe Mornings</td><td>Spring Promo</td></tr>
+          <tr><td>14 May, 10:15</td><td>sarah.c@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">3715-22</td><td class="mono">800</td><td>$5.00</td><td>Urban Retail</td><td>Spring Promo</td></tr>
+          <tr><td>14 May, 09:48</td><td>priya.p@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">6201-38</td><td class="mono">2,400</td><td>$5.00</td><td>Sky Cinema</td><td>Loyalty Q2</td></tr>
+          <tr><td>14 May, 09:12</td><td>kenji.t@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">7490-12</td><td class="mono">1,500</td><td>$5.00</td><td>Cafe Mornings</td><td>Spring Promo</td></tr>
+          <tr><td>13 May, 16:30</td><td>j.wong@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">6351-08</td><td class="mono">2,400</td><td>$5.00</td><td>TechMart</td><td>Spring Promo</td></tr>
+          <tr><td>13 May, 15:45</td><td>maria@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">9047-33</td><td class="mono">1,500</td><td>$5.00</td><td>FitZone Gym</td><td>New User</td></tr>
+          <tr><td>13 May, 14:20</td><td>sophie.b@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">3156-89</td><td class="mono">3,000</td><td>$5.00</td><td>EventPro</td><td>Loyalty Q2</td></tr>
+          <tr><td>13 May, 12:10</td><td>aisha.m@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">9872-04</td><td class="mono">1,800</td><td>$5.00</td><td>Spa Serenity</td><td>New User</td></tr>
+          <tr><td>12 May, 18:00</td><td>d.lim@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">2580-14</td><td class="mono">3,000</td><td>$5.00</td><td>Sky Cinema</td><td>Spring Promo</td></tr>
+          <tr><td>12 May, 16:22</td><td>omar.h@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">5410-27</td><td class="mono">1,200</td><td>$5.00</td><td>FunWorld Arcade</td><td>Spring Promo</td></tr>
+          <tr><td>12 May, 14:35</td><td>emily.p@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">4501-92</td><td class="mono">2,800</td><td>$5.00</td><td>Urban Retail</td><td>Loyalty Q2</td></tr>
+          <tr><td>12 May, 11:08</td><td>carlos.g@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">7139-41</td><td class="mono">600</td><td>$5.00</td><td>Cafe Mornings</td><td>New User</td></tr>
+          <tr><td>11 May, 19:45</td><td>sarah.c@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">8624-77</td><td class="mono">1,200</td><td>$5.00</td><td>TechMart</td><td>Flash Sale</td></tr>
+          <tr><td>11 May, 14:00</td><td>alex@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">2339-06</td><td class="mono">2,000</td><td>$5.00</td><td>EventPro</td><td>Spring Promo</td></tr>
+          <tr><td>11 May, 10:30</td><td>priya.p@email.com</td><td style="font-family:var(--font-mono);font-size:12px;letter-spacing:.08em">1884-55</td><td class="mono">4,500</td><td>$5.00</td><td>Sky Cinema</td><td>Loyalty Q2</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+    <span style="font-size:12px;color:var(--muted)">Page 1 of 1,214</span>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-sm btn-ghost" disabled>Prev</button>
+      <button class="btn btn-sm btn-primary">1</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('Page 2')">2</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('Page 3')">3</button>
+      <button class="btn btn-sm btn-ghost">…</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('Page 1214')">1,214</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('Next page')">Next</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+<script src="admin.js"></script>
+</body>
+</html>

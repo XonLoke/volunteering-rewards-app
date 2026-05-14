@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Organisers — Dbase Controller</title>
+<link rel="stylesheet" href="admin.css">
+<style>
+.doc-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);transition:background .12s}
+.doc-row:hover{background:color-mix(in oklch, var(--bg), var(--accent) 2%)}
+.doc-row + .doc-row{margin-top:8px}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="index.html">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+    <span>Dbase<span>Controller</span></span>
+  </a>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <a class="nav-item" href="index.html" data-nav="dashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Dashboard
+      </a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Management</div>
+      <a class="nav-item" href="users.html" data-nav="users">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users
+        <span class="badge">2,847</span>
+      </a>
+      <a class="nav-item" href="reward-system.html" data-nav="reward-system">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/></svg>
+        Reward System
+      </a>
+      <a class="nav-item" href="coupons.html" data-nav="coupons">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4"/><path d="M20 6H4"/><path d="M20 18H4"/><circle cx="8" cy="6" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="10" cy="18" r="1" fill="currentColor"/></svg>
+        Coupons / PIN Codes
+      </a>
+      <a class="nav-item" href="merchants.html" data-nav="merchants">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Merchants
+      </a>
+      <a class="nav-item active" href="event-organisers.html" data-nav="event-organisers">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M8 16V8l4-4 4 4v8"/><path d="M8 16h8"/><path d="M12 12v4"/></svg>
+        Event Organisers
+        <span class="badge">12</span>
+      </a>
+      <a class="nav-item" href="qr-codes.html" data-nav="qr-codes">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="4" height="4"/><path d="M3 20v-2"/><path d="M7 18v2"/><path d="M18 14v.01"/></svg>
+        QR Codes
+      </a>
+      <a class="nav-item" href="campaigns.html" data-nav="campaigns">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="M8.5 8.5A4.96 4.96 0 0 0 7 12a4.96 4.96 0 0 0 1.5 3.5"/><path d="M13.5 13.5A4.96 4.96 0 0 0 15 12a4.96 4.96 0 0 0-1.5-3.5"/><path d="M18.5 18.5A9.9 9.9 0 0 0 21 12a9.9 9.9 0 0 0-2.5-6.5"/><path d="M5.5 5.5A9.9 9.9 0 0 0 3 12a9.9 9.9 0 0 0 2.5 6.5"/></svg>
+        Campaigns
+      </a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">History</div>
+      <a class="nav-item" href="redemptions.html" data-nav="redemptions">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Redemption History
+      </a>
+      <a class="nav-item" href="events.html" data-nav="events">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+        Event Participation
+      </a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">Dbase Controller v2.1 · System Operator</div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+    </button>
+  </div>
+  <div class="topbar-search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" placeholder="Search users, merchants, campaigns…" id="globalSearch">
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-btn" aria-label="Notifications">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span class="dot"></span>
+    </button>
+    <div class="admin-avatar">
+      <div class="avatar-circle">SO</div>
+      <span class="admin-name">Sys Operator</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>Event Organisers</h1>
+      <div class="sub">Verify official documents of approval and manage organiser accounts</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary" onclick="showToast('New organiser registration form opened')">+ Add Organiser</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="metrics" style="margin-bottom:28px">
+    <div class="metric-card">
+      <div class="metric-label">Total Organisers</div>
+      <div class="metric-value">48</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Pending Verification</div>
+      <div class="metric-value" style="color:var(--warning)">12</div>
+      <div class="sub">Documents awaiting review</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Verified</div>
+      <div class="metric-value">32</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Upcoming Events</div>
+      <div class="metric-value">18</div>
+      <div class="sub">In next 30 days</div>
+    </div>
+  </div>
+
+  <!-- Pending verifications -->
+  <div class="section-title">Pending Document Verification <span class="count">(12)</span></div>
+  <div class="card" style="margin-bottom:28px">
+    <div class="card-body">
+      <div class="doc-row">
+        <div><strong style="font-size:13px">GreenFest Inc.</strong><br><span style="font-size:12px;color:var(--muted)">Eco Summit 2026 · Documents submitted 12 May</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-success btn-sm" onclick="showToast('GreenFest Inc. approved')">Approve</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="showToast('GreenFest Inc. rejected — notification sent')">Reject</button>
+        </div>
+      </div>
+      <div class="doc-row">
+        <div><strong style="font-size:13px">Lumina Events</strong><br><span style="font-size:12px;color:var(--muted)">Night Market · Documents submitted 13 May</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-success btn-sm" onclick="showToast('Lumina Events approved')">Approve</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="showToast('Lumina Events rejected — notification sent')">Reject</button>
+        </div>
+      </div>
+      <div class="doc-row">
+        <div><strong style="font-size:13px">CodeCamp SG</strong><br><span style="font-size:12px;color:var(--muted)">DevConf 2026 · Documents submitted 13 May</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-success btn-sm" onclick="showToast('CodeCamp SG approved')">Approve</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="showToast('CodeCamp SG rejected — notification sent')">Reject</button>
+        </div>
+      </div>
+      <div class="doc-row">
+        <div><strong style="font-size:13px">Wellness Co.</strong><br><span style="font-size:12px;color:var(--muted)">Health Fest · Documents submitted 14 May</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-success btn-sm" onclick="showToast('Wellness Co. approved')">Approve</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="showToast('Wellness Co. rejected — notification sent')">Reject</button>
+        </div>
+      </div>
+      <div class="doc-row">
+        <div><strong style="font-size:13px">MusicWave Productions</strong><br><span style="font-size:12px;color:var(--muted)">Summer Music Fest · Documents submitted 14 May</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-success btn-sm" onclick="showToast('MusicWave approved')">Approve</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="showToast('MusicWave rejected — notification sent')">Reject</button>
+        </div>
+      </div>
+      <div class="doc-row">
+        <div><strong style="font-size:13px">ArtSpace Collective</strong><br><span style="font-size:12px;color:var(--muted)">Art Walk 2026 · Documents submitted 14 May</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-success btn-sm" onclick="showToast('ArtSpace approved')">Approve</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="showToast('ArtSpace rejected — notification sent')">Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- All organisers -->
+  <div class="section-title">All Organisers</div>
+  <div class="filter-bar">
+    <input type="text" placeholder="Search organisers…">
+    <select>
+      <option>All status</option>
+      <option>Verified</option>
+      <option>Pending</option>
+      <option>Suspended</option>
+    </select>
+    <span class="results">Showing 10 of 48</span>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Organiser</th><th>Contact</th><th>Events Organised</th><th>Verified</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:500">TasteMakers</td><td>info@tastemakers.com</td><td class="mono">4</td><td>12 Mar 2024</td><td><span class="pill active"><span class="dot"></span>Verified</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">View</button></td></tr>
+          <tr><td style="font-weight:500">FitLife Events</td><td>hello@fitlife.com</td><td class="mono">6</td><td>3 Jan 2025</td><td><span class="pill active"><span class="dot"></span>Verified</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">View</button></td></tr>
+          <tr><td style="font-weight:500">GreenFest Inc.</td><td>contact@greenfest.io</td><td class="mono">2</td><td>—</td><td><span class="pill pending"><span class="dot"></span>Pending</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">Review</button></td></tr>
+          <tr><td style="font-weight:500">Lumina Events</td><td>info@luminaevents.com</td><td class="mono">1</td><td>—</td><td><span class="pill pending"><span class="dot"></span>Pending</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">Review</button></td></tr>
+          <tr><td style="font-weight:500">CodeCamp SG</td><td>team@codecampsg.com</td><td class="mono">3</td><td>—</td><td><span class="pill pending"><span class="dot"></span>Pending</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">Review</button></td></tr>
+          <tr><td style="font-weight:500">Wellness Co.</td><td>hello@wellnessco.com</td><td class="mono">1</td><td>—</td><td><span class="pill pending"><span class="dot"></span>Pending</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">Review</button></td></tr>
+          <tr><td style="font-weight:500">Community Arts</td><td>admin@communityarts.org</td><td class="mono">8</td><td>20 Aug 2024</td><td><span class="pill active"><span class="dot"></span>Verified</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">View</button></td></tr>
+          <tr><td style="font-weight:500">SportEvents SG</td><td>info@sportevents.sg</td><td class="mono">5</td><td>15 Sep 2024</td><td><span class="pill active"><span class="dot"></span>Verified</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">View</button></td></tr>
+          <tr><td style="font-weight:500">MusicWave Productions</td><td>contact@musicwave.com</td><td class="mono">2</td><td>—</td><td><span class="pill pending"><span class="dot"></span>Pending</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">Review</button></td></tr>
+          <tr><td style="font-weight:500">ArtSpace Collective</td><td>info@artspace.sg</td><td class="mono">1</td><td>—</td><td><span class="pill pending"><span class="dot"></span>Pending</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('view-organiser')">Review</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+    <span style="font-size:12px;color:var(--muted)">Page 1 of 5</span>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-sm btn-ghost" disabled>Prev</button>
+      <button class="btn btn-sm btn-primary">1</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('Page 2')">2</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('Page 3')">3</button>
+      <button class="btn btn-sm btn-ghost">…</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('Page 5')">5</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('Next page')">Next</button>
+    </div>
+  </div>
+</main>
+
+<!-- View Organiser modal -->
+<div class="modal-overlay" id="modal-view-organiser">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2>Organiser Profile</h2>
+      <button class="modal-close" onclick="closeModal('view-organiser')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:20px">
+        <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--accent-subtle);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:600;font-size:16px">GF</div>
+        <div>
+          <div style="font-weight:600;font-size:15px">GreenFest Inc.</div>
+          <div style="font-size:13px;color:var(--muted)">contact@greenfest.io</div>
+          <div style="font-size:12px;color:var(--muted)">Registration: REG-2025-0891</div>
+        </div>
+        <span class="pill pending" style="margin-left:auto"><span class="dot"></span>Pending</span>
+      </div>
+      <div class="field">
+        <label>Documents of Approval</label>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:var(--bg);padding:10px 14px;border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span style="flex:1;font-size:13px">Business_Registration_GreenFest.pdf</span>
+            <span class="pill active" style="font-size:10px">Valid</span>
+          </div>
+          <div style="background:var(--bg);padding:10px 14px;border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span style="flex:1;font-size:13px">Event_Permit_Eco_Summit_2026.pdf</span>
+            <span class="pill active" style="font-size:10px">Valid</span>
+          </div>
+          <div style="background:var(--bg);padding:10px 14px;border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span style="flex:1;font-size:13px">Insurance_Certificate.pdf</span>
+            <span class="pill pending" style="font-size:10px">Pending Review</span>
+          </div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:16px">
+        <label>Verification Decision</label>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-success" onclick="showToast('GreenFest Inc. — all documents approved')">Approve All</button>
+          <button class="btn btn-ghost" style="color:var(--danger)" onclick="showToast('GreenFest Inc. — rejected, notify sent')">Reject</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('view-organiser')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="admin.js"></script>
+</body>
+</html>

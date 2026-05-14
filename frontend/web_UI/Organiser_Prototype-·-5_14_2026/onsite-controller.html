@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>On-Site Controller — Events Organiser</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Mobile-first layout — expands gracefully on desktop */
+    .onsite-page {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: var(--space-4) var(--space-3);
+      padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+    }
+    @media (min-width: 768px) {
+      .onsite-page { max-width: 640px; padding: var(--space-6); }
+    }
+    @media (min-width: 1024px) {
+      .onsite-page { max-width: 800px; }
+    }
+
+    .onsite-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+    .onsite-header h1 {
+      font-size: 1.25rem;
+    }
+    .onsite-event-selector {
+      margin-bottom: var(--space-4);
+    }
+    .onsite-event-selector .form-select {
+      font-size: 1rem;
+      padding: 0.75rem;
+    }
+
+    /* Attendance list */
+    .attendance-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-2);
+      transition: border-color 0.15s;
+    }
+    .attendance-item.present {
+      border-color: var(--success);
+      background: oklch(98% 0.04 145);
+    }
+    .attendance-item .avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .attendance-item .info { flex: 1; min-width: 0; }
+    .attendance-item .name { font-weight: 500; font-size: 0.9375rem; }
+    .attendance-item .meta { font-size: 0.75rem; color: var(--muted); }
+    .attendance-item .check-btn {
+      flex-shrink: 0;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      color: var(--muted);
+    }
+    .attendance-item .check-btn:hover { border-color: var(--success); color: var(--success); }
+    .attendance-item .check-btn.checked {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+    .attendance-item .check-btn:focus-visible { box-shadow: var(--focus-ring); }
+
+    /* Tabs for modes */
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+    .mode-tab {
+      padding: var(--space-3);
+      text-align: center;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: var(--font-body);
+      color: var(--muted);
+    }
+    .mode-tab.active {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+    .mode-tab:focus-visible { box-shadow: var(--focus-ring); }
+
+    /* Attendance summary bar */
+    .attendance-summary {
+      display: flex;
+      gap: var(--space-4);
+      margin-bottom: var(--space-3);
+      font-size: 0.8125rem;
+      padding: var(--space-3) var(--space-4);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+    .attendance-summary span { display: flex; align-items: center; gap: var(--space-1); }
+    .attendance-summary .count { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* QR mode */
+    .qr-mode { display: none; }
+    .qr-mode.active { display: block; }
+    .attendance-mode { display: none; }
+    .attendance-mode.active { display: block; }
+
+    .qr-result {
+      text-align: center;
+      margin-top: var(--space-4);
+      padding: var(--space-4);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+    }
+    .qr-result .volunteer-name { font-weight: 600; font-size: 1.125rem; }
+    .qr-result .volunteer-detail { font-size: 0.8125rem; color: var(--muted); margin-bottom: var(--space-3); }
+    .qr-result .check-in-time { font-size: 0.75rem; color: var(--muted); }
+    .qr-result .status-badge { display: inline-block; margin-bottom: var(--space-2); }
+
+    .scan-again-btn {
+      margin-top: var(--space-4);
+    }
+
+    /* Completed state */
+    .completed-banner {
+      text-align: center;
+      padding: var(--space-4);
+      background: var(--success-light);
+      border: 1px solid oklch(55% 0.18 145 / 20%);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-4);
+    }
+    .completed-banner h3 { color: var(--success); margin-bottom: var(--space-1); }
+    .completed-banner p { color: var(--success); font-size: 0.875rem; }
+
+    /* Desktop adjustments for the nav */
+    @media (max-width: 640px) {
+      .site-header .header-nav a:not(.active) span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="header-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+        <span class="header-logo-text">Events Organiser</span>
+      </a>
+      <nav class="header-nav">
+        <a href="dashboard.html"><span>Dashboard</span></a>
+        <a href="events.html"><span>Events</span></a>
+        <a href="onsite-controller.html" class="active"><span>On-Site</span></a>
+        <a href="login.html" style="color:var(--danger);">Sign out</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="onsite-page">
+    <!-- Header -->
+    <div class="onsite-header">
+      <h1>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:var(--space-1);"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        On-Site Controller
+      </h1>
+      <span id="currentTime" class="text-mono text-sm"></span>
+    </div>
+
+    <!-- Event selector -->
+    <div class="onsite-event-selector">
+      <select class="form-select" id="eventSelect" onchange="switchEvent()">
+        <option value="1">Beach Clean-up — East Coast (Today)</option>
+        <option value="2">Tree Planting — Bishan Park (Upcoming)</option>
+        <option value="3">Heritage Walk — Chinatown (Upcoming)</option>
+      </select>
+    </div>
+
+    <!-- Completed banner (toggles) -->
+    <div id="completedBanner" class="completed-banner" style="display:none;">
+      <h3>✓ Event Completed</h3>
+      <p>All attendance recorded. You can now scan volunteer QR codes for post-event verification.</p>
+    </div>
+
+    <!-- Mode tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="attendanceTab" onclick="switchMode('attendance')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:var(--space-1);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Attendance
+      </button>
+      <button class="mode-tab" id="qrTab" onclick="switchMode('qr')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:var(--space-1);"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Scan QR
+      </button>
+    </div>
+
+    <!-- Attendance Mode -->
+    <div id="attendancePanel" class="attendance-mode active">
+      <!-- Summary -->
+      <div class="attendance-summary">
+        <span>Present: <strong class="count" id="presentCount">0</strong></span>
+        <span>Absent: <strong class="count" id="absentCount">0</strong></span>
+        <span>Total: <strong class="count" id="totalCount">0</strong></span>
+      </div>
+
+      <!-- Mark completed -->
+      <button class="btn btn-primary w-full" style="justify-content:center;margin-bottom:var(--space-4);" onclick="markEventCompleted()" id="completeBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark Event as Completed
+      </button>
+
+      <!-- Attendance list -->
+      <div id="attendanceList"></div>
+    </div>
+
+    <!-- QR Mode -->
+    <div id="qrPanel" class="qr-mode">
+      <div id="qrScanner" class="qr-scanner" style="margin-bottom:var(--space-4);">
+        <div class="qr-scanner-frame"></div>
+        <div class="qr-scanner-line"></div>
+        <div class="qr-scanner-overlay">Position QR code within frame</div>
+      </div>
+
+      <button class="btn btn-primary w-full" style="justify-content:center;" onclick="simulateScan()" id="scanBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+        Simulate QR Scan
+      </button>
+
+      <!-- Scan result -->
+      <div id="scanResult" class="qr-result" style="display:none;">
+        <div class="status-badge badge badge-success">✓ Checked In</div>
+        <div class="volunteer-name" id="scannedName">—</div>
+        <div class="volunteer-detail" id="scannedDetail">—</div>
+        <div class="check-in-time" id="scannedTime">—</div>
+        <button class="btn btn-secondary scan-again-btn w-full" style="justify-content:center;" onclick="resetScan()">Scan Another</button>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // --- Volunteer data per event ---
+    const eventVolunteers = {
+      1: [
+        { id: 'V001', name: 'Ahmad Bin Hassan', email: 'ahmad.b@example.com', checked: false },
+        { id: 'V002', name: 'Lynn Chen', email: 'lynn.c@example.com', checked: false },
+        { id: 'V003', name: 'Dinesh Raj', email: 'dinesh.r@example.com', checked: false },
+        { id: 'V004', name: 'Nurul Amirah', email: 'nurul.a@example.com', checked: false },
+        { id: 'V005', name: 'James Tan', email: 'james.t@example.com', checked: false },
+        { id: 'V006', name: 'Siti Rahmah', email: 'siti.r@example.com', checked: false },
+        { id: 'V007', name: 'Wei Ming Lim', email: 'weiming.l@example.com', checked: false },
+        { id: 'V008', name: 'Priya Menon', email: 'priya.m@example.com', checked: false },
+      ],
+      2: [
+        { id: 'V009', name: 'Marcus Ong', email: 'marcus.o@example.com', checked: false },
+        { id: 'V010', name: 'Sara Lim', email: 'sara.l@example.com', checked: false },
+        { id: 'V011', name: 'Ravi Sivan', email: 'ravi.s@example.com', checked: false },
+        { id: 'V012', name: 'Emily Wong', email: 'emily.w@example.com', checked: false },
+      ],
+      3: [
+        { id: 'V013', name: 'Sarah Tan', email: 'sarah.t@example.com', checked: false },
+        { id: 'V014', name: 'Ben Ng', email: 'ben.n@example.com', checked: false },
+        { id: 'V015', name: 'Carol Lim', email: 'carol.l@example.com', checked: false },
+      ],
+    };
+
+    let currentEvent = '1';
+    let isCompleted = false;
+    let qrScanHistory = [];
+
+    // --- Time update ---
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' });
+    }
+    updateTime();
+    setInterval(updateTime, 30000);
+
+    // --- Mode switching ---
+    function switchMode(mode) {
+      document.getElementById('attendanceTab').classList.toggle('active', mode === 'attendance');
+      document.getElementById('qrTab').classList.toggle('active', mode === 'qr');
+      document.getElementById('attendancePanel').classList.toggle('active', mode === 'attendance');
+      document.getElementById('qrPanel').classList.toggle('active', mode === 'qr');
+    }
+
+    // --- Event switching ---
+    function switchEvent() {
+      currentEvent = document.getElementById('eventSelect').value;
+      isCompleted = false;
+      document.getElementById('completedBanner').style.display = 'none';
+      document.getElementById('completeBtn').style.display = 'block';
+      renderAttendance();
+    }
+
+    // --- Render attendance list ---
+    function renderAttendance() {
+      const volunteers = eventVolunteers[currentEvent] || [];
+      const container = document.getElementById('attendanceList');
+
+      if (volunteers.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">No volunteers registered for this event.</div></div>';
+        updateSummary();
+        return;
+      }
+
+      container.innerHTML = volunteers.map((v, i) => {
+        const initial = v.name.split(' ').map(s => s[0]).join('');
+        return `
+          <div class="attendance-item ${v.checked ? 'present' : ''}">
+            <div class="avatar">${initial}</div>
+            <div class="info">
+              <div class="name">${v.name}</div>
+              <div class="meta">${v.id} &middot; ${v.email}</div>
+            </div>
+            <button class="check-btn ${v.checked ? 'checked' : ''}" onclick="toggleAttendance(${i})" aria-label="${v.checked ? 'Mark absent' : 'Mark present'}">
+              ${v.checked ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+            </button>
+          </div>
+        `;
+      }).join('');
+      updateSummary();
+    }
+
+    // --- Toggle attendance ---
+    function toggleAttendance(index) {
+      const volunteers = eventVolunteers[currentEvent];
+      if (!volunteers || !volunteers[index]) return;
+      volunteers[index].checked = !volunteers[index].checked;
+      renderAttendance();
+    }
+
+    // --- Mark event completed ---
+    function markEventCompleted() {
+      const volunteers = eventVolunteers[currentEvent];
+      const present = volunteers.filter(v => v.checked).length;
+      const total = volunteers.length;
+
+      if (present === 0) {
+        showToast('Please mark at least one volunteer as present first.', 'error');
+        return;
+      }
+
+      isCompleted = true;
+      document.getElementById('completedBanner').style.display = 'block';
+      document.getElementById('completeBtn').style.display = 'none';
+      showToast(`Event marked as completed. ${present}/${total} volunteers accounted for.`, 'success');
+    }
+
+    // --- Update summary ---
+    function updateSummary() {
+      const volunteers = eventVolunteers[currentEvent] || [];
+      const present = volunteers.filter(v => v.checked).length;
+      const absent = volunteers.length - present;
+      document.getElementById('presentCount').textContent = present;
+      document.getElementById('absentCount').textContent = absent;
+      document.getElementById('totalCount').textContent = volunteers.length;
+    }
+
+    // --- QR Scan simulation ---
+    const qrNames = ['Ahmad Bin Hassan', 'Lynn Chen', 'Dinesh Raj', 'Nurul Amirah', 'James Tan', 'Siti Rahmah', 'Wei Ming Lim'];
+    let qrIndex = 0;
+
+    function simulateScan() {
+      if (!isCompleted) {
+        showToast('Complete the event first before scanning QR codes.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('scanBtn');
+      btn.textContent = 'Scanning…';
+      btn.disabled = true;
+
+      setTimeout(() => {
+        const name = qrNames[qrIndex % qrNames.length];
+        qrIndex++;
+
+        // Check if this volunteer is in the current event
+        const volunteers = eventVolunteers[currentEvent] || [];
+        const match = volunteers.find(v => v.name === name);
+        const wasPresent = match ? match.checked : false;
+
+        document.getElementById('scannedName').textContent = name;
+        document.getElementById('scannedDetail').textContent = match
+          ? `${match.id} — ${match.email}${wasPresent ? ' (Attendance recorded)' : ' (Not in this event)'}`
+          : 'Volunteer not found in this event roster';
+        document.getElementById('scannedTime').textContent = 'Scanned at: ' + new Date().toLocaleTimeString('en-SG');
+        document.getElementById('scanResult').style.display = 'block';
+        document.getElementById('qrScanner').style.display = 'none';
+
+        btn.textContent = 'Simulate QR Scan';
+        btn.disabled = false;
+        showToast(`QR scanned: ${name}`, 'success');
+      }, 1500);
+    }
+
+    function resetScan() {
+      document.getElementById('scanResult').style.display = 'none';
+      document.getElementById('qrScanner').style.display = 'block';
+    }
+
+    // --- Toast ---
+    function showToast(msg, type) {
+      const container = document.getElementById('toast-container') || (() => {
+        const c = document.createElement('div');
+        c.id = 'toast-container';
+        c.className = 'toast-container';
+        document.body.appendChild(c);
+        return c;
+      })();
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // --- Initialise ---
+    renderAttendance();
+  </script>
+</body>
+</html>

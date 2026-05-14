@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Organisation — Events Organiser</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .register-page {
+      min-height: 100vh;
+      padding: var(--space-8) var(--space-4);
+      background: var(--bg);
+    }
+    .register-container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .register-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+    }
+    .register-card h1 {
+      margin-bottom: var(--space-1);
+    }
+    .register-card .subtitle {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-bottom: var(--space-6);
+    }
+    .form-section {
+      margin-bottom: var(--space-6);
+      padding-bottom: var(--space-6);
+      border-bottom: 1px solid var(--border);
+    }
+    .form-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .form-section-title {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .form-section-number {
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .upload-list { margin-top: var(--space-3); }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: var(--space-6);
+    }
+    .back-link:hover { color: var(--fg); }
+  </style>
+</head>
+<body>
+  <div class="register-page">
+    <div class="register-container">
+      <a href="login.html" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 12L6 8l4-4"/></svg>
+        Back to sign in
+      </a>
+
+      <div class="register-card">
+        <h1>Register Organisation</h1>
+        <p class="subtitle">Submit your organisation details for approval. Statutory boards must upload official supporting documents.</p>
+
+        <form id="registerForm" onsubmit="handleRegister(event)">
+          <!-- Section 1: Organisation Details -->
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="form-section-number">1</span>
+              Organisation Details
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="orgName" class="form-label">Organisation name <span class="required">*</span></label>
+                <input type="text" id="orgName" class="form-input" placeholder="e.g. National Parks Board" required>
+              </div>
+              <div class="form-group">
+                <label for="uen" class="form-label">UEN / Registration no. <span class="required">*</span></label>
+                <input type="text" id="uen" class="form-input" placeholder="e.g. T08GB0001A" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="orgType" class="form-label">Organisation type <span class="required">*</span></label>
+                <select id="orgType" class="form-select" required>
+                  <option value="">Select type…</option>
+                  <option value="statutory-board">Statutory Board</option>
+                  <option value="government-ministry">Government Ministry</option>
+                  <option value="government-agency">Government Agency</option>
+                  <option value="non-profit">Non-Profit Organisation</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="industry" class="form-label">Sector</label>
+                <select id="industry" class="form-select">
+                  <option value="">Select sector…</option>
+                  <option value="environment">Environment &amp; Sustainability</option>
+                  <option value="education">Education</option>
+                  <option value="health">Health</option>
+                  <option value="social">Social &amp; Community</option>
+                  <option value="arts">Arts &amp; Culture</option>
+                  <option value="sports">Sports</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="address" class="form-label">Registered address <span class="required">*</span></label>
+              <input type="text" id="address" class="form-input" placeholder="Street address" required>
+            </div>
+          </div>
+
+          <!-- Section 2: Official Documents -->
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="form-section-number">2</span>
+              Official Approval Documents
+            </div>
+            <p class="form-hint" style="margin-bottom:var(--space-3);">
+              Upload official documents confirming your organisation's status (e.g. Board resolution, letter of appointment, Gazette notification). Accepted formats: PDF, DOCX, PNG, JPG. Max 10 MB each.
+            </p>
+
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+              <div class="upload-zone-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <div class="upload-zone-text">
+                Drag &amp; drop files here, or <strong>browse</strong>
+              </div>
+            </div>
+            <input type="file" id="fileInput" multiple accept=".pdf,.docx,.png,.jpg,.jpeg" style="display:none" onchange="handleFiles(this.files)">
+
+            <div class="upload-list" id="uploadList"></div>
+          </div>
+
+          <!-- Section 3: Person-in-Charge -->
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="form-section-number">3</span>
+              Person-in-Charge
+            </div>
+            <p class="form-hint" style="margin-bottom:var(--space-3);">
+              Primary contact person for event coordination and scheduling.
+            </p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="picName" class="form-label">Full name <span class="required">*</span></label>
+                <input type="text" id="picName" class="form-input" placeholder="e.g. Lim Wei Ming" required>
+              </div>
+              <div class="form-group">
+                <label for="picDesignation" class="form-label">Designation <span class="required">*</span></label>
+                <input type="text" id="picDesignation" class="form-input" placeholder="e.g. Events Manager" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="picEmail" class="form-label">Email <span class="required">*</span></label>
+                <input type="email" id="picEmail" class="form-input" placeholder="weiming@organisation.gov.sg" required>
+              </div>
+              <div class="form-group">
+                <label for="picPhone" class="form-label">Phone number <span class="required">*</span></label>
+                <input type="tel" id="picPhone" class="form-input" placeholder="+65 9123 4567" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div class="flex justify-end gap-3" style="padding-top:var(--space-4)">
+            <a href="login.html" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Submit for Approval</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const uploadedFiles = [];
+
+    function handleFiles(files) {
+      for (const file of files) {
+        if (file.size > 10 * 1024 * 1024) {
+          showToast('File too large: ' + file.name, 'error');
+          continue;
+        }
+        uploadedFiles.push(file);
+      }
+      renderUploadList();
+      document.getElementById('fileInput').value = '';
+    }
+
+    function removeFile(index) {
+      uploadedFiles.splice(index, 1);
+      renderUploadList();
+    }
+
+    function renderUploadList() {
+      const container = document.getElementById('uploadList');
+      if (uploadedFiles.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      container.innerHTML = uploadedFiles.map((f, i) => `
+        <div class="uploaded-file">
+          <div class="file-info">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span class="file-name">${f.name}</span>
+            <span class="file-size">${(f.size / 1024).toFixed(0)} KB</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-ghost" onclick="removeFile(${i})">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.textContent = 'Submitting…';
+      btn.disabled = true;
+
+      setTimeout(() => {
+        showToast('Registration submitted for approval. You will be notified once verified.', 'success');
+        btn.textContent = 'Submit for Approval';
+        btn.disabled = false;
+      }, 2000);
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toast-container') || (() => {
+        const c = document.createElement('div');
+        c.id = 'toast-container';
+        c.className = 'toast-container';
+        document.body.appendChild(c);
+        return c;
+      })();
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Drag-and-drop support
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ServeConnect — Volunteer App Prototype</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #f5f4f0;
+      color: #1a1916;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      padding: 48px 24px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header h1 {
+      font-family: 'Söhne', 'Avenir Next', -apple-system, system-ui, sans-serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin: 0;
+      line-height: 1.1;
+    }
+    header p {
+      color: #6b6964;
+      font-size: 16px;
+      margin: 8px 0 0;
+      max-width: 500px;
+      line-height: 1.5;
+    }
+
+    .meta-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #6b6964;
+    }
+    .meta-bar span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: #fff;
+      border-radius: 999px;
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      letter-spacing: 0.03em;
+    }
+
+    .flow-overview {
+      max-width: 1200px;
+      margin: 0 auto 32px;
+      padding: 0 24px;
+    }
+    .flow-overview h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 12px;
+    }
+    .flow-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .flow-step {
+      padding: 6px 12px;
+      background: #fff;
+      border-radius: 999px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .flow-step .num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #2a9d8f;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: ui-monospace, monospace;
+    }
+
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      padding: 0 24px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+      justify-content: center;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+      width: 220px;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      transform: translateY(-4px);
+    }
+
+    .card .preview {
+      width: 100%;
+      aspect-ratio: 390 / 844;
+      background: #fafaf7;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid #eee;
+    }
+    .card .preview iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      pointer-events: none;
+    }
+    .card .preview .badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      padding: 3px 7px;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      border-radius: 999px;
+      font-size: 9px;
+      font-family: ui-monospace, monospace;
+      letter-spacing: 0.05em;
+    }
+
+    .card .info {
+      padding: 12px 14px 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .card .info h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 0 2px;
+      line-height: 1.3;
+    }
+    .card .info p {
+      font-size: 12px;
+      color: #6b6964;
+      margin: 0 0 10px;
+      line-height: 1.4;
+    }
+    .card .info .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    .card .info .tags span {
+      padding: 2px 7px;
+      background: #f0efea;
+      border-radius: 999px;
+      font-size: 10px;
+      color: #6b6964;
+    }
+    .card .info a {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 14px;
+      background: #2a9d8f;
+      color: #fff;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      align-self: flex-start;
+      margin-top: auto;
+    }
+    .card .info a:hover {
+      background: #238b7e;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0 24px 40px;
+      color: #6b6964;
+      font-size: 13px;
+    }
+
+    @media (max-width: 640px) {
+      header { padding: 32px 16px 24px; }
+      .gallery { padding: 0 16px 32px; gap: 16px; }
+      .card { width: 100%; max-width: 360px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ServeConnect</h1>
+  <p>Volunteer mobile app prototype — full user journey from onboarding to rewards redemption.</p>
+  <div class="meta-bar">
+    <span>10 screens</span>
+    <span>Responsive mobile</span>
+    <span>Human / approachable</span>
+    <span>High-fidelity</span>
+  </div>
+</header>
+
+<div class="flow-overview">
+  <h2>User flow</h2>
+  <div class="flow-steps">
+    <span class="flow-step"><span class="num">1</span> Onboarding</span>
+    <span class="flow-step"><span class="num">2</span> Register</span>
+    <span class="flow-step"><span class="num">3</span> Login</span>
+    <span class="flow-step"><span class="num">4</span> Event Store</span>
+    <span class="flow-step"><span class="num">5</span> Event Detail</span>
+    <span class="flow-step"><span class="num">6</span> My Events</span>
+    <span class="flow-step"><span class="num">7</span> Check-in</span>
+    <span class="flow-step"><span class="num">8</span> QR &amp; Points</span>
+    <span class="flow-step"><span class="num">9</span> Rewards</span>
+    <span class="flow-step"><span class="num">10</span> V-Social</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/01-onboarding.html" loading="lazy"></iframe>
+      <span class="badge">01</span>
+    </div>
+    <div class="info">
+      <h3>Onboarding</h3>
+      <p>3-step walkthrough: Welcome → Find Causes → Earn &amp; Redeem</p>
+      <div class="tags"><span>Walkthrough</span><span>3 steps</span></div>
+      <a href="screens/01-onboarding.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/02-register.html" loading="lazy"></iframe>
+      <span class="badge">02</span>
+    </div>
+    <div class="info">
+      <h3>Register</h3>
+      <p>Sign-up with name, email, phone, and password</p>
+      <div class="tags"><span>Form</span><span>Auth</span></div>
+      <a href="screens/02-register.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/03-login.html" loading="lazy"></iframe>
+      <span class="badge">03</span>
+    </div>
+    <div class="info">
+      <h3>Login</h3>
+      <p>Sign in with email &amp; password, remember-me toggle</p>
+      <div class="tags"><span>Auth</span><span>Form</span></div>
+      <a href="screens/03-login.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/04-event-store.html" loading="lazy"></iframe>
+      <span class="badge">04</span>
+    </div>
+    <div class="info">
+      <h3>Event Store</h3>
+      <p>Browse &amp; search volunteering events with category filters</p>
+      <div class="tags"><span>Browse</span><span>Search</span><span>Filters</span></div>
+      <a href="screens/04-event-store.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/05-event-detail.html" loading="lazy"></iframe>
+      <span class="badge">05</span>
+    </div>
+    <div class="info">
+      <h3>Event Detail</h3>
+      <p>Full event info, map, what-to-bring, and join + calendar actions</p>
+      <div class="tags"><span>Detail</span><span>Join</span><span>Calendar</span></div>
+      <a href="screens/05-event-detail.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/06-my-events.html" loading="lazy"></iframe>
+      <span class="badge">06</span>
+    </div>
+    <div class="info">
+      <h3>My Events</h3>
+      <p>Schedule view with date picker, upcoming &amp; past events, check-in CTA</p>
+      <div class="tags"><span>Schedule</span><span>Calendar</span></div>
+      <a href="screens/06-my-events.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/07-checkin.html" loading="lazy"></iframe>
+      <span class="badge">07</span>
+    </div>
+    <div class="info">
+      <h3>Check-in &amp; Feedback</h3>
+      <p>Map view, GPS check-in, event &amp; organizer ratings with comments</p>
+      <div class="tags"><span>Location</span><span>Rating</span><span>Feedback</span></div>
+      <a href="screens/07-checkin.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/08-qr-points.html" loading="lazy"></iframe>
+      <span class="badge">08</span>
+    </div>
+    <div class="info">
+      <h3>QR Scanner &amp; Points</h3>
+      <p>Scan organizer QR codes, view points balance and earning history</p>
+      <div class="tags"><span>QR</span><span>Points</span><span>Scanner</span></div>
+      <a href="screens/08-qr-points.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/09-rewards.html" loading="lazy"></iframe>
+      <span class="badge">09</span>
+    </div>
+    <div class="info">
+      <h3>Rewards &amp; Redemption</h3>
+      <p>Online &amp; in-store rewards catalog, 6-figure PIN redemption flow</p>
+      <div class="tags"><span>Rewards</span><span>Redeem</span><span>QR</span><span>PIN</span></div>
+      <a href="screens/09-rewards.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="preview">
+      <iframe src="screens/10-vsocial.html" loading="lazy"></iframe>
+      <span class="badge">10</span>
+    </div>
+    <div class="info">
+      <h3>V-Social</h3>
+      <p>Community feed with photo posts, likes, comments, and stories</p>
+      <div class="tags"><span>Social</span><span>Feed</span><span>Gallery</span></div>
+      <a href="screens/10-vsocial.html" target="_blank">Open screen</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  ServeConnect · Volunteer App Prototype · 10 screens covering registration through rewards redemption
+</footer>
+
+</body>
+</html>
+</｜｜DSML｜｜artifact>

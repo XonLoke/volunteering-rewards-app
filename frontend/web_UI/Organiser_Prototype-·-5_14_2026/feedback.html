@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Volunteer Feedback — Events Organiser</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="header-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+        Events Organiser
+      </a>
+      <nav class="header-nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="events.html">Events</a>
+        <a href="feedback.html" class="active">Feedback</a>
+        <a href="assessment.html">Assessment</a>
+        <a href="onsite-controller.html">On-Site</a>
+        <a href="login.html" style="color:var(--danger);">Sign out</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-header">
+      <h1>Volunteer Feedback</h1>
+      <p>Review feedback, ratings, and suggestions submitted by volunteers after events.</p>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Total Responses</span>
+        <span class="stat-value">47</span>
+        <span class="stat-change up">+8 this month</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Average Rating</span>
+        <span class="stat-value">4.3</span>
+        <span class="stat-change">/ 5.0 across all events</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Pending Review</span>
+        <span class="stat-value">12</span>
+        <span class="stat-change down">Requires attention</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Suggestions Received</span>
+        <span class="stat-value">9</span>
+        <span class="stat-change">This quarter</span>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <select class="form-select" id="eventFilter" onchange="filterFeedback()">
+        <option value="all">All events</option>
+        <option value="1">Beach Clean-up — East Coast</option>
+        <option value="2">River Clean-up — Kallang</option>
+        <option value="3">Community Garden Workshop</option>
+        <option value="4">Tree Planting — Bishan Park</option>
+      </select>
+      <select class="form-select" id="ratingFilter" onchange="filterFeedback()">
+        <option value="all">All ratings</option>
+        <option value="5">5 stars</option>
+        <option value="4">4 stars</option>
+        <option value="3">3 stars</option>
+        <option value="2">2 stars</option>
+        <option value="1">1 star</option>
+      </select>
+      <label class="form-checkbox" style="margin-left:auto;">
+        <input type="checkbox" id="pendingOnly" onchange="filterFeedback()">
+        Pending review only
+      </label>
+    </div>
+
+    <!-- Feedback Cards -->
+    <div id="feedbackContainer"></div>
+
+  </main>
+
+  <script>
+    const feedbackData = [
+      { id: 1, event: 'River Clean-up — Kallang', eventId: 2, volunteer: 'Ahmad Bin Hassan', rating: 5, comment: 'Well organised event. The briefing before starting was clear and the team leaders were very helpful. Would love to join again.', date: '12 May 2026', reviewed: true },
+      { id: 2, event: 'River Clean-up — Kallang', eventId: 2, volunteer: 'Lynn Chen', rating: 4, comment: 'Good event overall but could use more drinking water stations along the route. The cleanup itself was well-coordinated.', date: '12 May 2026', reviewed: true },
+      { id: 3, event: 'River Clean-up — Kallang', eventId: 2, volunteer: 'Dinesh Raj', rating: 5, comment: 'Very rewarding experience. The team provided proper equipment and safety briefings.', date: '12 May 2026', reviewed: false },
+      { id: 4, event: 'Community Garden Workshop', eventId: 3, volunteer: 'Ravi Sivan', rating: 5, comment: 'Loved the hands-on gardening workshop. Learned about composting and native plants. Well done!', date: '10 May 2026', reviewed: true },
+      { id: 5, event: 'Community Garden Workshop', eventId: 3, volunteer: 'Priya Menon', rating: 4, comment: 'Informative session. Would suggest having more practical demonstration time next round.', date: '10 May 2026', reviewed: false },
+      { id: 6, event: 'Beach Clean-up — East Coast', eventId: 1, volunteer: 'James Tan', rating: 3, comment: 'The event was decent but started later than scheduled due to equipment delay. The actual cleanup was productive.', date: '18 May 2026', reviewed: false },
+      { id: 7, event: 'Beach Clean-up — East Coast', eventId: 1, volunteer: 'Nurul Amirah', rating: 5, comment: 'Great atmosphere and meaningful cause. The post-event refreshments were a nice touch!', date: '18 May 2026', reviewed: false },
+    ];
+
+    function renderStars(count) {
+      return '<span class="stars">' +
+        '★'.repeat(count) + '<span class="empty">' + '★'.repeat(5 - count) + '</span>' +
+        '</span>';
+    }
+
+    function filterFeedback() {
+      const eventFilter = document.getElementById('eventFilter').value;
+      const ratingFilter = document.getElementById('ratingFilter').value;
+      const pendingOnly = document.getElementById('pendingOnly').checked;
+
+      const filtered = feedbackData.filter(f => {
+        if (eventFilter !== 'all' && f.eventId !== parseInt(eventFilter)) return false;
+        if (ratingFilter !== 'all' && f.rating !== parseInt(ratingFilter)) return false;
+        if (pendingOnly && f.reviewed) return false;
+        return true;
+      });
+
+      const container = document.getElementById('feedbackContainer');
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="card" style="text-align:center;padding:3rem;color:var(--muted);">No feedback matches your filters.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(f => `
+        <div class="card" style="margin-bottom:var(--space-4);${!f.reviewed ? 'border-left:3px solid var(--accent);' : ''}">
+          <div class="flex items-center justify-between" style="margin-bottom:var(--space-3);">
+            <div>
+              <strong>${f.volunteer}</strong>
+              <span class="text-muted text-sm" style="margin-left:var(--space-2);">on ${f.event}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              ${renderStars(f.rating)}
+              ${!f.reviewed ? '<span class="badge badge-accent">New</span>' : ''}
+            </div>
+          </div>
+          <p style="font-size:0.875rem;margin-bottom:var(--space-3);">"${f.comment}"</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-muted">${f.date}</span>
+            <div class="flex gap-2">
+              <button class="btn btn-sm ${f.reviewed ? 'btn-ghost' : 'btn-primary'}" onclick="markReviewed(${f.id})">
+                ${f.reviewed ? '✓ Reviewed' : 'Mark as reviewed'}
+              </button>
+              ${f.comment.toLowerCase().includes('suggest') || f.comment.toLowerCase().includes('would suggest') || f.comment.toLowerCase().includes('could use') ?
+                `<span class="badge badge-info">Suggestion</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function markReviewed(id) {
+      const item = feedbackData.find(f => f.id === id);
+      if (item) {
+        item.reviewed = !item.reviewed;
+        filterFeedback();
+      }
+    }
+
+    // Initial render
+    filterFeedback();
+  </script>
+</body>
+</html>
