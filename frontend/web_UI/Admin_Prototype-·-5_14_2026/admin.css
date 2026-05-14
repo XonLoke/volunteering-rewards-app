@@ -5,9 +5,9 @@
   --fg:      oklch(18% 0.012 250);
   --muted:   oklch(54% 0.012 250);
   --border:  oklch(92% 0.005 250);
-  --accent:  oklch(58% 0.18 255);
-  --accent-hover: oklch(52% 0.20 255);
-  --accent-subtle: oklch(94% 0.06 255);
+  --accent:  oklch(65% 0.205 145);
+  --accent-hover: oklch(58% 0.22 145);
+  --accent-subtle: oklch(93% 0.08 145);
   --success: oklch(55% 0.18 145);
   --warning: oklch(70% 0.18 85);
   --danger:  oklch(55% 0.20 25);
