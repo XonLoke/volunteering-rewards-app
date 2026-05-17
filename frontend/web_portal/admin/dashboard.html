@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Admin Portal</title>
+  <link rel="stylesheet" href="/web_portal/shared/admin.css" />
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <h2>Volunteering Rewards</h2>
+        <span>Admin Portal</span>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="/web_portal/admin/dashboard.html" class="active"><span class="icon">&#9632;</span> <span>Dashboard</span></a></li>
+        <li><a href="/web_portal/admin/users.html"><span class="icon">&#9644;</span> <span>Users</span></a></li>
+        <li><a href="/web_portal/admin/organisers.html"><span class="icon">&#9638;</span> <span>Organisers</span></a></li>
+        <li><a href="/web_portal/admin/events.html"><span class="icon">&#9776;</span> <span>Events</span></a></li>
+        <li><a href="/web_portal/admin/coupons.html"><span class="icon">&#9733;</span> <span>Coupons</span></a></li>
+        <li><a href="/web_portal/admin/redemptions.html"><span class="icon">&#8635;</span> <span>Redemptions</span></a></li>
+        <li><a href="/web_portal/admin/rewards-config.html"><span class="icon">&#9881;</span> <span>Rewards Config</span></a></li>
+      </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Top Bar -->
+      <div class="topbar">
+        <h1>Dashboard</h1>
+        <div class="topbar-right">
+          <span class="admin-name" id="adminName">Loading...</span>
+          <span id="currentTime" style="font-size:12px;color:#94a3b8;"></span>
+          <button class="btn-logout" onclick="handleLogout()">Logout</button>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content-area">
+        <div id="lastUpdated" style="font-size:12px;color:#94a3b8;margin-bottom:16px;"></div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value" id="statTotalUsers">-</div>
+            <div class="stat-change" id="statUsersGrowth"></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Organisers</div>
+            <div class="stat-value" id="statTotalOrganisers">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pending Approvals</div>
+            <div class="stat-value" id="statPendingApprovals">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Coupons Issued Today</div>
+            <div class="stat-value" id="statCouponsToday">-</div>
+            <div class="stat-change" id="statCouponsGrowth"></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Redemptions Today</div>
+            <div class="stat-value" id="statRedemptionsToday">-</div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <h3 style="font-size:14px;color:#64748b;margin-bottom:12px;">Quick Actions</h3>
+        <div class="quick-actions">
+          <a href="/web_portal/admin/users.html" class="quick-action-btn">&#9644; Manage Users</a>
+          <a href="/web_portal/admin/organisers.html" class="quick-action-btn">&#9638; Approve Organisers</a>
+          <a href="/web_portal/admin/events.html" class="quick-action-btn">&#9776; View Events</a>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="table-container" style="margin-top:28px;">
+          <div class="table-header">
+            <h3>Recent Activity</h3>
+          </div>
+          <div id="recentActivity">
+            <div class="loading-spinner">Loading activity...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/web_portal/shared/api.js"></script>
+  <script>
+    let adminUser = null;
+
+    function getAdminUser() {
+      try {
+        const saved = localStorage.getItem('admin_user');
+        return saved ? JSON.parse(saved) : null;
+      } catch (e) { return null; }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      window.location.href = '/web_portal/admin/login.html';
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-SG', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+    }
+
+    function formatTime(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function loadDashboard() {
+      try {
+        const data = await apiGet('/admin/dashboard');
+
+        // Update stats
+        document.getElementById('statTotalUsers').textContent =
+          data?.stats?.total_users?.toLocaleString() || '-';
+        document.getElementById('statTotalOrganisers').textContent =
+          data?.stats?.total_organisers?.toLocaleString() || '-';
+        document.getElementById('statPendingApprovals').textContent =
+          data?.stats?.pending_approvals || '-';
+        document.getElementById('statCouponsToday').textContent =
+          data?.stats?.total_coupons_issued_today?.toLocaleString() || '-';
+        document.getElementById('statRedemptionsToday').textContent =
+          data?.stats?.total_redemptions_today?.toLocaleString() || '-';
+
+        // Growth percentages
+        const usersGrowth = document.getElementById('statUsersGrowth');
+        if (data?.stats?.users_growth_pct !== undefined) {
+          usersGrowth.textContent = '+' + data.stats.users_growth_pct + '% this month';
+        } else {
+          usersGrowth.textContent = '';
+        }
+
+        const couponsGrowth = document.getElementById('statCouponsGrowth');
+        if (data?.stats?.coupons_growth_pct !== undefined) {
+          couponsGrowth.textContent = '+' + data.stats.coupons_growth_pct + '% vs yesterday';
+        } else {
+          couponsGrowth.textContent = '';
+        }
+
+        // Last updated
+        if (data?.current_date) {
+          document.getElementById('lastUpdated').textContent =
+            data.current_date + ' | Last updated: ' + (data?.last_updated || '');
+        }
+
+        // Recent activity
+        const activityContainer = document.getElementById('recentActivity');
+        if (data?.recent_activity && data.recent_activity.length > 0) {
+          let html = '<table><thead><tr><th>Activity</th><th>Time</th></tr></thead><tbody>';
+          data.recent_activity.forEach(act => {
+            const time = act.timestamp ? formatTime(act.timestamp) : '';
+            html += '<tr><td>' + act.description + '</td><td>' + time + '</td></tr>';
+          });
+          html += '</tbody></table>';
+          activityContainer.innerHTML = html;
+        } else {
+          activityContainer.innerHTML = '<div class="empty-state">No recent activity</div>';
+        }
+      } catch (err) {
+        document.getElementById('statsGrid').innerHTML =
+          '<div class="alert alert-error">Failed to load dashboard data: ' + err.message + '</div>';
+      }
+    }
+
+    // Init
+    adminUser = getAdminUser();
+    if (adminUser && adminUser.name) {
+      document.getElementById('adminName').textContent = adminUser.name + ' (Admin)';
+    }
+
+    // Update current time
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('currentTime').textContent =
+        now.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' });
+    }
+    updateTime();
+    setInterval(updateTime, 30000);
+
+    loadDashboard();
+  </script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users - Admin Portal</title>
+  <link rel="stylesheet" href="/web_portal/shared/admin.css" />
+  <style>
+    .user-row { cursor: pointer; }
+    .user-detail-row { display: none; }
+    .user-detail-row.open { display: table-row; }
+    .user-detail-cell { padding: 0 !important; }
+    .user-detail-content {
+      padding: 16px 20px 16px 52px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    .detail-item {
+      font-size: 13px;
+      color: #475569;
+    }
+    .detail-item strong {
+      display: block;
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 200;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .toast.show { display: block; }
+    .toast.success { background: #16a34a; color: #fff; }
+    .toast.error { background: #dc2626; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="dashboard-layout">
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <h2>Volunteering Rewards</h2>
+        <span>Admin Portal</span>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="/web_portal/admin/dashboard.html"><span class="icon">&#9632;</span> <span>Dashboard</span></a></li>
+        <li><a href="/web_portal/admin/users.html" class="active"><span class="icon">&#9644;</span> <span>Users</span></a></li>
+        <li><a href="/web_portal/admin/organisers.html"><span class="icon">&#9638;</span> <span>Organisers</span></a></li>
+        <li><a href="/web_portal/admin/events.html"><span class="icon">&#9776;</span> <span>Events</span></a></li>
+        <li><a href="/web_portal/admin/coupons.html"><span class="icon">&#9733;</span> <span>Coupons</span></a></li>
+        <li><a href="/web_portal/admin/redemptions.html"><span class="icon">&#8635;</span> <span>Redemptions</span></a></li>
+        <li><a href="/web_portal/admin/rewards-config.html"><span class="icon">&#9881;</span> <span>Rewards Config</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="main-content">
+      <div class="topbar">
+        <h1>Users</h1>
+        <div class="topbar-right">
+          <span class="admin-name" id="adminName">Loading...</span>
+          <button class="btn-logout" onclick="handleLogout()">Logout</button>
+        </div>
+      </div>
+
+      <div class="content-area">
+        <div class="table-container">
+          <div class="table-header">
+            <h3>All Users</h3>
+            <div class="table-filters">
+              <input type="text" id="searchInput" placeholder="Search name or email..." oninput="debouncedSearch()" />
+              <select id="roleFilter" onchange="loadUsers(1)">
+                <option value="">All Roles</option>
+                <option value="volunteer">Volunteer</option>
+                <option value="organiser">Organiser</option>
+                <option value="admin">Admin</option>
+                <option value="merchant">Merchant</option>
+              </select>
+              <select id="statusFilter" onchange="loadUsers(1)">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="disabled">Disabled</option>
+              </select>
+            </div>
+          </div>
+          <div id="usersTableArea">
+            <div class="loading-spinner">Loading users...</div>
+          </div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="/web_portal/shared/api.js"></script>
+  <script>
+    let currentPage = 1;
+    let debounceTimer = null;
+
+    function handleLogout() {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      window.location.href = '/web_portal/admin/login.html';
+    }
+
+    function showToast(message, type) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast ' + type + ' show';
+      setTimeout(() => { toast.className = 'toast'; }, 3000);
+    }
+
+    function debouncedSearch() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => loadUsers(1), 300);
+    }
+
+    // Load admin name
+    (function() {
+      try {
+        const saved = localStorage.getItem('admin_user');
+        if (saved) {
+          const user = JSON.parse(saved);
+          document.getElementById('adminName').textContent = user.name + ' (Admin)';
+        }
+      } catch (e) {}
+    })();
+
+    async function loadUsers(page) {
+      currentPage = page;
+      const search = document.getElementById('searchInput').value;
+      const role = document.getElementById('roleFilter').value;
+      const status = document.getElementById('statusFilter').value;
+
+      const area = document.getElementById('usersTableArea');
+      area.innerHTML = '<div class="loading-spinner">Loading users...</div>';
+
+      try {
+        const params = { page, limit: 20 };
+        if (search) params.search = search;
+        if (role) params.role = role;
+        if (status) params.status = status;
+
+        const data = await apiGet('/admin/users', params);
+        renderUsers(data);
+      } catch (err) {
+        area.innerHTML = '<div class="alert alert-error">' + err.message + '</div>';
+      }
+    }
+
+    function renderUsers(data) {
+      const area = document.getElementById('usersTableArea');
+      const users = data?.data || [];
+
+      if (users.length === 0) {
+        area.innerHTML = '<div class="empty-state">No users found</div>';
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+
+      let html = '<table><thead><tr>' +
+        '<th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Points</th><th>Actions</th>' +
+        '</tr></thead><tbody>';
+
+      users.forEach(u => {
+        const statusBadge = u.status === 'active'
+          ? '<span class="badge badge-active">Active</span>'
+          : '<span class="badge badge-disabled">Disabled</span>';
+
+        html += '<tr class="user-row" onclick="toggleUserDetail(\'' + u.id + '\')" data-id="' + u.id + '">' +
+          '<td><strong>' + escapeHtml(u.name) + '</strong></td>' +
+          '<td>' + escapeHtml(u.email) + '</td>' +
+          '<td>' + escapeHtml(u.role) + '</td>' +
+          '<td>' + statusBadge + '</td>' +
+          '<td>' + (u.points_balance || 0) + '</td>' +
+          '<td>' +
+            (u.status === 'active'
+              ? '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deactivateUser(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\')">Deactivate</button>'
+              : '<button class="btn btn-success btn-sm" onclick="event.stopPropagation();reactivateUser(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\')">Reactivate</button>') +
+          '</td>' +
+          '</tr>';
+
+        // Detail row (hidden initially)
+        html += '<tr class="user-detail-row" id="detail-' + u.id + '">' +
+          '<td colspan="6" class="user-detail-cell">' +
+            '<div class="user-detail-content" id="detailContent-' + u.id + '">' +
+              '<div class="loading-spinner" style="padding:0;">Loading details...</div>' +
+            '</div>' +
+          '</td>' +
+        '</tr>';
+      });
+
+      html += '</tbody></table>';
+      area.innerHTML = html;
+
+      // Pagination
+      const total = data.total || 0;
+      const totalPages = data.total_pages || Math.ceil(total / 20);
+      renderPagination(page, totalPages, total);
+    }
+
+    function renderPagination(page, totalPages, total) {
+      const container = document.getElementById('pagination');
+      if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+      let html = '<button onclick="loadUsers(1)" ' + (page <= 1 ? 'disabled' : '') + '>First</button>';
+      html += '<button onclick="loadUsers(' + (page - 1) + ')" ' + (page <= 1 ? 'disabled' : '') + '>Prev</button>';
+      html += '<span class="page-info">Page ' + page + ' of ' + totalPages + ' (' + total + ' total)</span>';
+      html += '<button onclick="loadUsers(' + (page + 1) + ')" ' + (page >= totalPages ? 'disabled' : '') + '>Next</button>';
+      html += '<button onclick="loadUsers(' + totalPages + ')" ' + (page >= totalPages ? 'disabled' : '') + '>Last</button>';
+      container.innerHTML = html;
+    }
+
+    async function toggleUserDetail(userId) {
+      const detailRow = document.getElementById('detail-' + userId);
+      const isOpen = detailRow.classList.contains('open');
+
+      // Close all open details
+      document.querySelectorAll('.user-detail-row.open').forEach(r => r.classList.remove('open'));
+
+      if (!isOpen) {
+        detailRow.classList.add('open');
+        // Load detail if not already loaded
+        const content = document.getElementById('detailContent-' + userId);
+        if (content && content.querySelector('.loading-spinner')) {
+          try {
+            const data = await apiGet('/admin/users/' + userId);
+            content.innerHTML =
+              '<div class="detail-item"><strong>Events Attended</strong>' + (data.total_events_attended || 0) + '</div>' +
+              '<div class="detail-item"><strong>Points Earned</strong>' + (data.total_points_earned || 0).toLocaleString() + '</div>' +
+              '<div class="detail-item"><strong>Points Redeemed</strong>' + (data.total_points_redeemed || 0).toLocaleString() + '</div>' +
+              '<div class="detail-item"><strong>Joined</strong>' + (data.created_at ? new Date(data.created_at).toLocaleDateString() : '-') + '</div>';
+          } catch (err) {
+            content.innerHTML = '<div style="color:#dc2626;font-size:13px;">Failed to load details: ' + err.message + '</div>';
+          }
+        }
+      }
+    }
+
+    async function deactivateUser(userId, userName) {
+      if (!confirm('Deactivate ' + userName + '? They will not be able to log in.')) return;
+
+      try {
+        await apiDel('/admin/users/' + userId);
+        showToast(userName + ' has been deactivated', 'success');
+        loadUsers(currentPage);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function reactivateUser(userId, userName) {
+      if (!confirm('Reactivate ' + userName + '?')) return;
+
+      try {
+        await apiPut('/admin/users/' + userId, { status: 'active' });
+        showToast(userName + ' has been reactivated', 'success');
+        loadUsers(currentPage);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initial load
+    loadUsers(1);
+  </script>
+</body>
+</html>

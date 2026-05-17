@@ -10,17 +10,19 @@ function errorHandler(err, _req, res, _next) {
   // Determine status code
   const statusCode = err.statusCode || err.status || 500;
 
-  // Build response payload
+  // Contract-compliant error shape: { error: { code, message, details? } }
   const body = {
-    error: true,
-    message: statusCode >= 500 && process.env.NODE_ENV === "production"
-      ? "Internal server error"
-      : err.message || "An unexpected error occurred",
+    error: {
+      code: err.code || "internal_error",
+      message: statusCode >= 500 && process.env.NODE_ENV === "production"
+        ? "Internal server error"
+        : err.message || "An unexpected error occurred",
+    },
   };
 
   // Attach validation details if present (Joi / express-validation)
   if (err.details) {
-    body.details = err.details;
+    body.error.details = err.details;
   }
 
   // Log server errors for debugging
@@ -35,13 +37,15 @@ function errorHandler(err, _req, res, _next) {
  * Factory for creating operational (expected) errors.
  * Use this in services/controllers instead of throw new Error().
  *
- * Example:
- *   throw createError(400, "Email already registered");
+ * Examples:
+ *   throw createError(400, "validation_error", "Email already registered");
+ *   throw createError(401, "invalid_credentials", "Invalid email or password.");
  */
-function createError(statusCode, message, details) {
+function createError(statusCode, code, message, details) {
   const err = new Error(message);
   err.statusCode = statusCode;
-  err.details = details;
+  err.code = code || "internal_error";
+  if (details) err.details = details;
   return err;
 }
 
