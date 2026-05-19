@@ -68,10 +68,5 @@ async function updateProfile(req, res, next) {
   }
 }
 
-module.exports = {
-  register,
-  login,
-  refresh,
-  getProfile,
-  updateProfile,
-};
+// POST /api/auth/register/organiser (AUTH-08)
+async function registerOrganiser(req, res, n

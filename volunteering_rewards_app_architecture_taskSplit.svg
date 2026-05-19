@@ -1,0 +1,411 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 820" width="100%" height="100%">
+  <defs>
+    <filter id="shadow1" x="-2" y="-2" width="108" height="108">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#00000020"/>
+    </filter>
+    <marker id="arrowDown" markerWidth="8" markerHeight="8" refX="4" refY="8" orient="auto">
+      <path d="M0,0 L4,8 L8,0" fill="#000000"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1120" height="820" fill="#FFFFFF" rx="6"/>
+
+  <!-- ===== TITLE AREA ===== -->
+  <rect x="0" y="0" width="1120" height="52" fill="#000000" rx="6"/>
+  <rect x="0" y="26" width="1120" height="26" fill="#000000"/>
+  <text x="40" y="26" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="16" font-weight="700" fill="#FFFFFF">Volunteering Rewards App — System Architecture (Vertical Slices)</text>
+  <text x="40" y="42" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="11" fill="#CBD5E1">Sprint 2 — May 2026  |  Each team member owns their slice end-to-end (backend + frontend + testing)</text>
+
+  <!-- ===== FLOW INDICATOR BAR ===== -->
+  <rect x="380" y="17" width="340" height="24" rx="12" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+  <text x="410" y="33" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#CBD5E1">Flow:</text>
+  <text x="448" y="33" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" font-weight="600" fill="#60A5FA">Mobile App</text>
+  <text x="523" y="33" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#CBD5E1">→</text>
+  <text x="540" y="33" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" font-weight="600" fill="#60A5FA">Backend API</text>
+  <text x="625" y="33" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#CBD5E1">→</text>
+  <text x="640" y="33" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" font-weight="600" fill="#60A5FA">PostgreSQL</text>
+
+  <!-- ===== COLUMN LAYOUT ===== -->
+  <!-- Columns: Label(36px) + 5 cols of 190px with 12px gaps -->
+  <!-- Label: x=20, w=36 | Col1(Xon): x=62 | Col2(Vivian): x=264 | Col3(Grace): x=466 | Col4(Nurain): x=668 | Col5(Shared): x=870 -->
+  <!-- Each col: w=190, gap=12 -->
+
+  <!-- Row Y positions:
+       Col headers: y=64 to y=120 (h=56)
+       Mobile: y=136 to y=248 (h=112)
+       Web: y=264 to y=358 (h=94)
+       Backend: y=374 to y=542 (h=168)
+       Database: y=558 to y=696 (h=138)
+       Legend: y=716 to y=800
+  -->
+
+  <!-- ===== COLUMN HEADERS ===== -->
+
+  <!-- -- Xon -- -->
+  <rect x="62" y="64" width="190" height="56" rx="6" fill="#2563EB"/>
+  <text x="157" y="86" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">Xon</text>
+  <text x="157" y="106" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#BFDBFE">Auth + Shared Infrastructure</text>
+
+  <!-- -- Vivian -- -->
+  <rect x="264" y="64" width="190" height="56" rx="6" fill="#059669"/>
+  <text x="359" y="86" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">Vivian</text>
+  <text x="359" y="106" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#A7F3D0">Events + QR Attendance</text>
+
+  <!-- -- Grace -- -->
+  <rect x="466" y="64" width="190" height="56" rx="6" fill="#D97706"/>
+  <text x="561" y="86" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">Grace</text>
+  <text x="561" y="106" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#FEF3C7">Rewards + Merchant</text>
+
+  <!-- -- Nurain -- -->
+  <rect x="668" y="64" width="190" height="56" rx="6" fill="#7C3AED"/>
+  <text x="763" y="86" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">Nurain</text>
+  <text x="763" y="106" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#DDD6FE">Admin + Organiser</text>
+
+  <!-- -- Shared Infrastructure -- -->
+  <rect x="870" y="64" width="190" height="56" rx="6" fill="#000000"/>
+  <text x="965" y="86" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">Shared</text>
+  <text x="965" y="106" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#CBD5E1">Infrastructure (Xon)</text>
+
+  <!-- Column separator lines (subtle) -->
+  <line x1="62" y1="120" x2="62" y2="696" stroke="#CBD5E1" stroke-width="1"/>
+  <line x1="264" y1="120" x2="264" y2="696" stroke="#CBD5E1" stroke-width="1"/>
+  <line x1="466" y1="120" x2="466" y2="696" stroke="#CBD5E1" stroke-width="1"/>
+  <line x1="668" y1="120" x2="668" y2="696" stroke="#CBD5E1" stroke-width="1"/>
+  <line x1="870" y1="120" x2="870" y2="696" stroke="#CBD5E1" stroke-width="1"/>
+
+  <!-- ===== LAYER ROW 1: MOBILE FRONTEND ===== -->
+  <!-- Row background -->
+  <rect x="56" y="136" width="1004" height="112" rx="0" fill="#F8FAFC"/>
+
+  <!-- Layer label -->
+  <rect x="12" y="136" width="36" height="112" rx="4" fill="#000000"/>
+  <text x="30" y="175" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">M</text>
+  <text x="30" y="188" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">O</text>
+  <text x="30" y="201" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">B</text>
+  <text x="30" y="214" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">I</text>
+  <text x="30" y="227" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">L</text>
+  <text x="30" y="240" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">E</text>
+
+  <!-- Xon: Mobile -->
+  <rect x="72" y="144" width="170" height="96" rx="4" fill="#DBEAFE"/>
+  <rect x="82" y="148" width="45" height="16" rx="3" fill="#93C5FD"/>
+  <text x="104" y="160" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">MOBILE</text>
+  <rect x="82" y="170" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="157" y="183" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Login Screen</text>
+  <rect x="82" y="192" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="157" y="205" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Register Screen</text>
+  <rect x="82" y="214" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="157" y="227" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Profile Screen</text>
+
+  <!-- Vivian: Mobile -->
+  <rect x="274" y="144" width="170" height="96" rx="4" fill="#D1FAE5"/>
+  <rect x="284" y="148" width="45" height="16" rx="3" fill="#6EE7B7"/>
+  <text x="306" y="160" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">MOBILE</text>
+  <rect x="284" y="170" width="75" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="321" y="183" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Browse Events</text>
+  <rect x="363" y="170" width="75" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="400" y="183" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Event Detail</text>
+  <rect x="284" y="192" width="75" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="321" y="205" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">My Events</text>
+  <rect x="363" y="192" width="75" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="400" y="205" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">QR Scanner</text>
+  <rect x="284" y="214" width="154" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="361" y="227" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Favorites Toggle</text>
+
+  <!-- Grace: Mobile -->
+  <rect x="476" y="144" width="170" height="96" rx="4" fill="#FEF3C7"/>
+  <rect x="486" y="148" width="45" height="16" rx="3" fill="#FCD34D"/>
+  <text x="508" y="160" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">MOBILE</text>
+  <rect x="486" y="170" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="561" y="183" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Rewards Catalog</text>
+  <rect x="486" y="192" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="561" y="205" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">My Coupons</text>
+
+  <!-- Grace: Web part (in Grace's mobile row row) -->
+  <rect x="486" y="214" width="45" height="16" rx="3" fill="#FCD34D"/>
+  <text x="508" y="226" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">WEB</text>
+  <rect x="536" y="214" width="100" height="18" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="586" y="227" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Merchant Portal</text>
+
+  <!-- Nurain: Mobile (empty — no mobile) -->
+  <rect x="678" y="144" width="170" height="96" rx="4" fill="#EDE9FE"/>
+  <text x="763" y="195" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#000000" font-style="italic">— no mobile screens —</text>
+
+  <!-- Shared: Mobile -->
+  <rect x="880" y="144" width="170" height="96" rx="4" fill="#E2E8F0"/>
+  <rect x="890" y="148" width="45" height="16" rx="3" fill="#CBD5E1"/>
+  <text x="912" y="160" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">SHARED</text>
+  <rect x="890" y="170" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="183" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">api.ts (HTTP client)</text>
+  <rect x="890" y="192" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="205" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Token Storage (SecureStore)</text>
+
+  <!-- ===== LAYER ROW 2: WEB FRONTEND ===== -->
+  <rect x="56" y="264" width="1004" height="94" rx="0" fill="#FFFFFF"/>
+
+  <!-- Layer label -->
+  <rect x="12" y="264" width="36" height="94" rx="4" fill="#000000"/>
+  <text x="30" y="300" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">W</text>
+  <text x="30" y="313" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">E</text>
+  <text x="30" y="326" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">B</text>
+
+  <!-- Xon: Web (empty) -->
+  <rect x="72" y="268" width="170" height="86" rx="4" fill="#DBEAFE"/>
+  <text x="157" y="315" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#000000" font-style="italic">— no web screens —</text>
+
+  <!-- Vivian: Web (empty) -->
+  <rect x="274" y="268" width="170" height="86" rx="4" fill="#D1FAE5"/>
+  <text x="359" y="315" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="10" fill="#000000" font-style="italic">— no web screens —</text>
+
+  <!-- Grace: Web -->
+  <rect x="476" y="268" width="170" height="86" rx="4" fill="#FEF3C7"/>
+  <rect x="486" y="272" width="35" height="16" rx="3" fill="#FCD34D"/>
+  <text x="503" y="284" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">WEB</text>
+  <rect x="486" y="294" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="561" y="307" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Merchant PIN Verification</text>
+  <rect x="486" y="316" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="561" y="329" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Redemption History</text>
+
+  <!-- Nurain: Web -->
+  <rect x="678" y="268" width="170" height="86" rx="4" fill="#EDE9FE"/>
+  <rect x="688" y="272" width="35" height="16" rx="3" fill="#C4B5FD"/>
+  <text x="705" y="284" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">WEB</text>
+  <rect x="688" y="294" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#A78BFA" stroke-width="1"/>
+  <text x="763" y="307" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Admin Portal (11 pages)</text>
+  <rect x="688" y="316" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#A78BFA" stroke-width="1"/>
+  <text x="763" y="329" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">Organiser Portal (8 pages)</text>
+
+  <!-- Shared: Web -->
+  <rect x="880" y="268" width="170" height="86" rx="4" fill="#E2E8F0"/>
+  <rect x="890" y="272" width="45" height="16" rx="3" fill="#CBD5E1"/>
+  <text x="912" y="284" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">SHARED</text>
+  <rect x="890" y="294" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="307" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">api.js (HTTP client)</text>
+
+  <!-- ===== VERTICAL FLOW ARROWS: Frontend → Backend ===== -->
+  <!-- Line down the middle of each column -->
+  <line x1="157" y1="240" x2="157" y2="262" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+  <line x1="359" y1="240" x2="359" y2="262" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+  <line x1="561" y1="240" x2="561" y2="262" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+  <line x1="763" y1="240" x2="763" y2="262" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+  <line x1="965" y1="240" x2="965" y2="262" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+
+  <!-- ===== LAYER ROW 3: BACKEND API ===== -->
+  <rect x="56" y="374" width="1004" height="168" rx="0" fill="#F8FAFC"/>
+
+  <!-- Layer label -->
+  <rect x="12" y="374" width="36" height="168" rx="4" fill="#000000"/>
+  <text x="30" y="410" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">B</text>
+  <text x="30" y="423" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">A</text>
+  <text x="30" y="436" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">C</text>
+  <text x="30" y="449" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">K</text>
+  <text x="30" y="462" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">E</text>
+  <text x="30" y="475" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">N</text>
+  <text x="30" y="488" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">D</text>
+
+  <!-- Xon: Backend -->
+  <rect x="72" y="380" width="170" height="156" rx="4" fill="#DBEAFE"/>
+  <rect x="82" y="384" width="50" height="16" rx="3" fill="#93C5FD"/>
+  <text x="107" y="396" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">AUTH</text>
+  <rect x="82" y="406" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="157" y="418" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">auth.routes</text>
+  <rect x="82" y="426" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="157" y="438" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">auth.controller</text>
+  <rect x="82" y="446" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="157" y="458" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">auth.service</text>
+
+  <rect x="82" y="472" width="65" height="14" rx="3" fill="#93C5FD"/>
+  <text x="114" y="483" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="7" font-weight="600" fill="#000000">MIDDLEWARE</text>
+  <rect x="82" y="490" width="72" height="16" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="118" y="502" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">authenticate</text>
+  <rect x="158" y="490" width="74" height="16" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="195" y="502" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">authorize</text>
+  <rect x="82" y="510" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="157" y="522" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">errorHandler + rateLimiter</text>
+
+  <!-- Vivian: Backend -->
+  <rect x="274" y="380" width="170" height="156" rx="4" fill="#D1FAE5"/>
+  <rect x="284" y="384" width="50" height="16" rx="3" fill="#6EE7B7"/>
+  <text x="309" y="396" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">EVENTS</text>
+  <rect x="284" y="406" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="359" y="418" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">events.routes / controller</text>
+  <rect x="284" y="426" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="359" y="438" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">events.service</text>
+  <rect x="284" y="450" width="60" height="14" rx="3" fill="#6EE7B7"/>
+  <text x="314" y="461" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="7" font-weight="600" fill="#000000">ATTEND</text>
+  <rect x="284" y="468" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="359" y="480" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">attendance.r / c / s</text>
+  <rect x="284" y="492" width="50" height="14" rx="3" fill="#6EE7B7"/>
+  <text x="309" y="503" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="7" font-weight="600" fill="#000000">FAV</text>
+  <rect x="284" y="510" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="359" y="522" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">favorites.r / c / s</text>
+
+  <!-- Grace: Backend -->
+  <rect x="476" y="380" width="170" height="156" rx="4" fill="#FEF3C7"/>
+  <rect x="486" y="384" width="55" height="16" rx="3" fill="#FCD34D"/>
+  <text x="513" y="396" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">REWARDS</text>
+  <rect x="486" y="406" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="561" y="418" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">rewards.routes / controller</text>
+  <rect x="486" y="426" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="561" y="438" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">rewards.service</text>
+  <rect x="486" y="450" width="60" height="14" rx="3" fill="#FCD34D"/>
+  <text x="516" y="461" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="7" font-weight="600" fill="#000000">MERCHANT</text>
+  <rect x="486" y="468" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="561" y="480" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">merchant.r / c / s</text>
+
+  <!-- Nurain: Backend -->
+  <rect x="678" y="380" width="170" height="156" rx="4" fill="#EDE9FE"/>
+  <rect x="688" y="384" width="50" height="16" rx="3" fill="#C4B5FD"/>
+  <text x="713" y="396" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">ADMIN</text>
+  <rect x="688" y="406" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#A78BFA" stroke-width="1"/>
+  <text x="763" y="418" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">admin.routes / controller</text>
+  <rect x="688" y="426" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#A78BFA" stroke-width="1"/>
+  <text x="763" y="438" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">admin.service</text>
+  <rect x="688" y="450" width="60" height="14" rx="3" fill="#C4B5FD"/>
+  <text x="718" y="461" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="7" font-weight="600" fill="#000000">ORGANISER</text>
+  <rect x="688" y="468" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#A78BFA" stroke-width="1"/>
+  <text x="763" y="480" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">organiser.r / c / s</text>
+  <rect x="688" y="492" width="40" height="14" rx="3" fill="#C4B5FD"/>
+  <text x="708" y="503" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="7" font-weight="600" fill="#000000">ME</text>
+  <rect x="688" y="510" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#A78BFA" stroke-width="1"/>
+  <text x="763" y="522" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">me.routes / controller</text>
+
+  <!-- Shared: Backend -->
+  <rect x="880" y="380" width="170" height="156" rx="4" fill="#E2E8F0"/>
+  <rect x="890" y="384" width="55" height="16" rx="3" fill="#CBD5E1"/>
+  <text x="917" y="396" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">CORE</text>
+  <rect x="890" y="406" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="418" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">index.js (entry + router)</text>
+  <rect x="890" y="426" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="438" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">jwt.js (token utils)</text>
+  <rect x="890" y="450" width="55" height="14" rx="3" fill="#CBD5E1"/>
+  <text x="917" y="461" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="7" font-weight="600" fill="#000000">INFRA</text>
+  <rect x="890" y="468" width="72" height="16" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="926" y="480" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">Dockerfile</text>
+  <rect x="966" y="468" width="74" height="16" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="1003" y="480" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">CI/CD</text>
+  <rect x="890" y="488" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="500" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">docker-compose.yml</text>
+  <rect x="890" y="508" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="520" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">Postman Collection</text>
+
+  <!-- ===== VERTICAL FLOW ARROWS: Backend → Database ===== -->
+  <line x1="157" y1="542" x2="157" y2="556" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+  <line x1="359" y1="542" x2="359" y2="556" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+  <line x1="561" y1="542" x2="561" y2="556" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+  <line x1="763" y1="542" x2="763" y2="556" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+  <line x1="965" y1="542" x2="965" y2="556" stroke="#000000" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowDown)"/>
+
+  <!-- ===== LAYER ROW 4: DATABASE ===== -->
+  <rect x="56" y="558" width="1004" height="138" rx="0" fill="#FFFFFF"/>
+
+  <!-- Layer label -->
+  <rect x="12" y="558" width="36" height="138" rx="4" fill="#000000"/>
+  <text x="30" y="597" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">D</text>
+  <text x="30" y="610" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">B</text>
+
+  <!-- Database icon / label -->
+  <rect x="16" y="620" width="28" height="50" rx="4" fill="#000000"/>
+  <ellipse cx="30" cy="625" rx="10" ry="4" fill="#475569"/>
+  <ellipse cx="30" cy="645" rx="10" ry="4" fill="#475569"/>
+  <ellipse cx="30" cy="665" rx="10" ry="4" fill="#475569"/>
+  <rect x="20" y="625" width="20" height="40" fill="#000000"/>
+  <ellipse cx="30" cy="625" rx="10" ry="4" fill="#64748B"/>
+  <ellipse cx="30" cy="645" rx="10" ry="4" fill="#64748B"/>
+  <ellipse cx="30" cy="665" rx="10" ry="4" fill="#64748B"/>
+
+  <!-- Xon: DB -->
+  <rect x="72" y="564" width="170" height="126" rx="4" fill="#DBEAFE"/>
+  <rect x="82" y="568" width="50" height="16" rx="3" fill="#93C5FD"/>
+  <text x="107" y="580" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">TABLES</text>
+  <rect x="82" y="590" width="72" height="18" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="118" y="603" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">users</text>
+  <rect x="158" y="590" width="74" height="18" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="195" y="603" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">refresh_tokens</text>
+  <rect x="82" y="612" width="72" height="18" rx="3" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1"/>
+  <text x="118" y="625" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">roles</text>
+
+  <!-- Vivian: DB -->
+  <rect x="274" y="564" width="170" height="126" rx="4" fill="#D1FAE5"/>
+  <rect x="284" y="568" width="50" height="16" rx="3" fill="#6EE7B7"/>
+  <text x="309" y="580" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">TABLES</text>
+  <rect x="284" y="590" width="72" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="320" y="603" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">events</text>
+  <rect x="360" y="590" width="74" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="397" y="603" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">attendance</text>
+  <rect x="284" y="612" width="72" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="320" y="625" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">favorites</text>
+  <rect x="360" y="612" width="74" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="397" y="625" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">event_categories</text>
+  <rect x="284" y="634" width="74" height="18" rx="3" fill="#FFFFFF" stroke="#34D399" stroke-width="1"/>
+  <text x="321" y="647" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">event_registrations</text>
+
+  <!-- Grace: DB -->
+  <rect x="476" y="564" width="170" height="126" rx="4" fill="#FEF3C7"/>
+  <rect x="486" y="568" width="50" height="16" rx="3" fill="#FCD34D"/>
+  <text x="511" y="580" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">TABLES</text>
+  <rect x="486" y="590" width="72" height="18" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="522" y="603" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">coupons</text>
+  <rect x="562" y="590" width="74" height="18" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="599" y="603" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">rewards</text>
+  <rect x="486" y="612" width="72" height="18" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="522" y="625" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">redemptions</text>
+  <rect x="562" y="612" width="74" height="18" rx="3" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1"/>
+  <text x="599" y="625" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">merchants</text>
+
+  <!-- Nurain: DB -->
+  <rect x="678" y="564" width="170" height="126" rx="4" fill="#EDE9FE"/>
+  <rect x="688" y="568" width="50" height="16" rx="3" fill="#C4B5FD"/>
+  <text x="713" y="580" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">TABLES</text>
+  <rect x="688" y="590" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#A78BFA" stroke-width="1"/>
+  <text x="763" y="603" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">users (admin CRUD)</text>
+  <rect x="688" y="612" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#A78BFA" stroke-width="1"/>
+  <text x="763" y="625" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">organisers (approval)</text>
+  <text x="763" y="654" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000" font-style="italic">(reads from most tables)</text>
+
+  <!-- Shared: DB -->
+  <rect x="880" y="564" width="170" height="126" rx="4" fill="#E2E8F0"/>
+  <rect x="890" y="568" width="55" height="16" rx="3" fill="#CBD5E1"/>
+  <text x="917" y="580" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" font-weight="600" fill="#000000">CORE</text>
+  <rect x="890" y="590" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="603" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">database.js (PG Pool)</text>
+  <rect x="890" y="612" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="625" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">migrationRunner.js</text>
+  <rect x="890" y="634" width="150" height="18" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>
+  <text x="965" y="647" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" fill="#000000">seed.js (test data)</text>
+
+  <!-- ===== BORDER FOR THE WHOLE TABLE ===== -->
+  <rect x="56" y="136" width="1004" height="560" rx="0" fill="none" stroke="#000000" stroke-width="1"/>
+  <rect x="12" y="136" width="42" height="560" rx="4" fill="none" stroke="#000000" stroke-width="1"/>
+
+  <!-- ===== LEGEND ===== -->
+  <rect x="56" y="718" width="1004" height="75" rx="6" fill="#F8FAFC" stroke="#000000" stroke-width="1"/>
+
+  <text x="80" y="738" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="11" font-weight="600" fill="#000000">Legend</text>
+
+  <!-- Technology stack badges -->
+  <rect x="80" y="746" width="130" height="20" rx="4" fill="#000000"/>
+  <text x="145" y="760" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">Express + Node.js 20</text>
+
+  <rect x="220" y="746" width="130" height="20" rx="4" fill="#000000"/>
+  <text x="285" y="760" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">Expo / React Native</text>
+
+  <rect x="360" y="746" width="130" height="20" rx="4" fill="#000000"/>
+  <text x="425" y="760" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">React (Web Portal)</text>
+
+  <rect x="500" y="746" width="160" height="20" rx="4" fill="#000000"/>
+  <text x="580" y="760" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">PostgreSQL 16 (Supabase)</text>
+
+  <!-- Metadata badges -->
+  <rect x="80" y="772" width="200" height="16" rx="3" fill="#FFFFFF" stroke="#000000" stroke-width="1"/>
+  <text x="180" y="784" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">Each slice: routes + controller + service + frontend screens</text>
+
+  <rect x="290" y="772" width="150" height="16" rx="3" fill="#FFFFFF" stroke="#000000" stroke-width="1"/>
+  <text x="365" y="784" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">No two people edit the same route file</text>
+
+  <!-- Supabase note -->
+  <rect x="640" y="772" width="220" height="16" rx="3" fill="#DBEAFE" stroke="#60A5FA" stroke-width="1"/>
+  <text x="750" y="784" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="8" fill="#000000">Supabase: hosted PostgreSQL only — Express handles all auth/business logic</text>
+
+</svg>

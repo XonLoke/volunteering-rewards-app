@@ -372,10 +372,4 @@ async function getRoleName(roleId) {
   return rows[0]?.role_name || "volunteer";
 }
 
-module.exports = {
-  register,
-  login,
-  refreshTokens,
-  getProfile,
-  updateProfile,
-};
+// ═══════════════════════════════�

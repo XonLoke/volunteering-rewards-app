@@ -1,0 +1,75 @@
+:root {
+  --bg: #F5F5F7;
+  --surface: #FFFFFF;
+  --fg: #1C1C1E;
+  --muted: #6C6C70;
+  --border: #E0E0E5;
+  --accent: #34C759;
+  --accent-hover: #2DB84E;
+  --accent-subtle: #E8F8E8;
+  --accent-blue: #007AFF;
+  --accent-orange: #FF9500;
+  --accent-red: #FF3B30;
+  --success: #34C759;
+  --warning: #FF9500;
+  --danger: #FF3B30;
+  --success-subtle: #E8F8E8;
+  --warning-subtle: #FFF3E0;
+  --danger-subtle: #FFEBEE;
+  --sidebar-w: 240px;
+  --topbar-h: 56px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', monospace;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  letter-spacing: -0.005em;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  cursor: pointer;
+  font: inherit;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Spinner animation for scan & merchant apps */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

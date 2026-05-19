@@ -21,6 +21,9 @@ const { authStrict, authRegister } = require("../middleware/rateLimiter.middlewa
 // AUTH-01: Register (with strict rate limiter)
 router.post("/register", authRegister, controller.register);
 
+// AUTH-08: Register Organiser (with strict rate limiter)
+router.post("/register/organiser", authRegister, controller.registerOrganiser);
+
 // AUTH-02: Login (with strict rate limiter)
 router.post("/login", authStrict, controller.login);
 
@@ -31,7 +34,4 @@ router.post("/refresh", controller.refresh);
 router.get("/me", authenticate, controller.getProfile);
 router.put("/me", authenticate, controller.updateProfile);
 
-// Legacy alias (remove after mobile app is updated)
-router.get("/profile", authenticate, controller.getProfile);
-
-module.exports = router;
+//

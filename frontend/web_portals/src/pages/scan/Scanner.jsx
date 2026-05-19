@@ -1,0 +1,644 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { apiGet, apiPost } from '../../services/api';
+import { useToast } from '../../components/Toast';
+
+const STORAGE_KEY = 'scan_failed_scans';
+
+function loadOfflineScans() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOfflineScans(scans) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(scans));
+}
+
+function formatTimeDisplay() {
+  const now = new Date();
+  return now.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+const ERROR_MAP = {
+  not_registered: 'Volunteer is not registered for this event.',
+  already_checked_in: 'Volunteer has already been checked in.',
+  event_not_today: 'This event is not scheduled for today.',
+  not_found: 'Volunteer not found. Please check the ID.',
+};
+
+export default function Scanner() {
+  const { eventId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const autoClearRef = useRef(null);
+
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [volunteerId, setVolunteerId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
+  const [scanError, setScanError] = useState(null);
+
+  const [offlineScans, setOfflineScans] = useState([]);
+  const [syncing, setSyncing] = useState(false);
+
+  // Load offline scans on mount
+  useEffect(() => {
+    setOfflineScans(loadOfflineScans());
+  }, []);
+
+  // Auto-clear result after 5 seconds
+  useEffect(() => {
+    if (scanResult || scanError) {
+      if (autoClearRef.current) clearTimeout(autoClearRef.current);
+      autoClearRef.current = setTimeout(() => {
+        setScanResult(null);
+        setScanError(null);
+      }, 5000);
+    }
+    return () => {
+      if (autoClearRef.current) clearTimeout(autoClearRef.current);
+    };
+  }, [scanResult, scanError]);
+
+  // Fetch event details
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        const res = await apiGet('/events/today');
+        const found = (res.data || []).find((e) => String(e.id) === String(eventId));
+        if (found) {
+          setEvent(found);
+        } else {
+          setError('Event not found in today\'s schedule.');
+        }
+      } catch (err) {
+        setError(err.message || 'Failed to load event');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvent();
+  }, [eventId]);
+
+  const handleScan = useCallback(
+    async (actionType) => {
+      if (!volunteerId.trim()) {
+        toast('Please enter a Volunteer ID', 'error');
+        return;
+      }
+      if (submitting) return;
+
+      setSubmitting(true);
+      setScanResult(null);
+      setScanError(null);
+
+      try {
+        const res = await apiPost('/attendance/scan', {
+          volunteer_id: volunteerId.trim(),
+          event_id: Number(eventId),
+          scanned_at: new Date().toISOString(),
+        });
+        setScanResult({
+          volunteerName: res.volunteer?.name || res.attendance?.volunteer_name || 'Volunteer',
+          pointsAwarded: res.attendance?.points_awarded || 0,
+          newBalance: res.volunteer?.points_balance || 0,
+          action: actionType === 'checkin' ? 'Checked In' : 'Points Awarded',
+          time: formatTimeDisplay(),
+        });
+        setVolunteerId('');
+      } catch (err) {
+        if (err.status === 409) {
+          const friendly = ERROR_MAP[err.code] || err.message;
+          setScanError({ message: friendly, code: err.code });
+        } else if (err.status === 400 || err.status === 404) {
+          const friendly = ERROR_MAP[err.code] || err.message;
+          setScanError({ message: friendly, code: err.code });
+          // Store failed scan offline for batch sync
+          const failed = {
+            volunteer_id: volunteerId.trim(),
+            event_id: Number(eventId),
+            attempted_at: new Date().toISOString(),
+            error: err.code,
+          };
+          const updated = [...offlineScans, failed];
+          setOfflineScans(updated);
+          saveOfflineScans(updated);
+        } else {
+          setScanError({ message: err.message || 'Scan failed', code: 'unknown' });
+          // Network error — store offline
+          const failed = {
+            volunteer_id: volunteerId.trim(),
+            event_id: Number(eventId),
+            attempted_at: new Date().toISOString(),
+            error: 'network_error',
+          };
+          const updated = [...offlineScans, failed];
+          setOfflineScans(updated);
+          saveOfflineScans(updated);
+        }
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [volunteerId, eventId, submitting, offlineScans, toast]
+  );
+
+  const handleSync = useCallback(async () => {
+    if (offlineScans.length === 0 || syncing) return;
+    setSyncing(true);
+    try {
+      const payload = {
+        scans: offlineScans.map((s) => ({
+          volunteer_id: s.volunteer_id,
+          event_id: s.event_id,
+          scanned_at: s.attempted_at,
+        })),
+      };
+      const res = await apiPost('/attendance/batch', payload);
+      const succeeded = res.success_count || 0;
+      const skipped = res.skipped_count || 0;
+      setOfflineScans([]);
+      saveOfflineScans([]);
+      toast(`Synced: ${succeeded} succeeded, ${skipped} skipped`, 'success');
+    } catch (err) {
+      toast(err.message || 'Sync failed', 'error');
+    } finally {
+      setSyncing(false);
+    }
+  }, [offlineScans, syncing, toast]);
+
+  if (loading) {
+    return (
+      <div style={styles.wrapper}>
+        <div className="loading-state" style={{ minHeight: 300 }}>
+          <div style={styles.spinnerLarge} />
+          <p>Loading event...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={styles.wrapper}>
+        <div className="error-state" style={{ minHeight: 300 }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <h2>Error</h2>
+          <p>{error}</p>
+          <button
+            style={styles.backBtn}
+            onClick={() => navigate('/scan/events')}
+          >
+            Back to Events
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.wrapper}>
+      <div style={styles.container}>
+        {/* Header */}
+        <div style={styles.header}>
+          <button style={styles.backIcon} onClick={() => navigate('/scan/events')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <div style={styles.headerInfo}>
+            <h1 style={styles.heading}>Scanner</h1>
+            <p style={styles.eventName}>{event?.title || 'Event'}</p>
+          </div>
+        </div>
+
+        {/* Camera viewfinder placeholder */}
+        <div style={styles.viewfinder}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6C6C70" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+          <p style={styles.viewfinderText}>Camera viewfinder</p>
+          <p style={styles.viewfinderHint}>Camera available in native app</p>
+        </div>
+
+        {/* Manual entry */}
+        <div style={styles.manualSection}>
+          <label style={styles.inputLabel}>Volunteer ID</label>
+          <input
+            type="text"
+            style={styles.input}
+            placeholder="Enter volunteer ID or name"
+            value={volunteerId}
+            onChange={(e) => setVolunteerId(e.target.value)}
+            disabled={submitting}
+            autoFocus
+          />
+        </div>
+
+        {/* Action buttons */}
+        <div style={styles.actionRow}>
+          <button
+            style={{
+              ...styles.checkinBtn,
+              opacity: submitting ? 0.6 : 1,
+              cursor: submitting ? 'not-allowed' : 'pointer',
+            }}
+            onClick={() => handleScan('checkin')}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <span style={styles.btnLoading}>
+                <span style={styles.btnSpinner} />
+                Processing...
+              </span>
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Check In
+              </>
+            )}
+          </button>
+          <button
+            style={{
+              ...styles.awardBtn,
+              opacity: submitting ? 0.6 : 1,
+              cursor: submitting ? 'not-allowed' : 'pointer',
+            }}
+            onClick={() => handleScan('award')}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <span style={styles.btnLoading}>
+                <span style={styles.btnSpinner} />
+                Processing...
+              </span>
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="8" r="7" />
+                  <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+                </svg>
+                Award Points
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Scan result */}
+        {scanResult && (
+          <div style={styles.successPanel}>
+            <div style={styles.successIcon}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <div style={styles.successContent}>
+              <p style={styles.successAction}>{scanResult.action}</p>
+              <h3 style={styles.successName}>{scanResult.volunteerName}</h3>
+              <p style={styles.successPoints}>
+                +{scanResult.pointsAwarded} points &middot; Balance: {scanResult.newBalance}
+              </p>
+              <p style={styles.successTime}>{scanResult.time}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Scan error */}
+        {scanError && (
+          <div style={styles.errorPanel}>
+            <div style={styles.errorIcon}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+            </div>
+            <div style={styles.errorContent}>
+              <p style={styles.errorTitle}>Scan Failed</p>
+              <p style={styles.errorMsg}>{scanError.message}</p>
+              {scanError.code && (
+                <p style={styles.errorCode}>Code: {scanError.code}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Batch sync */}
+        {offlineScans.length > 0 && (
+          <div style={styles.offlineBar}>
+            <div style={styles.offlineInfo}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="2" x2="12" y2="6" /><line x1="12" y1="18" x2="12" y2="22" />
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" /><line x1="16.24" y1="16.24" x2="19.07" y2="19.07" />
+                <line x1="2" y1="12" x2="6" y2="12" /><line x1="18" y1="12" x2="22" y2="12" />
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" /><line x1="16.24" y1="7.76" x2="19.07" y2="4.93" />
+              </svg>
+              <span>{offlineScans.length} failed scan{offlineScans.length > 1 ? 's' : ''} stored offline</span>
+            </div>
+            <button
+              style={{
+                ...styles.syncBtn,
+                opacity: syncing ? 0.6 : 1,
+                cursor: syncing ? 'not-allowed' : 'pointer',
+              }}
+              onClick={handleSync}
+              disabled={syncing}
+            >
+              {syncing ? 'Syncing...' : `Sync (${offlineScans.length})`}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  wrapper: {
+    padding: 24,
+    minHeight: '100vh',
+    background: '#F5F5F7',
+  },
+  container: {
+    maxWidth: 520,
+    margin: '0 auto',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 24,
+  },
+  backIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    background: '#FFFFFF',
+    border: '1px solid #E0E0E5',
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  heading: {
+    fontSize: 22,
+    fontWeight: 700,
+    fontFamily:
+      "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif",
+    color: '#1C1C1E',
+    margin: 0,
+  },
+  eventName: {
+    fontSize: 14,
+    color: '#6C6C70',
+    margin: '2px 0 0',
+  },
+  viewfinder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    padding: '48px 24px',
+    background: '#FFFFFF',
+    borderRadius: 14,
+    border: '2px dashed #C7C7CC',
+    marginBottom: 20,
+  },
+  viewfinderText: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: '#6C6C70',
+    margin: 0,
+  },
+  viewfinderHint: {
+    fontSize: 12,
+    color: '#AEAEB2',
+    margin: 0,
+  },
+  manualSection: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    display: 'block',
+    fontSize: 13,
+    fontWeight: 500,
+    color: '#1C1C1E',
+    marginBottom: 6,
+  },
+  input: {
+    width: '100%',
+    minHeight: 48,
+    padding: '12px 16px',
+    border: '1px solid #E0E0E5',
+    borderRadius: 10,
+    fontSize: 16,
+    background: '#FFFFFF',
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  actionRow: {
+    display: 'flex',
+    gap: 12,
+    marginBottom: 20,
+  },
+  checkinBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    flex: 1,
+    minHeight: 52,
+    padding: '14px 20px',
+    borderRadius: 12,
+    fontSize: 16,
+    fontWeight: 600,
+    background: '#34C759',
+    color: '#FFFFFF',
+    border: 'none',
+    transition: 'background 0.15s',
+  },
+  awardBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    flex: 1,
+    minHeight: 52,
+    padding: '14px 20px',
+    borderRadius: 12,
+    fontSize: 16,
+    fontWeight: 600,
+    background: '#FF9500',
+    color: '#FFFFFF',
+    border: 'none',
+    transition: 'background 0.15s',
+  },
+  btnLoading: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  btnSpinner: {
+    display: 'inline-block',
+    width: 16,
+    height: 16,
+    border: '2px solid rgba(255,255,255,0.3)',
+    borderTopColor: '#FFFFFF',
+    borderRadius: '50%',
+    animation: 'spin 0.6s linear infinite',
+  },
+  successPanel: {
+    display: 'flex',
+    gap: 16,
+    padding: 20,
+    background: '#E8F8E8',
+    borderRadius: 14,
+    border: '1px solid #34C759',
+    marginBottom: 20,
+  },
+  successIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: '50%',
+    background: '#34C759',
+    flexShrink: 0,
+  },
+  successContent: {
+    flex: 1,
+  },
+  successAction: {
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    color: '#34C759',
+    margin: '0 0 4px',
+  },
+  successName: {
+    fontSize: 17,
+    fontWeight: 600,
+    color: '#1C1C1E',
+    margin: '0 0 4px',
+  },
+  successPoints: {
+    fontSize: 14,
+    color: '#1C1C1E',
+    margin: '0 0 2px',
+  },
+  successTime: {
+    fontSize: 12,
+    color: '#6C6C70',
+    margin: 0,
+  },
+  errorPanel: {
+    display: 'flex',
+    gap: 16,
+    padding: 20,
+    background: '#FFEBEE',
+    borderRadius: 14,
+    border: '1px solid #FF3B30',
+    marginBottom: 20,
+  },
+  errorIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: '50%',
+    background: '#FF3B30',
+    flexShrink: 0,
+  },
+  errorContent: {
+    flex: 1,
+  },
+  errorTitle: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: '#1C1C1E',
+    margin: '0 0 4px',
+  },
+  errorMsg: {
+    fontSize: 13,
+    color: '#1C1C1E',
+    margin: '0 0 2px',
+  },
+  errorCode: {
+    fontSize: 11,
+    color: '#6C6C70',
+    fontFamily:
+      "ui-monospace, 'SF Mono', monospace",
+    margin: 0,
+  },
+  offlineBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    padding: '12px 16px',
+    background: '#FFF3E0',
+    borderRadius: 10,
+    border: '1px solid #FFB347',
+  },
+  offlineInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 13,
+    fontWeight: 500,
+    color: '#1C1C1E',
+  },
+  syncBtn: {
+    padding: '8px 16px',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    background: '#FF9500',
+    color: '#FFFFFF',
+    border: 'none',
+    whiteSpace: 'nowrap',
+    minHeight: 36,
+  },
+  spinnerLarge: {
+    width: 32,
+    height: 32,
+    border: '3px solid #E0E0E5',
+    borderTopColor: '#34C759',
+    borderRadius: '50%',
+    animation: 'spin 0.6s linear infinite',
+  },
+  backBtn: {
+    padding: '10px 24px',
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    background: '#34C759',
+    color: '#FFFFFF',
+    border: 'none',
+    cursor: 'pointer',
+    minHeight: 44,
+    marginTop: 8,
+  },
+};

@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Volunteering Rewards",
+    "slug": "volunteering-rewards",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "vrewards",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#FFFFFF"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.volunteeringrewards.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.volunteeringrewards.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Volunteering Rewards to access your camera for QR code scanning."
+        }
+      ]
+    ]
+  }
+}
