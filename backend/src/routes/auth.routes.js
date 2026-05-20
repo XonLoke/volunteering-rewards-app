@@ -34,4 +34,7 @@ router.post("/refresh", controller.refresh);
 router.get("/me", authenticate, controller.getProfile);
 router.put("/me", authenticate, controller.updateProfile);
 
-//
+// Legacy alias (remove after mobile app is updated)
+router.get("/profile", authenticate, controller.getProfile);
+
+module.exports = router;

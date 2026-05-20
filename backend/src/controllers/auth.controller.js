@@ -69,4 +69,23 @@ async function updateProfile(req, res, next) {
 }
 
 // POST /api/auth/register/organiser (AUTH-08)
-async function registerOrganiser(req, res, n
+async function registerOrganiser(req, res, next) {
+  try {
+    const result = await authService.registerOrganiser(req.body);
+    res.status(201).json({
+      user: result.user,
+      token: result.token,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  register,
+  registerOrganiser,
+  login,
+  refresh,
+  getProfile,
+  updateProfile,
+};

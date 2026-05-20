@@ -7,7 +7,8 @@
     "start": "node index.js",
     "dev": "node --watch index.js",
     "migrate": "node src/utils/migrationRunner.js",
-    "seed": "node src/utils/seed.js"
+    "seed": "node src/utils/seed.js",
+    "test": "node -e \"console.log('No tests configured yet. Run: node --test')\""
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

@@ -372,4 +372,132 @@ async function getRoleName(roleId) {
   return rows[0]?.role_name || "volunteer";
 }
 
-// ═══════════════════════════════�
+// ═══════════════════════════════════════════════════════════
+//  AUTH-08: Register Organiser
+// ═══════════════════════════════════════════════════════════
+
+const registerOrganiserSchema = Joi.object({
+  name: Joi.string().min(2).max(100).trim().required()
+    .messages({ "string.min": "Name must be at least 2 characters.", "any.required": "Name is required." }),
+  email: Joi.string().email().trim().lowercase().required()
+    .messages({ "string.email": "Please provide a valid email address.", "any.required": "Email is required." }),
+  phone: Joi.string().pattern(/^\+65[689]\d{7}$/).optional().allow("")
+    .messages({ "string.pattern.base": "Phone must be a valid SG number (e.g. +6581234567)." }),
+  password: Joi.string().min(8).pattern(/(?=.*[A-Z])(?=.*\d)/).required()
+    .messages({
+      "string.min": "Password must be at least 8 characters.",
+      "string.pattern.base": "Password must contain at least one uppercase letter and one number.",
+      "any.required": "Password is required.",
+    }),
+  password_confirm: Joi.string().valid(Joi.ref("password")).required()
+    .messages({ "any.only": "Passwords do not match.", "any.required": "Please confirm your password." }),
+  organisation_name: Joi.string().min(2).max(255).trim().required()
+    .messages({ "string.min": "Organisation name must be at least 2 characters.", "any.required": "Organisation name is required." }),
+  organisation_type: Joi.string().valid("charity", "statutory_board", "community_group", "private", "other").required()
+    .messages({ "any.only": "Invalid organisation type.", "any.required": "Organisation type is required." }),
+  organisation_docs: Joi.array().items(Joi.string().uri()).optional(),
+});
+
+/**
+ * Register a new organiser account with organisation details.
+ *
+ * @param {object} body - { name, email, phone, password, password_confirm, organisation_name, organisation_type, organisation_docs? }
+ * @returns {object} { user, token }
+ * @throws {Error} 400 validation_error, 409 email_taken, 409 phone_taken
+ */
+async function registerOrganiser(body) {
+  // ── Joi validation ────────────────────────────────────
+  const { error, value } = registerOrganiserSchema.validate(body, { abortEarly: false });
+  if (error) {
+    const details = {};
+    error.details.forEach((d) => {
+      const field = d.path[0];
+      if (!details[field]) details[field] = d.message;
+    });
+    throw createError(400, "validation_error", "Validation failed. Please check your inputs.", details);
+  }
+
+  const { name, email, phone, password, organisation_name, organisation_type, organisation_docs } = value;
+
+  // ── Check for existing user ───────────────────────────
+  const { rows: existing } = await pool.query(
+    "SELECT id FROM users WHERE email = $1",
+    [email]
+  );
+
+  if (existing.length > 0) {
+    throw createError(409, "email_taken", "An account with this email already exists.");
+  }
+
+  // ── Check for existing phone (if provided) ────────────
+  if (phone) {
+    const { rows: phoneExists } = await pool.query(
+      "SELECT id FROM users WHERE phone = $1",
+      [phone]
+    );
+    if (phoneExists.length > 0) {
+      throw createError(409, "phone_taken", "This phone number is already registered.");
+    }
+  }
+
+  // ── Create organisation (pending approval) ────────────
+  const { rows: orgRows } = await pool.query(
+    `INSERT INTO organizations (org_name, org_type, status)
+     VALUES ($1, $2, 'pending')
+     RETURNING id, org_name, org_type, created_at`,
+    [organisation_name, organisation_type]
+  );
+  const organisation = orgRows[0];
+
+  // ── Create user ───────────────────────────────────────
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const organiserRoleId = await getRoleId("organiser");
+  const qrCode = uuidv4();
+
+  const { rows } = await pool.query(
+    `INSERT INTO users (email, password_hash, name, phone, role_id, volunteer_qr_code, points, status, organisation_id)
+     VALUES ($1, $2, $3, $4, $5, $6, 0, 'active', $7)
+     RETURNING id, email, name, phone, points, role_id, created_at`,
+    [email, passwordHash, name, phone || null, organiserRoleId, qrCode, organisation.id]
+  );
+
+  const user = rows[0];
+  const roleName = await getRoleName(user.role_id);
+
+  // ── Generate token ────────────────────────────────────
+  const tokenPayload = { id: user.id, role: roleName };
+  const accessToken = jwtUtil.generateAccessToken(tokenPayload);
+  const refreshToken = jwtUtil.generateRefreshToken(tokenPayload);
+
+  await pool.query(
+    "UPDATE users SET refresh_token = $1 WHERE id = $2",
+    [refreshToken, user.id]
+  );
+
+  return {
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: roleName,
+      organisation: {
+        id: organisation.id,
+        name: organisation.org_name,
+        type: organisation.org_type,
+        status: "pending_approval",
+      },
+      created_at: user.created_at,
+    },
+    token: accessToken,
+  };
+}
+
+module.exports = {
+  register,
+  registerOrganiser,
+  login,
+  refreshTokens,
+  getProfile,
+  updateProfile,
+};

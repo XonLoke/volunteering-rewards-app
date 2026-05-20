@@ -16,7 +16,12 @@ const PORT = process.env.PORT || 3000;
 
 // ─── Middleware Stack ────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false })); // Disable CSP for dev — enable in prod
-app.use(cors());
+
+// CORS — allow configured origins (fallback to all origins in dev)
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
+  : "*";
+app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(rateLimiter.global);
 

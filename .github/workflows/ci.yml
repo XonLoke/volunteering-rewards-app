@@ -2,12 +2,59 @@ name: CI
 
 on:
   push:
-    branches: [main, "feature/**"]
+    branches: [main, "feature/**", "vivian", "grace", "nurain"]
   pull_request:
     branches: [main]
 
+env:
+  NODE_VERSION: 20
+
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Check syntax (require() resolution)
+        run: node -e "
+          const files = [
+            'src/config/database',
+            'src/middleware/auth.middleware',
+            'src/middleware/errorHandler.middleware',
+            'src/middleware/rateLimiter.middleware',
+            'src/middleware/role.middleware',
+            'src/utils/jwt',
+            'src/utils/seed',
+          ];
+          let ok = true;
+          for (const f of files) {
+            try {
+              require('./' + f);
+              console.log('  ✓ ' + f);
+            } catch (e) {
+              console.error('  ✗ ' + f + ' — ' + e.message);
+              ok = false;
+            }
+          }
+          process.exit(ok ? 0 : 1);
+        "
+        working-directory: backend
+
   test:
+    name: Test
+    needs: lint
     runs-on: ubuntu-latest
 
     services:
@@ -28,10 +75,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js 20
+      - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: backend/package-lock.json
 
@@ -48,7 +95,20 @@ jobs:
           DB_NAME: volunteering_rewards_test
           DB_USER: postgres
           DB_PASSWORD: test123
-          JWT_SECRET: test-secret
+          JWT_ACCESS_SECRET: ci-test-access-secret
+          JWT_REFRESH_SECRET: ci-test-refresh-secret
+
+      - name: Run seed
+        run: node src/utils/seed.js
+        working-directory: backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: volunteering_rewards_test
+          DB_USER: postgres
+          DB_PASSWORD: test123
+          JWT_ACCESS_SECRET: ci-test-access-secret
+          JWT_REFRESH_SECRET: ci-test-refresh-secret
 
       - name: Run tests
         run: npm test
@@ -59,4 +119,16 @@ jobs:
           DB_NAME: volunteering_rewards_test
           DB_USER: postgres
           DB_PASSWORD: test123
-          JWT_SECRET: test-secret
+          JWT_ACCESS_SECRET: ci-test-access-secret
+          JWT_REFRESH_SECRET: ci-test-refresh-secret
+
+  deploy:
+    name: Deploy
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log deployment
+        run: echo "Deployment trigger ready — add your target (Render / Railway / Fly.io) here"
