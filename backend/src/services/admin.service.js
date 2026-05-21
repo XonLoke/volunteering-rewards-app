@@ -395,6 +395,22 @@ async function updateRewardsConfig(data) {
   return { message: "Configuration updated", updated_at: new Date().toISOString() };
 }
 
+
+// ─── Reset User Password ──────────────────────────────────
+async function resetUserPassword(userId, { newPassword }) {
+  if (!newPassword || newPassword.length < 8) {
+    throw createError(400, "validation_error", "Password must be at least 8 characters.");
+  }
+  const bcrypt = require("bcrypt");
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  const { rows } = await pool.query(
+    "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, email",
+    [passwordHash, userId]
+  );
+  if (rows.length === 0) throw createError(404, "not_found", "User not found.");
+  return { message: "Password reset successfully.", user: rows[0] };
+}
+
 module.exports = {
   getDashboardStats, getRecentActivity,
   listUsers, getUserDetail, updateUserStatus,
@@ -403,4 +419,5 @@ module.exports = {
   listCoupons, createCoupon, updateCoupon, deleteCoupon,
   getRewardsConfig, updateRewardsConfig,
   listRedemptions,
+  resetUserPassword,
 };

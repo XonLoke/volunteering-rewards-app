@@ -154,6 +154,15 @@ async function listRedemptions(req, res, next) {
   } catch (err) { next(err); }
 }
 
+
+// ─── PUT /api/admin/users/:id/reset-password ────────────────
+async function resetPassword(req, res, next) {
+  try {
+    const result = await adminService.resetUserPassword(req.params.id, req.body);
+    res.json(result);
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   dashboard, listUsers, getUser, updateUser, deactivateUser,
   listOrganisers, approveOrganiser,
@@ -161,4 +170,5 @@ module.exports = {
   listCoupons, createCoupon, updateCoupon, deleteCoupon,
   getRewardsConfig, updateRewardsConfig,
   listRedemptions,
+  resetPassword,
 };

@@ -7,6 +7,60 @@ import Modal from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { apiGet, apiPut, apiDel } from '../../services/api';
 
+function ResetPasswordModal({ isOpen, onClose, user, onReset }) {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetting, setResetting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleReset = async () => {
+    setError(null);
+    if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
+    setResetting(true);
+    try {
+      await onReset(user, newPassword);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError(err.message || 'Failed to reset password.');
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={() => { onClose(); setNewPassword(''); setConfirmPassword(''); setError(null); }}
+      title={`Reset Password: ${user?.name || 'User'}`}
+      actions={[
+        { label: 'Cancel', variant: 'secondary', onClick: () => { onClose(); setNewPassword(''); setConfirmPassword(''); setError(null); } },
+        { label: 'Reset', variant: 'primary', onClick: handleReset, disabled: resetting },
+      ]}
+    >
+      <p style={{ fontSize: 14, marginBottom: 16 }}>
+        Set a new password for <strong>{user?.name || 'this user'}</strong> ({user?.email}).
+      </p>
+      {error && (
+        <div style={{ padding: '8px 12px', borderRadius: 6, background: '#fff0f0', color: '#d32f2f', fontSize: 13, marginBottom: 12 }}>
+          {error}
+        </div>
+      )}
+      <div className="form-group" style={{ marginBottom: 12 }}>
+        <label className="form-label">New Password</label>
+        <input className="form-input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="Min 8 characters" style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Confirm Password</label>
+        <input className="form-input" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Re-enter new password" style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+      </div>
+    </Modal>
+  );
+}
+
 const NAV_ITEMS = [
   {
     section: 'Management',
@@ -206,6 +260,7 @@ export default function Users() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [suspendUser, setSuspendUser] = useState(null);
+  const [resetPwUser, setResetPwUser] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -251,6 +306,17 @@ export default function Users() {
 
   const handleSuspendUser = (user) => {
     setSuspendUser(user);
+  };
+
+  const handleResetPassword = async (user, newPassword) => {
+    try {
+      await apiPut(`/admin/users/${user.id}/reset-password`, { newPassword });
+      toast('Password reset successfully', 'success');
+      setResetPwUser(null);
+    } catch (err) {
+      toast(err.message || 'Failed to reset password', 'error');
+      throw err;
+    }
   };
 
   const confirmSuspend = async (user) => {
@@ -316,6 +382,15 @@ export default function Users() {
             }}
           >
             {row.status === 'active' ? 'Suspend' : 'Reactivate'}
+          </button>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setResetPwUser(row);
+            }}
+          >
+            Reset PW
           </button>
         </div>
       ),
@@ -457,6 +532,13 @@ export default function Users() {
         onClose={() => setSuspendUser(null)}
         user={suspendUser}
         onConfirm={confirmSuspend}
+      />
+
+      <ResetPasswordModal
+        isOpen={!!resetPwUser}
+        onClose={() => setResetPwUser(null)}
+        user={resetPwUser}
+        onReset={handleResetPassword}
       />
     </div>
   );

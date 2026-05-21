@@ -39,6 +39,7 @@ router.get("/dashboard", controller.dashboard);
 router.get("/users", controller.listUsers);
 router.get("/users/:id", controller.getUser);
 router.put("/users/:id", controller.updateUser);
+router.put("/users/:id/reset-password", controller.resetPassword);
 router.delete("/users/:id", controller.deactivateUser);
 
 // Organisers
