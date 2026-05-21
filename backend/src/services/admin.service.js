@@ -169,7 +169,7 @@ async function listOrganisers({ page = 1, limit = 15, status } = {}) {
      LEFT JOIN organizations o ON o.contact_email = u.email
      ${where}
      ORDER BY u.created_at DESC
-     LIMIT \${params.length + 1} OFFSET \${params.length + 2}`,
+     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
     [...params, limit, offset]
   );
 
