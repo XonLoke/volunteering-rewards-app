@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import Topbar from '../components/Topbar';
 import '../styles/admin.css';
 
 const NAV_ITEMS = [
@@ -51,10 +50,7 @@ export default function OrganiserLayout() {
           />
         )}
       </div>
-      <Topbar title="Organiser Panel" onMenuToggle={toggleSidebar} />
-      <main className="main-content">
-        <Outlet />
-      </main>
+      <Outlet context={{ sidebarOpen, toggleSidebar }} />
     </div>
   );
 }

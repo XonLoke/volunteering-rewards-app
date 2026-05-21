@@ -4,46 +4,46 @@ import OrganiserLayout from './layouts/OrganiserLayout';
 import ScanLayout from './layouts/ScanLayout';
 import MerchantLayout from './layouts/MerchantLayout';
 
+// Admin pages
+import AdminLogin from './pages/admin/Login';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminUsers from './pages/admin/Users';
+import AdminOrganisers from './pages/admin/Organisers';
+import AdminEvents from './pages/admin/Events';
+import AdminCoupons from './pages/admin/Coupons';
+import AdminRewardsConfig from './pages/admin/RewardsConfig';
+import AdminRedemptions from './pages/admin/Redemptions';
+import AdminQrCodes from './pages/admin/QRCodes';
+import AdminPinVerify from './pages/admin/PinVerify';
+import AdminMerchants from './pages/admin/Merchants';
+import AdminCampaigns from './pages/admin/Campaigns';
+
+// Organiser pages
+import OrganiserDashboard from './pages/organiser/Dashboard';
+import OrganiserEvents from './pages/organiser/Events';
+import OrganiserEventCreate from './pages/organiser/EventCreate';
+import OrganiserEventEdit from './pages/organiser/EventEdit';
+import OrganiserRoster from './pages/organiser/Roster';
+import OrganiserFeedback from './pages/organiser/Feedback';
+import OrganiserQna from './pages/organiser/Qna';
+import OrganiserOnsiteController from './pages/organiser/OnsiteController';
+
+// Scan pages
 import ScanLogin from './pages/scan/Login';
 import EventSelect from './pages/scan/EventSelect';
 import Scanner from './pages/scan/Scanner';
 import Roster from './pages/scan/Roster';
 
+// Merchant pages
 import MerchantLogin from './pages/merchant/Login';
 import PinVerify from './pages/merchant/PinVerify';
 import History from './pages/merchant/History';
 
-function Placeholder({ title }) {
-  return (
-    <div className="empty-state">
-      <h2>{title}</h2>
-      <p className="muted">This page is under construction.</p>
-    </div>
-  );
-}
-
-function AdminDashboard() { return <Placeholder title="Admin Dashboard" />; }
-function AdminUsers() { return <Placeholder title="Users Management" />; }
-function AdminOrganisers() { return <Placeholder title="Organisers Management" />; }
-function AdminEvents() { return <Placeholder title="Events Management" />; }
-function AdminCoupons() { return <Placeholder title="Coupons Management" />; }
-function AdminRewardsConfig() { return <Placeholder title="Rewards Configuration" />; }
-function AdminRedemptions() { return <Placeholder title="Redemptions" />; }
-function AdminQrCodes() { return <Placeholder title="QR Codes" />; }
-function AdminPinVerify() { return <Placeholder title="PIN Verification" />; }
-function AdminMerchants() { return <Placeholder title="Merchants" />; }
-function AdminCampaigns() { return <Placeholder title="Campaigns" />; }
-
-function OrganiserDashboard() { return <Placeholder title="Organiser Dashboard" />; }
-function OrganiserEvents() { return <Placeholder title="My Events" />; }
-function OrganiserEventCreate() { return <Placeholder title="Create Event" />; }
-function OrganiserEventEdit() { return <Placeholder title="Edit Event" />; }
-function OrganiserRoster() { return <Placeholder title="Event Roster" />; }
-function OrganiserFeedback() { return <Placeholder title="Event Feedback" />; }
-function OrganiserQna() { return <Placeholder title="Q&A" />; }
-function OrganiserOnsiteController() { return <Placeholder title="Onsite Controller" />; }
-
 const router = createBrowserRouter([
+  {
+    path: '/admin/login',
+    element: <AdminLogin />,
+  },
   {
     path: '/admin',
     element: <AdminLayout />,

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import Topbar from '../components/Topbar';
 import '../styles/admin.css';
 
 const NAV_ITEMS = [
@@ -16,7 +15,7 @@ const NAV_ITEMS = [
     children: [
       { label: 'Users', path: '/admin/users', icon: 'U' },
       { label: 'Organisers', path: '/admin/organisers', icon: 'O' },
-      { label: 'Events', path: '/admin/events', icon: 'E', badge: '12' },
+      { label: 'Events', path: '/admin/events', icon: 'E' },
       { label: 'Merchants', path: '/admin/merchants', icon: 'M' },
       { label: 'Campaigns', path: '/admin/campaigns', icon: 'C' },
     ],
@@ -40,7 +39,6 @@ const NAV_ITEMS = [
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   return (
@@ -60,10 +58,7 @@ export default function AdminLayout() {
           />
         )}
       </div>
-      <Topbar title="Admin Dashboard" onMenuToggle={toggleSidebar} />
-      <main className="main-content">
-        <Outlet />
-      </main>
+      <Outlet context={{ sidebarOpen, toggleSidebar }} />
     </div>
   );
 }
