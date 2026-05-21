@@ -1,10 +1,15 @@
+import { useNavigate } from 'react-router-dom';
 import { useToast } from './Toast';
+import { apiLogout } from '../services/api';
 
 export default function Topbar({ title, onMenuToggle }) {
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogout = () => {
+    apiLogout();
     toast('Logged out successfully', 'info');
+    navigate('/admin/login');
   };
 
   return (
