@@ -442,10 +442,10 @@ async function registerOrganiser(body) {
 
   // ── Create organisation (pending approval) ────────────
   const { rows: orgRows } = await pool.query(
-    `INSERT INTO organizations (org_name, org_type, status)
-     VALUES ($1, $2, 'pending')
+    `INSERT INTO organizations (org_name, org_type, contact_person, contact_email, status)
+     VALUES ($1, $2, $3, $4, 'pending')
      RETURNING id, org_name, org_type, created_at`,
-    [organisation_name, organisation_type]
+    [organisation_name, organisation_type, name, email]
   );
   const organisation = orgRows[0];
 
@@ -455,10 +455,10 @@ async function registerOrganiser(body) {
   const qrCode = uuidv4();
 
   const { rows } = await pool.query(
-    `INSERT INTO users (email, password_hash, name, phone, role_id, volunteer_qr_code, points, status, organisation_id)
-     VALUES ($1, $2, $3, $4, $5, $6, 0, 'active', $7)
+    `INSERT INTO users (email, password_hash, name, phone, role_id, volunteer_qr_code, points, status)
+     VALUES ($1, $2, $3, $4, $5, $6, 0, 'active')
      RETURNING id, email, name, phone, points, role_id, created_at`,
-    [email, passwordHash, name, phone || null, organiserRoleId, qrCode, organisation.id]
+    [email, passwordHash, name, phone || null, organiserRoleId, qrCode]
   );
 
   const user = rows[0];
