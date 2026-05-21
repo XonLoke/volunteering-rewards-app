@@ -172,7 +172,7 @@ export default function Events() {
   const handleDeleteEvent = async (event) => {
     try {
       await apiDel(`/admin/events/${event.id}`);
-      toast(`Event "${event.title}" deleted`, 'success');
+      toast(`Event "${event?.title || event?.id || 'Unknown'}" deleted`, 'success');
       setDeleteEvent(null);
       if (expandedId === event.id) setExpandedId(null);
       fetchEvents();
@@ -332,7 +332,3 @@ export default function Events() {
         onClose={() => setDeleteEvent(null)}
         event={deleteEvent}
         onConfirm={handleDeleteEvent}
-      />
-    </div>
-  );
-}

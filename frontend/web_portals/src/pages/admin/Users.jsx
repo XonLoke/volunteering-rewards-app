@@ -65,7 +65,7 @@ function UserDetailModal({ userId, isOpen, onClose, onUpdate }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={user ? `User: ${user.name}` : 'User Details'}
+      title={user ? `User: ${user.name || user.email || 'Unknown'}` : 'User Details'}
       actions={[
         { label: 'Close', variant: 'secondary', onClick: onClose },
       ]}
@@ -88,11 +88,11 @@ function UserDetailModal({ userId, isOpen, onClose, onUpdate }) {
           <div className="form-row" style={{ marginBottom: 16 }}>
             <div>
               <div className="form-label">Name</div>
-              <div style={{ fontSize: 14 }}>{user.name}</div>
+              <div style={{ fontSize: 14 }}>{user?.name || '—'}</div>
             </div>
             <div>
               <div className="form-label">Email</div>
-              <div style={{ fontSize: 14 }}>{user.email}</div>
+              <div style={{ fontSize: 14 }}>{user?.email || '—'}</div>
             </div>
           </div>
           <div className="form-row" style={{ marginBottom: 16 }}>
@@ -181,11 +181,11 @@ function SuspendModal({ isOpen, onClose, user, onConfirm }) {
     >
       {user?.status === 'active' ? (
         <p style={{ fontSize: 14 }}>
-          Are you sure you want to suspend <strong>{user.name}</strong>? They will no longer be able to access the platform.
+          Are you sure you want to suspend <strong>{user?.name || 'this user'}</strong>? They will no longer be able to access the platform.
         </p>
       ) : (
         <p style={{ fontSize: 14 }}>
-          Are you sure you want to reactivate <strong>{user.name}</strong>? They will regain access to the platform.
+          Are you sure you want to reactivate <strong>{user?.name || 'this user'}</strong>? They will regain access to the platform.
         </p>
       )}
     </Modal>
@@ -259,8 +259,8 @@ export default function Users() {
       await apiPut(`/admin/users/${user.id}`, { status: newStatus });
       toast(
         newStatus === 'disabled'
-          ? `${user.name} has been suspended`
-          : `${user.name} has been reactivated`,
+          ? `${user?.name || user?.email || 'User'} has been suspended`
+          : `${user?.name || user?.email || 'User'} has been reactivated`,
         'success'
       );
       setSuspendUser(null);
@@ -454,10 +454,4 @@ export default function Users() {
 
       <SuspendModal
         isOpen={!!suspendUser}
-        onClose={() => setSuspendUser(null)}
-        user={suspendUser}
-        onConfirm={confirmSuspend}
-      />
-    </div>
-  );
-}
+   
