@@ -198,6 +198,7 @@ async function login(body) {
       avatar_url: user.profile_image_url,
     },
     token: accessToken,
+    refresh_token: refreshToken,
     expires_at: expiresAt,
   };
 }

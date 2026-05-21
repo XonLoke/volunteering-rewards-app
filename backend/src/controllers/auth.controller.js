@@ -27,6 +27,7 @@ async function login(req, res, next) {
     res.status(200).json({
       user: result.user,
       token: result.token,
+      refresh_token: result.refresh_token,
       expires_at: result.expires_at,
     });
   } catch (err) {
