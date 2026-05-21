@@ -454,4 +454,10 @@ export default function Users() {
 
       <SuspendModal
         isOpen={!!suspendUser}
-   
+        onClose={() => setSuspendUser(null)}
+        user={suspendUser}
+        onConfirm={confirmSuspend}
+      />
+    </div>
+  );
+}
