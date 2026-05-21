@@ -61,6 +61,12 @@ router.delete("/coupons/:id", controller.deleteCoupon);
 router.get("/rewards/configuration", controller.getRewardsConfig);
 router.put("/rewards/configuration", controller.updateRewardsConfig);
 
+// Merchants
+router.get("/merchants", controller.listMerchants);
+router.post("/merchants", controller.createMerchant);
+router.get("/merchants/:id/products", controller.listMerchantProducts);
+router.post("/merchants/:id/products", controller.createMerchantProduct);
+
 // Redemptions
 router.get("/redemptions", controller.listRedemptions);
 

@@ -15,6 +15,7 @@ async function getDashboardStats() {
     total_organisers: pool.query("SELECT COUNT(*) FROM users WHERE role_id = (SELECT id FROM roles WHERE role_name = 'organizer')"),
     pending_approvals: pool.query("SELECT COUNT(*) FROM organizations WHERE approval_status = 'pending'"),
     total_events: pool.query("SELECT COUNT(*) FROM events"),
+    total_merchants: pool.query("SELECT COUNT(*) FROM merchants"),
     coupon_today: pool.query("SELECT COUNT(*) FROM user_coupons WHERE created_at::date = CURRENT_DATE"),
     redemption_today: pool.query("SELECT COUNT(*) FROM redemption_logs WHERE created_at::date = CURRENT_DATE"),
     users_30d: pool.query("SELECT COUNT(*) FROM users WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'"),
@@ -36,6 +37,7 @@ async function getDashboardStats() {
     users_growth_pct: results.users_30d > 0 ? Math.round((results.users_30d / results.total_users) * 100) : 0,
     coupons_growth_pct: results.coupons_30d > 0 ? Math.round((results.coupons_30d / results.coupon_today) * 100) : 0,
     total_events: results.total_events,
+    total_merchants: results.total_merchants,
   };
 }
 
@@ -323,15 +325,50 @@ async function listCoupons({ page = 1, limit = 15 } = {}) {
   return { data: rows, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
 }
 
-// ─── Create Coupon ────────────────────────────────────────
+// ─── Create Coupon (with batch PIN generation) ────────────
 async function createCoupon(data, userId) {
-  const { rows } = await pool.query(
-    `INSERT INTO coupons (title, description, points_required, quantity, value_cents, merchant_name, expiry_date, status, created_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8)
-     RETURNING id, title, points_required, quantity, value_cents, merchant_name, expiry_date`,
-    [data.title, data.description, data.points_required, data.quantity, data.value_cents || 0, data.merchant_name || null, data.expiry_date, userId]
-  );
-  return { coupon: rows[0], pins_generated: 0 };
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Create the coupon batch
+    const { rows } = await client.query(
+      `INSERT INTO coupons (title, description, points_required, quantity, value_cents, merchant_name, expiry_date, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8)
+       RETURNING id, title, points_required, quantity, value_cents, merchant_name, expiry_date`,
+      [data.title, data.description, data.points_required, data.quantity, data.value_cents || 0, data.merchant_name || null, data.expiry_date, userId]
+    );
+    const coupon = rows[0];
+    const quantity = parseInt(data.quantity) || 0;
+
+    // Generate unique 6-digit PINs for each coupon
+    const pins = [];
+    const usedPins = new Set();
+    while (pins.length < quantity) {
+      const pin = String(Math.floor(100000 + Math.random() * 900000));
+      if (!usedPins.has(pin)) {
+        usedPins.add(pin);
+        pins.push(pin);
+      }
+    }
+
+    // Insert PINs into user_coupons table (unused, no owner yet)
+    for (const pin of pins) {
+      await client.query(
+        `INSERT INTO user_coupons (coupon_id, pin_code, status, expiry_date)
+         VALUES ($1, $2, 'unused', $3)`,
+        [coupon.id, pin, data.expiry_date]
+      );
+    }
+
+    await client.query("COMMIT");
+    return { coupon, pins_generated: pins.length };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 // ─── Update Coupon ────────────────────────────────────────
@@ -396,6 +433,52 @@ async function updateRewardsConfig(data) {
 }
 
 
+// ─── List Merchants ──────────────────────────────────────
+async function listMerchants({ page = 1, limit = 15 } = {}) {
+  const offset = (page - 1) * limit;
+  const countResult = await pool.query("SELECT COUNT(*) FROM merchants");
+  const total = parseInt(countResult.rows[0].count);
+  const { rows } = await pool.query(
+    `SELECT m.*,
+            (SELECT COUNT(*) FROM merchant_products mp WHERE mp.merchant_id = m.id AND mp.is_active = TRUE) AS product_count
+     FROM merchants m
+     ORDER BY m.created_at DESC
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+  return { data: rows, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
+}
+
+// ─── Create Merchant ─────────────────────────────────────
+async function createMerchant(data, userId) {
+  const { rows } = await pool.query(
+    `INSERT INTO merchants (name, contact_person, contact_email, contact_phone, address, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [data.name, data.contact_person, data.contact_email, data.contact_phone, data.address, userId]
+  );
+  return { merchant: rows[0] };
+}
+
+// ─── List Merchant Products ──────────────────────────────
+async function listMerchantProducts(merchantId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM merchant_products WHERE merchant_id = $1 ORDER BY created_at DESC", [merchantId]
+  );
+  return { data: rows };
+}
+
+// ─── Create Merchant Product ─────────────────────────────
+async function createMerchantProduct(merchantId, data) {
+  const { rows } = await pool.query(
+    `INSERT INTO merchant_products (merchant_id, name, description, points_cost)
+     VALUES ($1, $2, $3, $4) RETURNING *`,
+    [merchantId, data.name, data.description, data.points_cost]
+  );
+  return { product: rows[0] };
+}
+
+// ─── Update createCoupon to generate PINs in batch ─────────
+
 // ─── Reset User Password ──────────────────────────────────
 async function resetUserPassword(userId, { newPassword }) {
   if (!newPassword || newPassword.length < 8) {
@@ -419,5 +502,9 @@ module.exports = {
   listCoupons, createCoupon, updateCoupon, deleteCoupon,
   getRewardsConfig, updateRewardsConfig,
   listRedemptions,
+  listMerchants,
+  createMerchant,
+  listMerchantProducts,
+  createMerchantProduct,
   resetUserPassword,
 };

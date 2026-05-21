@@ -1,59 +1,274 @@
+import { useState, useEffect, useCallback } from 'react';
 import Topbar from '../../components/Topbar';
+import DataTable from '../../components/DataTable';
+import Modal from '../../components/Modal';
+import { useToast } from '../../components/Toast';
+import { apiGet, apiPost } from '../../services/api';
+
+const INITIAL_FORM = {
+  name: '',
+  contact_person: '',
+  contact_email: '',
+  contact_phone: '',
+  address: '',
+};
+
+const INITIAL_PRODUCT = {
+  name: '',
+  description: '',
+  points_cost: '',
+};
+
+function MerchantFormModal({ isOpen, onClose, onSubmit }) {
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) setForm(INITIAL_FORM);
+  }, [isOpen]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(form);
+      setForm(INITIAL_FORM);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Register Merchant"
+      actions={[
+        { label: 'Cancel', variant: 'secondary', onClick: onClose },
+        { label: 'Register', variant: 'primary', onClick: handleSubmit, disabled: submitting },
+      ]}
+    >
+      <div className="form-group" style={{ marginBottom: 12 }}>
+        <label className="form-label">Merchant Name *</label>
+        <input className="form-input" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})}
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+      </div>
+      <div className="form-group" style={{ marginBottom: 12 }}>
+        <label className="form-label">Contact Person</label>
+        <input className="form-input" value={form.contact_person} onChange={(e) => setForm({...form, contact_person: e.target.value})}
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+      </div>
+      <div className="form-row" style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+        <div className="form-group" style={{ flex: 1 }}>
+          <label className="form-label">Email</label>
+          <input className="form-input" type="email" value={form.contact_email} onChange={(e) => setForm({...form, contact_email: e.target.value})}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+        </div>
+        <div className="form-group" style={{ flex: 1 }}>
+          <label className="form-label">Phone</label>
+          <input className="form-input" value={form.contact_phone} onChange={(e) => setForm({...form, contact_phone: e.target.value})}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Address</label>
+        <textarea className="form-textarea" value={form.address} onChange={(e) => setForm({...form, address: e.target.value})}
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box', minHeight: 60 }} />
+      </div>
+    </Modal>
+  );
+}
+
+function ProductFormModal({ isOpen, onClose, merchant, onSubmit }) {
+  const [form, setForm] = useState(INITIAL_PRODUCT);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) setForm(INITIAL_PRODUCT);
+  }, [isOpen]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(merchant.id, form);
+      setForm(INITIAL_PRODUCT);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`Add Product: ${merchant?.name || ''}`}
+      actions={[
+        { label: 'Cancel', variant: 'secondary', onClick: onClose },
+        { label: 'Add', variant: 'primary', onClick: handleSubmit, disabled: submitting },
+      ]}
+    >
+      <div className="form-group" style={{ marginBottom: 12 }}>
+        <label className="form-label">Product Name *</label>
+        <input className="form-input" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})}
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+      </div>
+      <div className="form-group" style={{ marginBottom: 12 }}>
+        <label className="form-label">Description</label>
+        <textarea className="form-textarea" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})}
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box', minHeight: 60 }} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Points Cost *</label>
+        <input className="form-input" type="number" value={form.points_cost} onChange={(e) => setForm({...form, points_cost: e.target.value})}
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+      </div>
+    </Modal>
+  );
+}
+
+function ProductListModal({ isOpen, onClose, merchant, products }) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`Products: ${merchant?.name || ''}`}
+      actions={[{ label: 'Close', variant: 'secondary', onClick: onClose }]}
+    >
+      {(!products || products.length === 0) ? (
+        <div className="empty-state"><p>No products added yet.</p></div>
+      ) : (
+        <table className="data-table" style={{ width: '100%' }}>
+          <thead><tr><th>Product</th><th>Description</th><th>Points</th></tr></thead>
+          <tbody>
+            {products.map((p) => (
+              <tr key={p.id}>
+                <td style={{ fontWeight: 500 }}>{p.name}</td>
+                <td>{p.description || '--'}</td>
+                <td>{p.points_cost}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Modal>
+  );
+}
 
 export default function Merchants() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [merchants, setMerchants] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
+  const [productFormOpen, setProductFormOpen] = useState(false);
+  const [productListOpen, setProductListOpen] = useState(false);
+  const [selectedMerchant, setSelectedMerchant] = useState(null);
+  const [products, setProducts] = useState([]);
+
+  const fetchMerchants = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiGet('/admin/merchants');
+      setMerchants(res.data || []);
+      setTotal(res.total || 0);
+    } catch (err) {
+      setError(err.message || 'Failed to load merchants');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchMerchants(); }, [fetchMerchants]);
+
+  const handleCreateMerchant = async (data) => {
+    try {
+      await apiPost('/admin/merchants', data);
+      toast('Merchant registered successfully', 'success');
+      setFormOpen(false);
+      fetchMerchants();
+    } catch (err) {
+      toast(err.message || 'Failed to register merchant', 'error');
+    }
+  };
+
+  const handleAddProduct = async (merchantId, data) => {
+    try {
+      await apiPost(`/admin/merchants/${merchantId}/products`, data);
+      toast('Product added', 'success');
+      setProductFormOpen(false);
+    } catch (err) {
+      toast(err.message || 'Failed to add product', 'error');
+    }
+  };
+
+  const handleViewProducts = async (merchant) => {
+    setSelectedMerchant(merchant);
+    try {
+      const res = await apiGet(`/admin/merchants/${merchant.id}/products`);
+      setProducts(res.data || []);
+      setProductListOpen(true);
+    } catch (err) {
+      toast(err.message || 'Failed to load products', 'error');
+    }
+  };
+
+  const columns = [
+    { key: 'name', label: 'Merchant Name' },
+    { key: 'contact_person', label: 'Contact Person' },
+    { key: 'contact_email', label: 'Email' },
+    { key: 'contact_phone', label: 'Phone' },
+    { key: 'product_count', label: 'Products' },
+    {
+      key: 'id', label: 'Actions', sortable: false,
+      render: (_, row) => (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn btn-outline btn-sm" onClick={() => { setSelectedMerchant(row); setProductFormOpen(true); }}>
+            + Product
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={() => handleViewProducts(row)}>
+            View Products
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div>
       <Topbar title="Merchants" />
       <div className="main-content">
         <div className="page-header">
-          <h2 className="page-title">Merchants</h2>
+          <h2 className="page-title">Merchant Management</h2>
+          <div className="page-actions">
+            <button className="btn btn-primary" onClick={() => setFormOpen(true)}>
+              + Register Merchant
+            </button>
+          </div>
         </div>
 
-        <div className="empty-state" style={{ padding: '60px 40px' }}>
-          <div
-            style={{
-              fontSize: 48,
-              marginBottom: 16,
-              opacity: 0.3,
-            }}
-          >
-            &#9733;
+        {loading && <div className="loading-state"><p>Loading merchants...</p></div>}
+        {error && !loading && (
+          <div className="error-state">
+            <h2>Error loading merchants</h2>
+            <p>{error}</p>
+            <button className="btn btn-primary" onClick={fetchMerchants}>Retry</button>
           </div>
-          <h2>Merchant Management</h2>
-          <p style={{ maxWidth: 400, margin: '8px auto' }}>
-            Merchant management is coming in Phase 2. This feature will allow you to manage
-            partner merchants who accept coupon redemptions.
-          </p>
-          <div
-            className="card"
-            style={{
-              marginTop: 24,
-              maxWidth: 400,
-              margin: '24px auto 0',
-              textAlign: 'left',
-            }}
-          >
-            <div className="card-header">
-              <h3 className="card-title">Planned Features</h3>
-            </div>
-            <ul
-              style={{
-                fontSize: 13,
-                lineHeight: 2,
-                paddingLeft: 20,
-                margin: 0,
-                color: 'var(--muted)',
-              }}
-            >
-              <li>Merchant registration and onboarding</li>
-              <li>Coupon acceptance configuration</li>
-              <li>Redemption validation at point of sale</li>
-              <li>Settlement and reconciliation reports</li>
-              <li>Merchant performance analytics</li>
-            </ul>
+        )}
+        {!loading && !error && merchants.length === 0 && (
+          <div className="empty-state" style={{ padding: '60px 40px' }}>
+            <h2>No Merchants Yet</h2>
+            <p>Register your first merchant to start building the rewards network.</p>
+            <button className="btn btn-primary" onClick={() => setFormOpen(true)} style={{ marginTop: 12 }}>
+              + Register Merchant
+            </button>
           </div>
-        </div>
+        )}
+        {!loading && !error && merchants.length > 0 && (
+          <DataTable columns={columns} data={merchants} />
+        )}
       </div>
+
+      <MerchantFormModal isOpen={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleCreateMerchant} />
+      <ProductFormModal isOpen={productFormOpen} onClose={() => setProductFormOpen(false)}
+        merchant={selectedMerchant} onSubmit={handleAddProduct} />
+      <ProductListModal isOpen={productListOpen} onClose={() => setProductListOpen(null)}
+        merchant={selectedMerchant} products={products} />
     </div>
   );
 }

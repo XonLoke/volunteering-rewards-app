@@ -163,12 +163,49 @@ async function resetPassword(req, res, next) {
   } catch (err) { next(err); }
 }
 
+
+// ─── GET /api/admin/merchants ───────────────────────────────
+async function listMerchants(req, res, next) {
+  try {
+    const result = await adminService.listMerchants(req.query);
+    res.json(result);
+  } catch (err) { next(err); }
+}
+
+// ─── POST /api/admin/merchants ──────────────────────────────
+async function createMerchant(req, res, next) {
+  try {
+    const result = await adminService.createMerchant(req.body, req.user.id);
+    res.status(201).json(result);
+  } catch (err) { next(err); }
+}
+
+// ─── GET /api/admin/merchants/:id/products ──────────────────
+async function listMerchantProducts(req, res, next) {
+  try {
+    const result = await adminService.listMerchantProducts(req.params.id);
+    res.json(result);
+  } catch (err) { next(err); }
+}
+
+// ─── POST /api/admin/merchants/:id/products ─────────────────
+async function createMerchantProduct(req, res, next) {
+  try {
+    const result = await adminService.createMerchantProduct(req.params.id, req.body);
+    res.status(201).json(result);
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   dashboard, listUsers, getUser, updateUser, deactivateUser,
   listOrganisers, approveOrganiser,
   listEvents, deleteEvent, eventParticipation,
   listCoupons, createCoupon, updateCoupon, deleteCoupon,
   getRewardsConfig, updateRewardsConfig,
+  listMerchants,
+  createMerchant,
+  listMerchantProducts,
+  createMerchantProduct,
   listRedemptions,
   resetPassword,
 };
