@@ -153,7 +153,7 @@ async function listOrganisers({ page = 1, limit = 15, status } = {}) {
     `SELECT COUNT(*) FROM users u
      JOIN roles r ON u.role_id = r.id
      LEFT JOIN organizations o ON o.contact_email = u.email
-     \${where}`, params
+     ${where}`, params
   );
   const total = parseInt(countResult.rows[0].count);
 
@@ -167,7 +167,7 @@ async function listOrganisers({ page = 1, limit = 15, status } = {}) {
      FROM users u
      JOIN roles r ON u.role_id = r.id
      LEFT JOIN organizations o ON o.contact_email = u.email
-     \${where}
+     ${where}
      ORDER BY u.created_at DESC
      LIMIT \${params.length + 1} OFFSET \${params.length + 2}`,
     [...params, limit, offset]
