@@ -16,6 +16,9 @@ async function getDashboardStats() {
     pending_approvals: pool.query("SELECT COUNT(*) FROM organizations WHERE approval_status = 'pending'"),
     total_events: pool.query("SELECT COUNT(*) FROM events"),
     total_merchants: pool.query("SELECT COUNT(*) FROM merchants"),
+    no_show_count: pool.query(`SELECT COUNT(*) FROM event_registrations er
+      JOIN events e ON er.event_id = e.id
+      WHERE e.event_date < NOW() AND er.check_in_time IS NULL AND er.status = 'registered'`),
     coupon_today: pool.query("SELECT COUNT(*) FROM user_coupons WHERE created_at::date = CURRENT_DATE"),
     redemption_today: pool.query("SELECT COUNT(*) FROM redemption_logs WHERE created_at::date = CURRENT_DATE"),
     users_30d: pool.query("SELECT COUNT(*) FROM users WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'"),
@@ -38,6 +41,7 @@ async function getDashboardStats() {
     coupons_growth_pct: results.coupons_30d > 0 ? Math.round((results.coupons_30d / results.coupon_today) * 100) : 0,
     total_events: results.total_events,
     total_merchants: results.total_merchants,
+    no_show_count: results.no_show_count || 0,
   };
 }
 

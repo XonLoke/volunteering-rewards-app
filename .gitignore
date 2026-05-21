@@ -4,3 +4,27 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# ─── Project documents (uploaded to OneDrive, not GitHub) ─
+/AI_GENERATION_PROMPTS_*.md
+/API_CONTRACTS*.md
+/Code Companion Guide*.md
+/Codebase Reference Map*.md
+/DAILY_WORKFLOW*.md
+/Draft Reply*.md
+/MIGRATION_GUIDE*.md
+/PROPOSAL_WATD*.md
+/Pre-Implementation Report*.md
+/Sprint*.md
+/Sprint1*.md
+/TEAM_WORKFLOW*.md
+/Vertical Slice Technical Guide*.md
+/Virtual Team Output Report*.md
+/fix_workspace.ps1
+/generate_proposal_docx.py
+/volunteering_rewards_app_architecture_taskSplit*.svg
+
+# ─── Old prototype files (design drafts, not production code) ─
+frontend/mobile_UI/
+frontend/web_UI/
+frontend/web_portal/
