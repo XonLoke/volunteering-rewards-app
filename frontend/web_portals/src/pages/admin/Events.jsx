@@ -332,3 +332,7 @@ export default function Events() {
         onClose={() => setDeleteEvent(null)}
         event={deleteEvent}
         onConfirm={handleDeleteEvent}
+      />
+    </div>
+  );
+}
