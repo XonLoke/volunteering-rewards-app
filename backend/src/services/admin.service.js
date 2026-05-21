@@ -142,41 +142,45 @@ async function updateUserStatus(userId, { status }) {
 async function listOrganisers({ page = 1, limit = 15, status } = {}) {
   const offset = (page - 1) * limit;
   const params = [];
-  let where = "WHERE r.role_name = 'organizer'";
 
+  let where = "WHERE r.role_name = 'organizer'";
   if (status) {
     params.push(status);
-    where += ` AND u.status = $${params.length}`;
+    where += ` AND o.approval_status = $${params.length}`;
   }
 
   const countResult = await pool.query(
-    `SELECT COUNT(*) FROM users u JOIN roles r ON u.role_id = r.id ${where}`, params
+    `SELECT COUNT(*) FROM users u
+     JOIN roles r ON u.role_id = r.id
+     LEFT JOIN organizations o ON o.contact_email = u.email
+     \${where}`, params
   );
   const total = parseInt(countResult.rows[0].count);
 
   const { rows } = await pool.query(
     `SELECT u.id, u.name, u.email, u.phone, u.status, u.created_at,
-            COALESCE(
-              (SELECT json_build_object(
-                'id', o.id,
-                'name', o.org_name,
-                'type', o.org_type,
-                'status', o.approval_status
-              ) FROM organizations o WHERE o.contact_email = u.email LIMIT 1),
-              '{}'::json
-            ) AS organisation
+            COALESCE(o.org_name, '') AS organisation_name,
+            COALESCE(o.org_type, '') AS organisation_type,
+            COALESCE(o.approval_status, 'pending') AS organisation_status,
+            o.contact_person AS contact_name,
+            o.contact_email AS org_contact_email
      FROM users u
      JOIN roles r ON u.role_id = r.id
-     ${where}
+     LEFT JOIN organizations o ON o.contact_email = u.email
+     \${where}
      ORDER BY u.created_at DESC
-     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+     LIMIT \${params.length + 1} OFFSET \${params.length + 2}`,
     [...params, limit, offset]
   );
 
-  return { data: rows, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
+  const data = rows.map(r => ({
+    ...r,
+    documents: [],
+  }));
+
+  return { data, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
 }
 
-// ─── Approve/Reject Organiser ─────────────────────────────
 async function approveOrganiser(userId, { status, approvedBy }) {
   if (!['approved', 'rejected'].includes(status)) {
     throw createError(400, "validation_error", "Status must be 'approved' or 'rejected'.");
