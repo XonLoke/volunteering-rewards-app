@@ -1,131 +1,161 @@
 /**
  * Admin Controller — Admin Web Portal
  *
- * Response shapes defined in API_CONTRACTS.md (Admin Web Portal section).
+ * Thin HTTP layer — all business logic delegated to admin.service.js.
+ * Response shapes defined in API_CONTRACTS_v2.md.
  */
+
+const adminService = require("../services/admin.service");
 
 // ─── GET /api/admin/dashboard ────────────────────────────────
 async function dashboard(req, res, next) {
   try {
-    res.json({ stats: {}, recent_activity: [], current_date: "", last_updated: "" });
+    const [stats, recentActivity] = await Promise.all([
+      adminService.getDashboardStats(),
+      adminService.getRecentActivity(),
+    ]);
+    res.json({
+      stats,
+      recent_activity: recentActivity,
+      current_date: new Date().toISOString().split('T')[0],
+      last_updated: new Date().toISOString(),
+    });
   } catch (err) { next(err); }
 }
 
 // ─── GET /api/admin/users ────────────────────────────────────
 async function listUsers(req, res, next) {
   try {
-    res.json({ data: [], total: 0, page: 1, limit: 20 });
+    const result = await adminService.listUsers(req.query);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── GET /api/admin/users/:id ────────────────────────────────
 async function getUser(req, res, next) {
   try {
-    res.json({ id: req.params.id });
+    const user = await adminService.getUserDetail(req.params.id);
+    res.json(user);
   } catch (err) { next(err); }
 }
 
 // ─── PUT /api/admin/users/:id ────────────────────────────────
 async function updateUser(req, res, next) {
   try {
-    res.json({ id: req.params.id, updated_at: "" });
+    const result = await adminService.updateUserStatus(req.params.id, req.body);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── DELETE /api/admin/users/:id ─────────────────────────────
 async function deactivateUser(req, res, next) {
   try {
-    res.json({ message: "User deactivated" });
+    const result = await adminService.updateUserStatus(req.params.id, { status: 'disabled' });
+    res.json({ message: "User deactivated", user: result });
   } catch (err) { next(err); }
 }
 
 // ─── GET /api/admin/organisers ───────────────────────────────
 async function listOrganisers(req, res, next) {
   try {
-    res.json({ data: [], total: 0, page: 1, limit: 20 });
+    const result = await adminService.listOrganisers(req.query);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── PUT /api/admin/organisers/:id/approve ───────────────────
 async function approveOrganiser(req, res, next) {
   try {
-    res.json({ organisation: { id: req.params.id, status: "approved" } });
+    const result = await adminService.approveOrganiser(req.params.id, {
+      status: req.body.status,
+      approvedBy: req.user.id,
+    });
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── GET /api/admin/events ───────────────────────────────────
 async function listEvents(req, res, next) {
   try {
-    res.json({ data: [], total: 0, page: 1, limit: 20 });
+    const result = await adminService.listEvents(req.query);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── DELETE /api/admin/events/:id ────────────────────────────
 async function deleteEvent(req, res, next) {
   try {
-    res.json({ message: "Event deleted" });
+    const result = await adminService.deleteEvent(req.params.id);
+    res.json({ message: `Event "${result.title}" deleted` });
   } catch (err) { next(err); }
 }
 
 // ─── GET /api/admin/events/:id/participation ─────────────────
 async function eventParticipation(req, res, next) {
   try {
-    res.json({ event: {}, participation: {} });
+    const result = await adminService.getEventParticipation(req.params.id);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── GET /api/admin/coupons ──────────────────────────────────
 async function listCoupons(req, res, next) {
   try {
-    res.json({ data: [], total: 0, page: 1, limit: 20 });
+    const result = await adminService.listCoupons(req.query);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── POST /api/admin/coupons ─────────────────────────────────
 async function createCoupon(req, res, next) {
   try {
-    res.status(201).json({ coupon: {}, pins_generated: 0 });
+    const result = await adminService.createCoupon(req.body, req.user.id);
+    res.status(201).json(result);
   } catch (err) { next(err); }
 }
 
 // ─── PUT /api/admin/coupons/:id ──────────────────────────────
 async function updateCoupon(req, res, next) {
   try {
-    res.json({ coupon: { id: req.params.id } });
+    const result = await adminService.updateCoupon(req.params.id, req.body);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── DELETE /api/admin/coupons/:id ───────────────────────────
 async function deleteCoupon(req, res, next) {
   try {
-    res.json({ message: "Coupon deleted" });
+    const result = await adminService.deleteCoupon(req.params.id);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── GET /api/admin/rewards/configuration ────────────────────
 async function getRewardsConfig(req, res, next) {
   try {
-    res.json({ points_per_dollar: 100, min_redeem_points: 50, max_redeem_per_day: 5, default_event_points: 50 });
+    const config = await adminService.getRewardsConfig();
+    res.json(config);
   } catch (err) { next(err); }
 }
 
 // ─── PUT /api/admin/rewards/configuration ────────────────────
 async function updateRewardsConfig(req, res, next) {
   try {
-    res.json({ message: "Configuration updated", updated_at: "" });
+    const result = await adminService.updateRewardsConfig(req.body);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 // ─── GET /api/admin/redemptions ──────────────────────────────
 async function listRedemptions(req, res, next) {
   try {
-    res.json({ data: [], total: 0, page: 1, limit: 20 });
+    const result = await adminService.listRedemptions(req.query);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
 module.exports = {
-  dashboard,
-  listUsers, getUser, updateUser, deactivateUser,
+  dashboard, listUsers, getUser, updateUser, deactivateUser,
   listOrganisers, approveOrganiser,
   listEvents, deleteEvent, eventParticipation,
   listCoupons, createCoupon, updateCoupon, deleteCoupon,
