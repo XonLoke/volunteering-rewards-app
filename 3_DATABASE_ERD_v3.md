@@ -1,0 +1,206 @@
+```mermaid
+erDiagram
+    %% =====================================================================
+    %% WORKFLOW A: AUTHENTICATION & USER MANAGEMENT
+    %% =====================================================================
+
+    roles {
+        int id PK
+        varchar role_name "Volunteer, Organizer, Admin, Cashier"
+        text description
+        timestamp created_at
+    }
+
+    users {
+        int id PK
+        varchar name
+        varchar email UK
+        text password_hash
+        varchar phone
+        int role_id FK
+        int points "cached balance"
+        varchar volunteer_qr_code UK
+        varchar status "active, suspended, inactive"
+        varchar profile_image_url
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    organizations {
+        int id PK
+        varchar org_name
+        varchar org_type
+        varchar uen
+        text address
+        varchar contact_person
+        varchar contact_email
+        varchar contact_phone
+        varchar approval_document_url
+        varchar approval_status "pending, approved, rejected"
+        int approved_by FK
+        timestamp approved_at
+        varchar status "active, inactive, suspended"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% =====================================================================
+    %% WORKFLOW B: EVENTS & QR SCANNING
+    %% =====================================================================
+
+    events {
+        int id PK
+        int organization_id FK
+        int organizer_id FK
+        varchar title
+        text description
+        varchar location
+        decimal latitude
+        decimal longitude
+        timestamp event_date
+        decimal duration_hours
+        int capacity
+        int points_value
+        varchar status "upcoming, ongoing, completed, cancelled"
+        varchar image_url
+        varchar category
+        decimal feedback_score "denormalized cache"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    event_registrations {
+        int id PK
+        int user_id FK
+        int event_id FK
+        timestamp check_in_time
+        varchar check_in_method "manual, organizer_scanned"
+        varchar status "registered, cancelled, attended, no_show"
+        text notes
+        boolean reminder_sent
+        timestamp created_at
+    }
+
+    attendance_logs {
+        int id PK
+        int event_id FK
+        int user_id FK "volunteer"
+        int scanned_by FK "organizer"
+        varchar scan_type "check_in, points_award"
+        varchar qr_code_value
+        int points_awarded
+        timestamp scanned_at
+    }
+
+    event_feedback {
+        int id PK
+        int user_id FK
+        int event_id FK
+        int rating "CHECK 1-5"
+        text comment
+        timestamp created_at
+    }
+
+    event_qna {
+        int id PK
+        int event_id FK
+        int question_by FK
+        text question
+        int answer_by FK "nullable"
+        text answer "nullable"
+        boolean is_published
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    favorites {
+        int id PK
+        int user_id FK
+        varchar item_type "event, coupon"
+        int item_id
+        timestamp created_at
+    }
+
+    %% =====================================================================
+    %% WORKFLOW C: REWARD & REDEMPTION
+    %% =====================================================================
+
+    coupons {
+        int id PK
+        varchar title
+        text description
+        varchar image_url
+        int points_required
+        int quantity
+        timestamp expiry_date
+        varchar status "active, inactive, depleted"
+        int created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    user_coupons {
+        int id PK
+        int user_id FK
+        int coupon_id FK
+        varchar pin_hash UK "HMAC-SHA256, not plaintext"
+        varchar status "unused, used, expired"
+        timestamp redeemed_at "when marked as used"
+        int verified_by FK "admin or cashier"
+        timestamp expiry_date "snapshot from coupon"
+        timestamp created_at
+    }
+
+    redemption_logs {
+        int id PK
+        int user_coupon_id FK
+        varchar action "redeemed, used, expired, auto_expired"
+        int action_by FK "volunteer, admin, cashier, or system"
+        varchar ip_address
+        timestamp created_at
+        text notes
+    }
+
+    points_ledger {
+        int id PK
+        int user_id FK
+        int amount "+earned / -spent"
+        int balance_after "running balance"
+        varchar reason_code "event_attendance, coupon_redemption, admin_adjustment"
+        int reference_id "FK to source record"
+        varchar reference_type "attendance, redemption, adjustment"
+        timestamp created_at
+    }
+
+    %% =====================================================================
+    %% RELATIONSHIPS
+    %% =====================================================================
+
+    %% WORKFLOW A
+    roles ||--o{ users : "has role"
+    users ||--o{ organizations : "approves (admin)" "approved_by"
+    organizations ||--o{ events : "hosts"
+
+    %% WORKFLOW B
+    users ||--o{ events : "organizes" "organizer_id"
+    events ||--o{ event_registrations : "registers volunteers"
+    users ||--o{ event_registrations : "joins"
+    events ||--o{ attendance_logs : "tracks attendance"
+    users ||--o{ attendance_logs : "attends as" "user_id"
+    users ||--o{ attendance_logs : "scanned by" "scanned_by"
+    events ||--o{ event_feedback : "receives feedback"
+    users ||--o{ event_feedback : "submits"
+    events ||--o{ event_qna : "has Q&A"
+    users ||--o{ event_qna : "asks" "question_by"
+    users ||--o{ event_qna : "answers" "answer_by"
+    users ||--o{ favorites : "bookmarks"
+
+    %% WORKFLOW C
+    users ||--o{ coupons : "creates (admin)" "created_by"
+    coupons ||--o{ user_coupons : "redeemed as"
+    users ||--o{ user_coupons : "owns"
+    users ||--o{ user_coupons : "verifies" "verified_by"
+    user_coupons ||--o{ redemption_logs : "audited by"
+    users ||--o{ redemption_logs : "action by"
+    users ||--o{ points_ledger : "earns/spends points"
+```

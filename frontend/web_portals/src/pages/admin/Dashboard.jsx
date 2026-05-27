@@ -224,6 +224,17 @@ export default function Dashboard() {
             label="Redemptions Today"
             change={stats.total_redemptions_today > 0 ? 'Today' : 'No redemptions yet'}
           />
+          <StatCard
+            value={stats.total_merchants ?? 0}
+            label="Total Merchants"
+            change={null}
+          />
+          <StatCard
+            value={stats.no_show_count ?? 0}
+            label="No-Show Alerts"
+            change={stats.no_show_count > 0 ? 'Registered but didn\'t attend' : null}
+            negative={stats.no_show_count > 0}
+          />
         </div>
 
         <ActivityFeed activities={recentActivity} />
