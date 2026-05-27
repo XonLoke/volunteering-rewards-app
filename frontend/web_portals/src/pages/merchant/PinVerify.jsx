@@ -135,7 +135,7 @@ export default function PinVerify() {
     setVerifyError(null);
     setIsRateLimited(false);
     try {
-      const res = await apiPost('/coupons/verify', { pin_code: pin });
+      const res = await apiPost('/coupons/verify', { pin });
       setCoupon(res.coupon);
       setPhase('verified');
     } catch (err) {
@@ -151,7 +151,7 @@ export default function PinVerify() {
     setPhase('redeeming');
     setRedeemError(null);
     try {
-      const res = await apiPost('/coupons/redeem', { coupon_id: coupon.id, pin_code: pin });
+      const res = await apiPost('/coupons/redeem', { pin, userCouponId: coupon.user_coupon_id || coupon.id,});
       setRedemption(res.redemption);
       setRedeemedAt(Date.now());
       setUndoWindowExpired(false);
@@ -166,7 +166,7 @@ export default function PinVerify() {
     setShowReverseConfirm(false);
     setReversing(true);
     try {
-      await apiPost('/coupons/reverse', { redemption_id: redemption.id });
+      await apiPost('/coupons/reverse', {userCouponId: redemption.user_coupon_id || redemption.id,});
       toast('Redemption reversed successfully', 'success');
       resetAll();
     } catch (err) {
@@ -320,11 +320,11 @@ export default function PinVerify() {
         </div>
         <div style={styles.successContent}>
           <p style={styles.successLabel}>Coupon Verified</p>
-          <h2 style={styles.couponType}>{coupon.coupon_type}</h2>
+          <h2 style={styles.couponType}>{coupon.coupon_title || coupon.title || coupon.coupon_type || 'Coupon'}</h2>
           <div style={styles.couponDetails}>
             <div style={styles.couponRow}>
               <span style={styles.couponLabel}>Value</span>
-              <span style={styles.couponValue}>{formatValue(coupon.value_cents)}</span>
+              <span style={styles.couponValue}>{coupon.points_required ? `${coupon.points_required} pts` : formatValue(coupon.value_cents)}</span>
             </div>
             {coupon.points_cost != null && (
               <div style={styles.couponRow}>

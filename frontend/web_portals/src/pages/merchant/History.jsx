@@ -246,12 +246,18 @@ export default function History() {
                       <tr key={item.id || idx}>
                         <td style={styles.td}>
                           <span style={{ fontFamily: "ui-monospace, 'SF Mono', monospace" }}>
-                            {maskPin(item.pin_code || item.pin)}
+                            {maskPin(item.user_coupon_id || item.id)}
                           </span>
                         </td>
-                        <td style={styles.td}>{item.coupon_type || '-'}</td>
+                        <td style={styles.td}>{item.coupon_title || item.title || item.coupon_type || '-'}</td>
                         <td style={styles.td}>
-                          <span style={{ fontWeight: 600 }}>{formatValue(item.value_cents)}</span>
+                          <span style={{ fontWeight: 600 }}>
+                            {
+                              item.points_required
+                                ? `${item.points_required} pts`
+                                : formatValue(item.value_cents)
+                            }
+                        </span>
                         </td>
                         <td style={styles.td}>
                           <StatusBadge status={cfg.status} />
@@ -274,14 +280,20 @@ export default function History() {
                 return (
                   <div key={item.id || idx} style={styles.mobileCard}>
                     <div style={styles.mobileCardHeader}>
-                      <span style={styles.mobileCouponType}>{item.coupon_type || 'Coupon'}</span>
-                      <span style={styles.mobileValue}>{formatValue(item.value_cents)}</span>
+                      <span style={styles.mobileCouponType}>{item.coupon_title || item.title || item.coupon_type || '-'}</span>
+                      <span style={styles.mobileValue}>
+                        {
+                           item.points_required
+                             ? `${item.points_required} pts`
+                             : formatValue(item.value_cents)
+                        }
+                    </span>
                     </div>
                     <div style={styles.mobileCardBody}>
                       <div style={styles.mobileRow}>
                         <span style={styles.mobileLabel}>PIN</span>
                         <span style={{ fontFamily: "ui-monospace, 'SF Mono', monospace" }}>
-                          {maskPin(item.pin_code || item.pin)}
+                          {maskPin(item.user_coupon_id || item.id)}
                         </span>
                       </div>
                       <div style={styles.mobileRow}>
