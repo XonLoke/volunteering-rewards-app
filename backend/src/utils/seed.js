@@ -28,12 +28,14 @@ const ROLES = [
   { role_name: "volunteer", description: "Volunteer — browses events, earns points, redeems rewards" },
   { role_name: "organizer", description: "Event Organizer — creates events, scans QR codes, manages attendance" },
   { role_name: "admin",     description: "System Admin — manages users, creates coupons, verifies PINs, audits" },
+  { role_name: "merchant",  description: "Merchant Cashier — verifies PINs, redeems coupons" },
 ];
 
 const TEST_USERS = [
   { name: "Alice Volunteer", email: "alice@test.com",   role: "volunteer", points: 500 },
   { name: "Bob Organizer",   email: "bob@test.com",     role: "organizer", points: 0 },
   { name: "Carol Admin",     email: "carol@test.com",   role: "admin",     points: 0 },
+  { name: "Diana Merchant",  email: "diana@test.com",   role: "merchant",  points: 0 },
 ];
 
 const TEST_ORGANIZATION = {
