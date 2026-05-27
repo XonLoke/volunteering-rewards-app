@@ -205,6 +205,15 @@ async function getCouponPins(req, res, next) {
   } catch (err) { next(err); }
 }
 
+
+// ─── PUT /api/admin/users/:id/role ─────────────────────────
+async function updateUserRole(req, res, next) {
+  try {
+    const result = await adminService.updateUserRole(req.params.id, req.body);
+    res.json(result);
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   dashboard, listUsers, getUser, updateUser, deactivateUser,
   listOrganisers, approveOrganiser,
@@ -216,6 +225,7 @@ module.exports = {
   listMerchantProducts,
   createMerchantProduct,
   getCouponPins,
+  updateUserRole,
   listRedemptions,
   resetPassword,
 };

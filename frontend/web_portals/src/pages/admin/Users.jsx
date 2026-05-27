@@ -308,6 +308,16 @@ export default function Users() {
     setSuspendUser(user);
   };
 
+  const handleChangeRole = async (user, newRole) => {
+    try {
+      await apiPut(`/admin/users/${user.id}/role`, { role_name: newRole });
+      toast(`User role changed to ${newRole}`, 'success');
+      fetchUsers();
+    } catch (err) {
+      toast(err.message || 'Failed to change role', 'error');
+    }
+  };
+
   const handleResetPassword = async (user, newPassword) => {
     try {
       await apiPut(`/admin/users/${user.id}/reset-password`, { newPassword });
@@ -382,6 +392,16 @@ export default function Users() {
             }}
           >
             {row.status === 'active' ? 'Suspend' : 'Reactivate'}
+          </button>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              const newRole = row.role === 'merchant' ? 'volunteer' : 'merchant';
+              handleChangeRole(row, newRole);
+            }}
+          >
+            {row.role === 'merchant' ? '→ Volunteer' : '→ Merchant'}
           </button>
           <button
             className="btn btn-outline btn-sm"
