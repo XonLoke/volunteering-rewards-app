@@ -5,8 +5,15 @@
  * Response shapes match API_CONTRACTS_v2.md exactly.
  */
 
+const crypto = require("crypto");
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
+
+// ─── PIN Hashing (compatible with Grace's merchant service) ──
+function hashPin(pin) {
+  const secret = process.env.PIN_SECRET || process.env.JWT_ACCESS_SECRET || "dev-pin-secret";
+  return crypto.createHmac("sha256", secret).update(String(pin)).digest("hex");
+}
 
 // ─── Dashboard Stats ─────────────────────────────────────
 async function getDashboardStats() {
@@ -358,10 +365,11 @@ async function createCoupon(data, userId) {
 
     // Insert PINs into user_coupons table (unused, no owner yet)
     for (const pin of pins) {
+      const pinHash = hashPin(pin);
       await client.query(
-        `INSERT INTO user_coupons (coupon_id, pin_code, status, expiry_date)
-         VALUES ($1, $2, 'unused', $3)`,
-        [coupon.id, pin, data.expiry_date]
+        `INSERT INTO user_coupons (coupon_id, pin_code, pin_hash, status, expiry_date)
+         VALUES ($1, $2, $3, 'unused', $4)`,
+        [coupon.id, pin, pinHash, data.expiry_date]
       );
     }
 
