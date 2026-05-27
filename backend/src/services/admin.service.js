@@ -500,6 +500,21 @@ async function getCouponPins(couponId) {
   return { data: rows };
 }
 
+// ─── Update User Role ────────────────────────────────────
+async function updateUserRole(userId, { role_name }) {
+  const { rows } = await pool.query(
+    "SELECT id FROM roles WHERE role_name = $1",
+    [role_name]
+  );
+  if (rows.length === 0) throw createError(400, "validation_error", "Role not found.");
+  const result = await pool.query(
+    "UPDATE users SET role_id = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, email",
+    [rows[0].id, userId]
+  );
+  if (result.rows.length === 0) throw createError(404, "not_found", "User not found.");
+  return { message: "User role updated.", user: result.rows[0] };
+}
+
 // ─── Reset User Password ──────────────────────────────────
 async function resetUserPassword(userId, { newPassword }) {
   if (!newPassword || newPassword.length < 8) {
@@ -528,5 +543,6 @@ module.exports = {
   listMerchantProducts,
   createMerchantProduct,
   getCouponPins,
+  updateUserRole,
   resetUserPassword,
 };

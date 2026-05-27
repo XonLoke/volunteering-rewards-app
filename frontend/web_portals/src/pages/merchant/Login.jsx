@@ -15,7 +15,12 @@ export default function MerchantLogin() {
     setLoading(true);
     setError(null);
     try {
-      await apiLogin(email, password);
+      const res = await apiLogin(email, password);
+      if (res.user?.role !== 'merchant') {
+        setError(`Access denied. This portal is for merchant cashiers only (your role: ${res.user?.role || 'unknown'}).`);
+        setLoading(false);
+        return;
+      }
       navigate('/merchant/verify');
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
@@ -175,13 +180,3 @@ const styles = {
     alignItems: 'center',
     gap: 8,
   },
-  spinner: {
-    display: 'inline-block',
-    width: 16,
-    height: 16,
-    border: '2px solid rgba(255,255,255,0.3)',
-    borderTopColor: '#FFFFFF',
-    borderRadius: '50%',
-    animation: 'spin 0.6s linear infinite',
-  },
-};
