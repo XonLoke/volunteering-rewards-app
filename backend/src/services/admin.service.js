@@ -491,6 +491,15 @@ async function createMerchantProduct(merchantId, data) {
 
 // ─── Update createCoupon to generate PINs in batch ─────────
 
+// ─── Get PINs for Coupon ─────────────────────────────────
+async function getCouponPins(couponId) {
+  const { rows } = await pool.query(
+    "SELECT id, pin_code, status, created_at FROM user_coupons WHERE coupon_id = $1 ORDER BY created_at ASC",
+    [couponId]
+  );
+  return { data: rows };
+}
+
 // ─── Reset User Password ──────────────────────────────────
 async function resetUserPassword(userId, { newPassword }) {
   if (!newPassword || newPassword.length < 8) {
@@ -518,5 +527,6 @@ module.exports = {
   createMerchant,
   listMerchantProducts,
   createMerchantProduct,
+  getCouponPins,
   resetUserPassword,
 };

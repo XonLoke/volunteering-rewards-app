@@ -196,6 +196,15 @@ async function createMerchantProduct(req, res, next) {
   } catch (err) { next(err); }
 }
 
+
+// ─── GET /api/admin/coupons/:id/pins ────────────────────────
+async function getCouponPins(req, res, next) {
+  try {
+    const result = await adminService.getCouponPins(req.params.id);
+    res.json(result);
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   dashboard, listUsers, getUser, updateUser, deactivateUser,
   listOrganisers, approveOrganiser,
@@ -206,6 +215,7 @@ module.exports = {
   createMerchant,
   listMerchantProducts,
   createMerchantProduct,
+  getCouponPins,
   listRedemptions,
   resetPassword,
 };

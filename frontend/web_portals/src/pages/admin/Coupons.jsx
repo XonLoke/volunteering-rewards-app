@@ -244,6 +244,20 @@ export default function Coupons() {
   const [formOpen, setFormOpen] = useState(false);
   const [editCoupon, setEditCoupon] = useState(null);
   const [deleteCoupon, setDeleteCoupon] = useState(null);
+  const [pinsData, setPinsData] = useState(null);
+  const [pinsModalOpen, setPinsModalOpen] = useState(false);
+  const [viewingCoupon, setViewingCoupon] = useState(null);
+  
+  const handleViewPins = async (coupon) => {
+    setViewingCoupon(coupon);
+    try {
+      const res = await apiGet(`/admin/coupons/${coupon.id}/pins`);
+      setPinsData(res.data || []);
+      setPinsModalOpen(true);
+    } catch (err) {
+      toast(err.message || 'Failed to load PINs', 'error');
+    }
+  };
 
   const fetchCoupons = useCallback(async () => {
     setLoading(true);
@@ -355,6 +369,12 @@ export default function Coupons() {
             onClick={() => handleEdit(row)}
           >
             Edit
+          </button>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => handleViewPins(row)}
+          >
+            PINs
           </button>
           <button
             className="btn btn-danger btn-sm"

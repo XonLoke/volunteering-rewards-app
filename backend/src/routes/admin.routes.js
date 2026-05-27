@@ -54,6 +54,7 @@ router.get("/events/:id/participation", controller.eventParticipation);
 // Coupons
 router.get("/coupons", controller.listCoupons);
 router.post("/coupons", controller.createCoupon);
+router.get("/coupons/:id/pins", controller.getCouponPins);
 router.put("/coupons/:id", controller.updateCoupon);
 router.delete("/coupons/:id", controller.deleteCoupon);
 
