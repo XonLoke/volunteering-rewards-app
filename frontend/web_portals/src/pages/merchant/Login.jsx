@@ -180,3 +180,13 @@ const styles = {
     alignItems: 'center',
     gap: 8,
   },
+  spinner: {
+    display: 'inline-block',
+    width: 16,
+    height: 16,
+    border: '2px solid rgba(255,255,255,0.3)',
+    borderTopColor: '#FFFFFF',
+    borderRadius: '50%',
+    animation: 'spin 0.6s linear infinite',
+  },
+};
