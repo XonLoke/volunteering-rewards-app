@@ -150,6 +150,7 @@ function ProductListModal({ isOpen, onClose, merchant, products }) {
 
 export default function Merchants() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('merchants');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [merchants, setMerchants] = useState([]);
@@ -197,6 +198,40 @@ export default function Merchants() {
     }
   };
 
+  const [prospects, setProspects] = useState([]);
+  const [prospectFormOpen, setProspectFormOpen] = useState(false);
+  const [prospectForm, setProspectForm] = useState({ name: '', contact_person: '', contact_email: '', contact_phone: '', notes: '' });
+  const [accountFormOpen, setAccountFormOpen] = useState(false);
+  const [accountForm, setAccountForm] = useState({ name: '', email: '', password: 'password123', phone: '', merchant_id: '' });
+
+  const fetchProspects = useCallback(async () => {
+    try { const r = await apiGet('/admin/merchants/prospects'); setProspects(r.data || []); } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'prospects') fetchProspects();
+  }, [activeTab, fetchProspects]);
+
+  const handleCreateProspect = async () => {
+    try {
+      await apiPost('/admin/merchants/prospects', prospectForm);
+      toast('Prospect added', 'success');
+      setProspectFormOpen(false);
+      setProspectForm({ name: '', contact_person: '', contact_email: '', contact_phone: '', notes: '' });
+      fetchProspects();
+    } catch (err) { toast(err.message || 'Failed', 'error'); }
+  };
+
+  const handleCreateAccount = async () => {
+    try {
+      const data = { ...accountForm, merchant_id: parseInt(accountForm.merchant_id) || undefined };
+      const r = await apiPost('/admin/merchants/create-account', data);
+      toast(r.message || 'Account created', 'success');
+      setAccountFormOpen(false);
+      setAccountForm({ name: '', email: '', password: 'password123', phone: '', merchant_id: '' });
+    } catch (err) { toast(err.message || 'Failed', 'error'); }
+  };
+
   const handleViewProducts = async (merchant) => {
     setSelectedMerchant(merchant);
     try {
@@ -235,10 +270,19 @@ export default function Merchants() {
       <div className="main-content">
         <div className="page-header">
           <h2 className="page-title">Merchant Management</h2>
-          <div className="page-actions">
-            <button className="btn btn-primary" onClick={() => setFormOpen(true)}>
-              + Register Merchant
-            </button>
+          <div className="page-actions" style={{ display: 'flex', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button className={`btn btn-sm ${activeTab === 'merchants' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('merchants')}>Merchants</button>
+              <button className={`btn btn-sm ${activeTab === 'prospects' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('prospects')}>Sourcing</button>
+            </div>
+            {activeTab === 'merchants' ? (
+              <>
+                <button className="btn btn-outline btn-sm" onClick={() => setAccountFormOpen(true)}>Create Account</button>
+                <button className="btn btn-primary" onClick={() => setFormOpen(true)}>+ Register</button>
+              </>
+            ) : (
+              <button className="btn btn-primary btn-sm" onClick={() => setProspectFormOpen(true)}>+ Add Prospect</button>
+            )}
           </div>
         </div>
 
@@ -259,12 +303,87 @@ export default function Merchants() {
             </button>
           </div>
         )}
-        {!loading && !error && merchants.length > 0 && (
+        {activeTab === 'merchants' && !loading && !error && merchants.length > 0 && (
           <DataTable columns={columns} data={merchants} />
+        )}
+        
+        {activeTab === 'prospects' && (
+          <>
+            {prospects.length === 0 ? (
+              <div className="empty-state" style={{ padding: '60px 40px' }}>
+                <h2>No Prospects Yet</h2>
+                <p>Track potential merchants before onboarding them.</p>
+                <button className="btn btn-primary" onClick={() => setProspectFormOpen(true)} style={{ marginTop: 12 }}>+ Add Prospect</button>
+              </div>
+            ) : (
+              <DataTable 
+                columns={[
+                  { key: 'name', label: 'Company' },
+                  { key: 'contact_person', label: 'Contact' },
+                  { key: 'contact_email', label: 'Email' },
+                  { key: 'contact_phone', label: 'Phone' },
+                  { key: 'status', label: 'Status' },
+                  { key: 'notes', label: 'Notes' },
+                ]} 
+                data={prospects} 
+              />
+            )}
+          </>
         )}
       </div>
 
       <MerchantFormModal isOpen={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleCreateMerchant} />
+      
+      <Modal isOpen={prospectFormOpen} onClose={() => setProspectFormOpen(false)} title="Add Prospect"
+        actions={[
+          { label: 'Cancel', variant: 'secondary', onClick: () => setProspectFormOpen(false) },
+          { label: 'Add', variant: 'primary', onClick: handleCreateProspect },
+        ]}>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">Company Name</label>
+          <input className="form-input" value={prospectForm.name} onChange={(e) => setProspectForm({...prospectForm, name: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+        </div>
+        <div className="form-row" style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="form-label">Contact Person</label>
+            <input className="form-input" value={prospectForm.contact_person} onChange={(e) => setProspectForm({...prospectForm, contact_person: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+          </div>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="form-label">Email</label>
+            <input className="form-input" value={prospectForm.contact_email} onChange={(e) => setProspectForm({...prospectForm, contact_email: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+          </div>
+        </div>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">Notes</label>
+          <textarea className="form-textarea" value={prospectForm.notes} onChange={(e) => setProspectForm({...prospectForm, notes: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box', minHeight: 60 }} />
+        </div>
+      </Modal>
+
+      <Modal isOpen={accountFormOpen} onClose={() => setAccountFormOpen(false)} title="Create Merchant Login"
+        actions={[
+          { label: 'Cancel', variant: 'secondary', onClick: () => setAccountFormOpen(false) },
+          { label: 'Create', variant: 'primary', onClick: handleCreateAccount },
+        ]}>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">Full Name</label>
+          <input className="form-input" value={accountForm.name} onChange={(e) => setAccountForm({...accountForm, name: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+        </div>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">Email (login ID)</label>
+          <input className="form-input" type="email" value={accountForm.email} onChange={(e) => setAccountForm({...accountForm, email: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+        </div>
+        <div className="form-row" style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="form-label">Password</label>
+            <input className="form-input" type="password" value={accountForm.password} onChange={(e) => setAccountForm({...accountForm, password: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+          </div>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="form-label">Phone</label>
+            <input className="form-input" value={accountForm.phone} onChange={(e) => setAccountForm({...accountForm, phone: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+          </div>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--muted)' }}>Default password is "password123"</p>
+      </Modal>
       <ProductFormModal isOpen={productFormOpen} onClose={() => setProductFormOpen(false)}
         merchant={selectedMerchant} onSubmit={handleAddProduct} />
       <ProductListModal isOpen={productListOpen} onClose={() => setProductListOpen(null)}

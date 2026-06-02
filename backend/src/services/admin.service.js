@@ -515,6 +515,64 @@ async function updateUserRole(userId, { role_name }) {
   return { message: "User role updated.", user: result.rows[0] };
 }
 
+// ─── Merchant Sourcing / Prospects ──────────────────────
+async function listProspects({ page = 1, limit = 15, status } = {}) {
+  const offset = (page - 1) * limit;
+  const params = [];
+  let where = '';
+  if (status) { params.push(status); where = `WHERE status = $${params.length}`; }
+  const countResult = await pool.query(`SELECT COUNT(*) FROM merchant_prospects ${where}`, params);
+  const total = parseInt(countResult.rows[0].count);
+  const { rows } = await pool.query(
+    `SELECT * FROM merchant_prospects ${where} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, limit, offset]
+  );
+  return { data: rows, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
+}
+
+async function createProspect(data, userId) {
+  const { rows } = await pool.query(
+    `INSERT INTO merchant_prospects (name, contact_person, contact_email, contact_phone, notes, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [data.name, data.contact_person, data.contact_email, data.contact_phone, data.notes, userId]
+  );
+  return { prospect: rows[0] };
+}
+
+async function updateProspectStatus(prospectId, { status }) {
+  const r = await pool.query("UPDATE merchant_prospects SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *", [status, prospectId]);
+  if (r.rows.length === 0) throw createError(404, "not_found", "Prospect not found.");
+  return { prospect: r.rows[0] };
+}
+
+// ─── Create Merchant Login Account ──────────────────────
+async function createMerchantAccount(data, adminId) {
+  const bcrypt = require("bcrypt");
+  const { v4: uuidv4 } = require("uuid");
+  
+  // Check email
+  const { rows: existing } = await pool.query("SELECT id FROM users WHERE email = $1", [data.email]);
+  if (existing.length > 0) throw createError(409, "email_taken", "Email already in use.");
+  
+  const roleId = (await pool.query("SELECT id FROM roles WHERE role_name = 'merchant'")).rows[0].id;
+  const hash = await bcrypt.hash(data.password, 12);
+  const qr = uuidv4();
+  
+  const { rows: userRows } = await pool.query(
+    `INSERT INTO users (email, password_hash, name, phone, role_id, points, volunteer_qr_code, status)
+     VALUES ($1, $2, $3, $4, $5, 0, $6, 'active') RETURNING id, email, name`,
+    [data.email, hash, data.name, data.phone || null, roleId, qr]
+  );
+  
+  // Link to merchant if merchant_id provided
+  if (data.merchant_id) {
+    await pool.query("UPDATE merchants SET contact_email = $1 WHERE id = $2", [data.email, data.merchant_id]);
+  }
+  
+  return { user: userRows[0], message: "Merchant account created. Login credentials sent." };
+}
+
+
 // ─── Reset User Password ──────────────────────────────────
 async function resetUserPassword(userId, { newPassword }) {
   if (!newPassword || newPassword.length < 8) {
@@ -544,5 +602,9 @@ module.exports = {
   createMerchantProduct,
   getCouponPins,
   updateUserRole,
+  listProspects,
+  createProspect,
+  updateProspectStatus,
+  createMerchantAccount,
   resetUserPassword,
 };

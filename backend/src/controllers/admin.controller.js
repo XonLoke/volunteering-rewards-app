@@ -214,6 +214,21 @@ async function updateUserRole(req, res, next) {
   } catch (err) { next(err); }
 }
 
+
+// ─── GET /api/admin/merchants/prospects ─────────────────
+async function listProspects(req, res, next) {
+  try { res.json(await adminService.listProspects(req.query)); } catch (err) { next(err); }
+}
+async function createProspect(req, res, next) {
+  try { const r = await adminService.createProspect(req.body, req.user.id); res.status(201).json(r); } catch (err) { next(err); }
+}
+async function updateProspectStatus(req, res, next) {
+  try { res.json(await adminService.updateProspectStatus(req.params.id, req.body)); } catch (err) { next(err); }
+}
+async function createMerchantAccount(req, res, next) {
+  try { res.status(201).json(await adminService.createMerchantAccount(req.body, req.user.id)); } catch (err) { next(err); }
+}
+
 module.exports = {
   dashboard, listUsers, getUser, updateUser, deactivateUser,
   listOrganisers, approveOrganiser,
@@ -227,5 +242,9 @@ module.exports = {
   getCouponPins,
   updateUserRole,
   listRedemptions,
+  listProspects,
+  createProspect,
+  updateProspectStatus,
+  createMerchantAccount,
   resetPassword,
 };

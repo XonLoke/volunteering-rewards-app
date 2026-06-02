@@ -65,7 +65,11 @@ router.put("/rewards/configuration", controller.updateRewardsConfig);
 
 // Merchants
 router.get("/merchants", controller.listMerchants);
+router.get("/merchants/prospects", controller.listProspects);
+router.post("/merchants/prospects", controller.createProspect);
+router.put("/merchants/prospects/:id/status", controller.updateProspectStatus);
 router.post("/merchants", controller.createMerchant);
+router.post("/merchants/create-account", controller.createMerchantAccount);
 router.get("/merchants/:id/products", controller.listMerchantProducts);
 router.post("/merchants/:id/products", controller.createMerchantProduct);
 
