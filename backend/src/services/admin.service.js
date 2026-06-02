@@ -461,14 +461,48 @@ async function listMerchants({ page = 1, limit = 15 } = {}) {
   return { data: rows, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
 }
 
-// ─── Create Merchant ─────────────────────────────────────
+// ─── Create Merchant (also creates cashier login account) ─
 async function createMerchant(data, userId) {
-  const { rows } = await pool.query(
-    `INSERT INTO merchants (name, contact_person, contact_email, contact_phone, address, created_by)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [data.name, data.contact_person, data.contact_email, data.contact_phone, data.address, userId]
-  );
-  return { merchant: rows[0] };
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // 1. Create the merchant record
+    const { rows } = await client.query(
+      `INSERT INTO merchants (name, contact_person, contact_email, contact_phone, address, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [data.name, data.contact_person, data.contact_email, data.contact_phone, data.address, userId]
+    );
+    const merchant = rows[0];
+
+    // 2. Auto-create a user account for the contact person if email is provided
+    if (data.contact_email) {
+      const bcrypt = require("bcrypt");
+      const { v4: uuidv4 } = require("uuid");
+      const defaultPassword = "password123";
+
+      // Check if user already exists
+      const { rows: existing } = await client.query("SELECT id FROM users WHERE email = $1", [data.contact_email]);
+      if (existing.length === 0) {
+        const roleId = (await client.query("SELECT id FROM roles WHERE role_name = 'merchant'")).rows[0].id;
+        const hash = await bcrypt.hash(defaultPassword, 12);
+        const qr = uuidv4();
+        await client.query(
+          `INSERT INTO users (email, password_hash, name, phone, role_id, points, volunteer_qr_code, status)
+           VALUES ($1, $2, $3, $4, $5, 0, $6, 'active')`,
+          [data.contact_email, hash, data.contact_person || data.name, data.contact_phone || null, roleId, qr]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+    return { merchant, message: data.contact_email ? "Merchant registered. Login: " + data.contact_email + " / password123" : "Merchant registered." };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 // ─── List Merchant Products ──────────────────────────────
