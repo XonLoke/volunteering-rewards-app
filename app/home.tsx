@@ -254,6 +254,7 @@ export default function Home() {
   const [userPoints, setUserPoints] = useState(0);
   const [activeCoupons, setActiveCoupons] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [featuredEvents, setFeaturedEvents] = useState<FeaturedEvent[]>([]);
   const [bookedEvents, setBookedEvents] = useState<FeaturedEvent[]>([]);
   const [updates, setUpdates] = useState<UpdateItem[]>([]);
@@ -415,6 +416,7 @@ export default function Home() {
         setUserPoints(0);
         setActiveCoupons(0);
         setUnreadCount(0);
+        setAvatarUri(null);
         setFeaturedEvents([]);
         setBookedEvents([]);
         setUpdates([]);
@@ -424,6 +426,7 @@ export default function Home() {
 
       const user = JSON.parse(stored);
 
+      setAvatarUri(user.avatar_url || null);
       setUserName(user.name || "Volunteer");
 
       const storedPoints = await AsyncStorage.getItem("userPoints");
@@ -442,6 +445,9 @@ export default function Home() {
             ...user,
             ...profileData.user,
           };
+
+          setUserName(updatedUser.name || "Volunteer");
+          setAvatarUri(updatedUser.avatar_url || null);
 
           await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
           await AsyncStorage.setItem("userPoints", String(freshPoints));
@@ -583,11 +589,15 @@ export default function Home() {
               onPress={() => router.push("/profile" as any)}
               activeOpacity={0.8}
             >
-              <Ionicons
-                name="person"
-                size={22}
-                color={theme.colors.textSecondary}
-              />
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.headerAvatarImg} />
+              ) : (
+                <Ionicons
+                  name="person"
+                  size={22}
+                  color={theme.colors.textSecondary}
+                />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -1453,6 +1463,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+  },
+
+  headerAvatarImg: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 22,
   },
 
   walletCard: {
