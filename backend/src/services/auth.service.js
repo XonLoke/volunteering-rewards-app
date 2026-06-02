@@ -76,6 +76,15 @@ async function register(body) {
     throw createError(409, "email_taken", "An account with this email already exists.");
   }
 
+  // ── Check if email belongs to a merchant ────────────
+  const { rows: merchantCheck } = await pool.query(
+    "SELECT id FROM merchants WHERE contact_email = $1 LIMIT 1",
+    [email]
+  );
+  if (merchantCheck.length > 0) {
+    throw createError(409, "email_taken", "This email is registered to a merchant business. Please use a different email.");
+  }
+
   // ── Check for existing phone (if provided) ────────────
   if (phone) {
     const { rows: phoneExists } = await pool.query(
@@ -428,6 +437,15 @@ async function registerOrganiser(body) {
 
   if (existing.length > 0) {
     throw createError(409, "email_taken", "An account with this email already exists.");
+  }
+
+  // ── Check if email belongs to a merchant ────────────
+  const { rows: merchantCheck } = await pool.query(
+    "SELECT id FROM merchants WHERE contact_email = $1 LIMIT 1",
+    [email]
+  );
+  if (merchantCheck.length > 0) {
+    throw createError(409, "email_taken", "This email is registered to a merchant business. Please use a different email.");
   }
 
   // ── Check for existing phone (if provided) ────────────

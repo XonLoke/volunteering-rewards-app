@@ -496,7 +496,7 @@ async function createMerchant(data, userId) {
       const defaultPassword = "password123";
 
       // Check if user already exists
-      const { rows: existing } = await client.query("SELECT id FROM users WHERE email = $1", [data.contact_email]);
+      const { rows: existing } = await client.query("SELECT id, role_id FROM users WHERE email = $1", [data.contact_email]);
       if (existing.length === 0) {
         const roleId = (await client.query("SELECT id FROM roles WHERE role_name = 'merchant'")).rows[0].id;
         const hash = await bcrypt.hash(defaultPassword, 12);
@@ -505,6 +505,13 @@ async function createMerchant(data, userId) {
           `INSERT INTO users (email, password_hash, name, phone, role_id, points, volunteer_qr_code, status)
            VALUES ($1, $2, $3, $4, $5, 0, $6, 'active')`,
           [data.contact_email, hash, data.contact_person || data.name, data.contact_phone || null, roleId, qr]
+        );
+      } else {
+        // Existing user — update name, phone, and set role to merchant
+        const merchantRoleId = (await client.query("SELECT id FROM roles WHERE role_name = 'merchant'")).rows[0].id;
+        await client.query(
+          "UPDATE users SET name = $1, phone = $2, role_id = $3 WHERE email = $4",
+          [data.contact_person || data.name, data.contact_phone || null, merchantRoleId, data.contact_email]
         );
       }
     }
