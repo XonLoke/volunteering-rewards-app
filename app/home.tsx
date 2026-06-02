@@ -632,7 +632,7 @@ export default function Home() {
           <View style={styles.walletActions}>
             <TouchableOpacity
               style={styles.walletActionBtn}
-              onPress={() => router.push("/scan")}
+              onPress={() => router.push("/scan" as any)}
             >
               <Ionicons name="qr-code-outline" size={20} color="#fff" />
               <Text style={styles.walletActionText}>Scan</Text>

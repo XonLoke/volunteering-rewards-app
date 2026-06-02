@@ -1,139 +1,56 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import QRCode from "react-native-qrcode-svg";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
-
-const CORNER_SIZE = 28;
-const CORNER_THICKNESS = 4;
-const CORNER_COLOR = "#ffffff";
-
-function CornerFrame() {
-  return (
-    <>
-      <View style={[styles.corner, styles.cornerTL]}>
-        <View style={[styles.cornerH, { backgroundColor: CORNER_COLOR }]} />
-        <View style={[styles.cornerV, { backgroundColor: CORNER_COLOR }]} />
-      </View>
-
-      <View style={[styles.corner, styles.cornerTR]}>
-        <View
-          style={[
-            styles.cornerH,
-            { backgroundColor: CORNER_COLOR, left: "auto", right: 0 },
-          ]}
-        />
-        <View
-          style={[
-            styles.cornerV,
-            { backgroundColor: CORNER_COLOR, left: "auto", right: 0 },
-          ]}
-        />
-      </View>
-
-      <View style={[styles.corner, styles.cornerBL]}>
-        <View
-          style={[
-            styles.cornerH,
-            { backgroundColor: CORNER_COLOR, top: "auto", bottom: 0 },
-          ]}
-        />
-        <View style={[styles.cornerV, { backgroundColor: CORNER_COLOR }]} />
-      </View>
-
-      <View style={[styles.corner, styles.cornerBR]}>
-        <View
-          style={[
-            styles.cornerH,
-            {
-              backgroundColor: CORNER_COLOR,
-              top: "auto",
-              bottom: 0,
-              left: "auto",
-              right: 0,
-            },
-          ]}
-        />
-        <View
-          style={[
-            styles.cornerV,
-            { backgroundColor: CORNER_COLOR, left: "auto", right: 0 },
-          ]}
-        />
-      </View>
-    </>
-  );
+interface User {
+  id: number;
+  name?: string;
+  email?: string;
+  points?: number;
+  volunteer_qr_code?: string;
+  volunteerQrCode?: string;
+  qr_code?: string;
 }
 
 export default function Scan() {
   const router = useRouter();
   const { theme } = useTheme();
 
-  const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
-  const [scannedData, setScannedData] = useState<string | null>(null);
-  const [torch, setTorch] = useState(false);
-  const [decoding, setDecoding] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [qrValue, setQrValue] = useState("");
 
-  const extractEventId = (data: string) => {
+  useEffect(() => {
+    loadVolunteerQR();
+  }, []);
+
+  const initials = useMemo(() => {
+    const name = user?.name || "Volunteer";
+    return name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }, [user?.name]);
+
+  const loadVolunteerQR = async () => {
     try {
-      const parsed = JSON.parse(data);
+      setLoading(true);
 
-      if (parsed.eventId) return Number(parsed.eventId);
-      if (parsed.event_id) return Number(parsed.event_id);
-      if (parsed.id) return Number(parsed.id);
-    } catch {
-      // QR is not JSON, continue below
-    }
-
-    const directNumber = Number(data);
-
-    if (!Number.isNaN(directNumber)) {
-      return directNumber;
-    }
-
-    const match =
-      data.match(/eventId=(\d+)/i) || data.match(/event_id=(\d+)/i);
-
-    if (match) {
-      return Number(match[1]);
-    }
-
-    return null;
-  };
-
-  const submitScanToBackend = async (qrData: string) => {
-    if (submitting) return;
-
-    const eventId = extractEventId(qrData);
-
-    if (!eventId) {
-      Alert.alert(
-        "Invalid QR Code",
-        "This QR code does not contain a valid event ID."
-      );
-      setScanned(false);
-      setScannedData(null);
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
       const storedUser = await AsyncStorage.getItem("user");
 
       if (!storedUser) {
@@ -142,155 +59,31 @@ export default function Scan() {
         return;
       }
 
-      const user = JSON.parse(storedUser);
+      const parsedUser: User = JSON.parse(storedUser);
 
-      const response = await fetch(`${BASE_URL}/attendance/scan`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          eventId,
-          volunteerId: user.id,
-        }),
-      });
+      const volunteerQrCode =
+        parsedUser.volunteer_qr_code ||
+        parsedUser.volunteerQrCode ||
+        parsedUser.qr_code ||
+        `VOL-${parsedUser.id}`;
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        if (
-          result.message === "already_scanned" ||
-          result.error?.message === "already_scanned"
-        ) {
-          throw new Error("You have already scanned this event.");
-        }
-
-        throw new Error(
-          result.message || result.error?.message || "Failed to submit scan."
-        );
-      }
-
-      const updatedUser = {
-        ...user,
-        points: result.totalPoints ?? user.points ?? 0,
-      };
-
-      await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
-      await AsyncStorage.setItem(
-        "userPoints",
-        String(result.totalPoints ?? user.points ?? 0)
-      );
-
-      router.replace({
-        pathname: "/scan-success",
-        params: {
-          eventName: result.eventName ?? "Volunteer Event",
-          pointsEarned: String(result.pointsEarned ?? 0),
-          totalPoints: String(result.totalPoints ?? user.points ?? 0),
-        },
-      });
-    } catch (err: any) {
-      Alert.alert("Scan failed", err.message || "Something went wrong.");
-      setScanned(false);
-      setScannedData(null);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
-    setScanned(true);
-    setScannedData(data);
-    submitScanToBackend(data);
-  };
-
-  const openPhotoLibrary = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission needed",
-        "Photo library access is needed to scan QR codes from images."
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 1,
-      base64: true,
-    });
-
-    if (result.canceled || !result.assets.length) return;
-
-    const asset = result.assets[0];
-    setDecoding(true);
-
-    try {
-      const base64 = asset.base64;
-
-      if (!base64) {
-        Alert.alert("Error", "Could not read image data. Please try again.");
-        return;
-      }
-
-      const jsQR = (await import("jsqr")).default;
-      const response = await fetch(`data:image/jpeg;base64,${base64}`);
-      const blob = await response.blob();
-
-      if (typeof createImageBitmap !== "undefined") {
-        const bitmap = await createImageBitmap(blob);
-        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-        const ctx = canvas.getContext("2d")!;
-
-        ctx.drawImage(bitmap, 0, 0);
-
-        const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-        if (code) {
-          setScanned(true);
-          setScannedData(code.data);
-          submitScanToBackend(code.data);
-        } else {
-          Alert.alert(
-            "No QR found",
-            "No QR code found. Try a clearer or better-lit photo."
-          );
-        }
-      } else {
-        Alert.alert(
-          "Not supported",
-          "Your device does not support QR decoding from images. Please use the camera to scan instead."
-        );
-      }
+      setUser(parsedUser);
+      setQrValue(volunteerQrCode);
     } catch (err) {
-      console.error("QR decode error:", err);
-      Alert.alert("Error", "Failed to decode the image. Please try again.");
+      console.error("Failed to load volunteer QR:", err);
+      Alert.alert("Error", "Failed to load your QR code.");
     } finally {
-      setDecoding(false);
+      setLoading(false);
     }
   };
 
-  const resetScan = () => {
-    setScanned(false);
-    setScannedData(null);
-  };
-
-  const submitDemoScan = async () => {
-    setScanned(true);
-    setScannedData("Demo eventId: 1");
-    await submitScanToBackend("1");
-  };
-
-  const skipToSuccessUIOnly = () => {
+  const goToSuccessDemo = () => {
     router.push({
       pathname: "/scan-success",
       params: {
         eventName: "Demo Volunteer Event",
         pointsEarned: "50",
-        totalPoints: "2500",
+        totalPoints: String((user?.points ?? 0) + 50),
       },
     });
   };
@@ -303,224 +96,332 @@ export default function Scan() {
         <TouchableOpacity
           onPress={() => router.back()}
           style={[
-            styles.backButton,
-            { backgroundColor: theme.colors.surfaceSecondary },
-          ]}
-        >
-          <Text style={[styles.backText, { color: theme.colors.primaryLight }]}>
-            Back
-          </Text>
-        </TouchableOpacity>
-
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          QR Scanner
-        </Text>
-
-        <View style={styles.spacer} />
-      </View>
-
-      {!permission ? (
-        <View
-          style={[styles.messageBox, { backgroundColor: theme.colors.surface }]}
-        >
-          <Text style={[styles.messageText, { color: theme.colors.text }]}>
-            Requesting camera permission...
-          </Text>
-        </View>
-      ) : !permission.granted ? (
-        <View
-          style={[styles.messageBox, { backgroundColor: theme.colors.surface }]}
-        >
-          <Text style={[styles.messageText, { color: theme.colors.text }]}>
-            Camera access is needed to scan QR codes.
-          </Text>
-
-          <TouchableOpacity
-            onPress={requestPermission}
-            style={[
-              styles.retryButton,
-              { backgroundColor: theme.colors.primary },
-            ]}
-          >
-            <Text style={[styles.retryText, { color: "#fff" }]}>Try again</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          <Text
-            style={[styles.frameHint, { color: theme.colors.textSecondary }]}
-          >
-            Position QR code within frame
-          </Text>
-
-          <View style={styles.scannerContainer}>
-            <CameraView
-              style={StyleSheet.absoluteFillObject}
-              facing="back"
-              enableTorch={torch}
-              onBarcodeScanned={
-                scanned || submitting ? undefined : handleBarCodeScanned
-              }
-              barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-            />
-
-            <View style={styles.overlayTop} />
-            <View style={styles.overlayBottom} />
-            <View style={styles.overlayLeft} />
-            <View style={styles.overlayRight} />
-
-            <View style={styles.qrFrame}>
-              <CornerFrame />
-              <Text style={styles.qrAreaLabel}>QR Code Area</Text>
-            </View>
-
-            <View
-              style={[
-                styles.hintBox,
-                { backgroundColor: "rgba(0,0,0,0.45)" },
-              ]}
-            >
-              <Text style={[styles.hintTitle, { color: "#fff" }]}>
-                {submitting
-                  ? "Submitting scan..."
-                  : scanned
-                  ? "Scan complete"
-                  : "Align QR code in the frame"}
-              </Text>
-
-              <Text style={[styles.hintSub, { color: "#e5e7eb" }]}>
-                {submitting
-                  ? "Please wait"
-                  : scanned
-                  ? "Processing your points"
-                  : "Camera will scan automatically"}
-              </Text>
-            </View>
-
-            {submitting && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator color="#fff" size="large" />
-              </View>
-            )}
-
-            <View style={styles.cameraControls}>
-              <TouchableOpacity
-                style={[
-                  styles.controlBtn,
-                  {
-                    backgroundColor: torch
-                      ? theme.colors.primary
-                      : theme.colors.surfaceSecondary,
-                  },
-                ]}
-                onPress={() => setTorch((t) => !t)}
-                disabled={submitting}
-              >
-                <Ionicons
-                  name={torch ? "flashlight" : "flashlight-outline"}
-                  size={22}
-                  color={theme.colors.text}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.controlBtn,
-                  { backgroundColor: theme.colors.surfaceSecondary },
-                ]}
-                onPress={openPhotoLibrary}
-                disabled={decoding || submitting}
-              >
-                {decoding ? (
-                  <ActivityIndicator color={theme.colors.primary} size="small" />
-                ) : (
-                  <Ionicons
-                    name="image-outline"
-                    size={22}
-                    color={theme.colors.text}
-                  />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </>
-      )}
-
-      {scannedData ? (
-        <View
-          style={[
-            styles.resultBox,
+            styles.iconButton,
             {
               backgroundColor: theme.colors.surface,
               borderColor: theme.colors.border,
             },
           ]}
+          activeOpacity={0.85}
         >
-          <Text
-            style={[styles.resultLabel, { color: theme.colors.textSecondary }]}
+          <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+        </TouchableOpacity>
+
+        <View style={styles.headerCenter}>
+          <Text style={[styles.headerMini, { color: theme.colors.textSecondary }]}>
+            Attendance Pass
+          </Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            My QR Code
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => router.push("/scan-history" as any)}
+          style={[
+            styles.iconButton,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
+          ]}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="time-outline" size={21} color={theme.colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <View
+            style={[
+              styles.loadingIconBox,
+              { backgroundColor: theme.colors.surface },
+            ]}
           >
-            Scanned data
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </View>
+
+          <Text style={[styles.loadingTitle, { color: theme.colors.text }]}>
+            Preparing your pass
           </Text>
 
-          <Text style={[styles.resultText, { color: theme.colors.text }]}>
-            {scannedData}
+          <Text
+            style={[styles.loadingText, { color: theme.colors.textSecondary }]}
+          >
+            Getting your personal volunteer QR code ready.
           </Text>
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.page}
+        >
+          <View
+            style={[
+              styles.passCard,
+              {
+                backgroundColor: theme.colors.primary,
+              },
+            ]}
+          >
+            <View style={styles.passDecorOne} />
+            <View style={styles.passDecorTwo} />
+
+            <View style={styles.passTop}>
+              <View>
+                <Text style={styles.passLabel}>VOLUNTEER PASS</Text>
+                <Text style={styles.passName} numberOfLines={1}>
+                  {user?.name || "Volunteer"}
+                </Text>
+                <Text style={styles.passEmail} numberOfLines={1}>
+                  {user?.email || "Ready for attendance"}
+                </Text>
+              </View>
+
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </View>
+            </View>
+
+            <View style={styles.passStatsRow}>
+              <View style={styles.passStatBox}>
+                <Text style={styles.passStatValue}>{user?.points ?? 0}</Text>
+                <Text style={styles.passStatLabel}>Points</Text>
+              </View>
+
+              <View style={styles.passStatDivider} />
+
+              <View style={styles.passStatBox}>
+                <Text style={styles.passStatValue}>Active</Text>
+                <Text style={styles.passStatLabel}>Status</Text>
+              </View>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.qrCard,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <View style={styles.qrTopRow}>
+              <View
+                style={[
+                  styles.readyPill,
+                  { backgroundColor: theme.colors.primary + "18" },
+                ]}
+              >
+                <View style={styles.liveDot} />
+                <Text style={[styles.readyText, { color: theme.colors.primary }]}>
+                  Ready to scan
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={loadVolunteerQR}
+                style={[
+                  styles.smallRefreshButton,
+                  { backgroundColor: theme.colors.background },
+                ]}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="refresh"
+                  size={17}
+                  color={theme.colors.primary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.qrOuterFrame}>
+              <View style={styles.qrInnerFrame}>
+                {qrValue ? (
+                  <QRCode
+                    value={qrValue}
+                    size={230}
+                    backgroundColor="#ffffff"
+                    color="#111827"
+                  />
+                ) : (
+                  <View style={styles.noQrBox}>
+                    <Ionicons name="qr-code-outline" size={76} color="#9ca3af" />
+                    <Text style={styles.noQrText}>No QR code found</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            <Text style={[styles.qrTitle, { color: theme.colors.text }]}>
+              Volunteer Attendance QR
+            </Text>
+
+            <Text
+              style={[styles.qrSubtitle, { color: theme.colors.textSecondary }]}
+            >
+              Show this to the organiser after the event. Once scanned, your
+              attendance will be confirmed and points will be awarded.
+            </Text>
+
+            <View
+              style={[
+                styles.qrIdBox,
+                {
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View>
+                <Text
+                  style={[
+                    styles.qrIdLabel,
+                    { color: theme.colors.textSecondary },
+                  ]}
+                >
+                  QR ID
+                </Text>
+                <Text
+                  style={[styles.qrIdValue, { color: theme.colors.text }]}
+                  numberOfLines={1}
+                >
+                  {qrValue || "Not available"}
+                </Text>
+              </View>
+
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={22}
+                color={theme.colors.primary}
+              />
+            </View>
+          </View>
+
+          <View style={styles.actionGrid}>
+            <TouchableOpacity
+              onPress={loadVolunteerQR}
+              style={[
+                styles.actionCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+              activeOpacity={0.86}
+            >
+              <View
+                style={[
+                  styles.actionIconBox,
+                  { backgroundColor: theme.colors.primary + "18" },
+                ]}
+              >
+                <Ionicons
+                  name="refresh-outline"
+                  size={23}
+                  color={theme.colors.primary}
+                />
+              </View>
+              <Text style={[styles.actionTitle, { color: theme.colors.text }]}>
+                Refresh
+              </Text>
+              <Text
+                style={[
+                  styles.actionSub,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                Reload QR
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/scan-history" as any)}
+              style={[
+                styles.actionCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+              activeOpacity={0.86}
+            >
+              <View
+                style={[
+                  styles.actionIconBox,
+                  { backgroundColor: "#f59e0b22" },
+                ]}
+              >
+                <Ionicons name="time-outline" size={23} color="#f59e0b" />
+              </View>
+              <Text style={[styles.actionTitle, { color: theme.colors.text }]}>
+                History
+              </Text>
+              <Text
+                style={[
+                  styles.actionSub,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                Past scans
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={[
+              styles.infoCard,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.infoIconBox,
+                { backgroundColor: "#10b98122" },
+              ]}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={25}
+                color="#10b981"
+              />
+            </View>
+
+            <View style={styles.infoContent}>
+              <Text style={[styles.infoTitle, { color: theme.colors.text }]}>
+                Correct attendance flow
+              </Text>
+
+              <Text
+                style={[styles.infoText, { color: theme.colors.textSecondary }]}
+              >
+                Volunteer shows QR → Organiser scans QR → Backend confirms
+                attendance → Points are awarded.
+              </Text>
+            </View>
+          </View>
 
           <TouchableOpacity
-            onPress={resetScan}
+            onPress={goToSuccessDemo}
             style={[
-              styles.actionButton,
+              styles.mainButton,
               { backgroundColor: theme.colors.primary },
             ]}
-            disabled={submitting}
+            activeOpacity={0.86}
           >
-            <Text style={[styles.actionButtonText, { color: "#fff" }]}>
-              Scan again
-            </Text>
+            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+            <Text style={styles.mainButtonText}>Demo Scan Success</Text>
           </TouchableOpacity>
-        </View>
-      ) : null}
-
-      {/* DEV ONLY - real backend demo scan */}
-      <TouchableOpacity
-        style={[
-          styles.devButton,
-          { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-        ]}
-        onPress={submitDemoScan}
-        disabled={submitting}
-      >
-        {submitting ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={[styles.devButtonText, { color: "#fff" }]}>
-            Demo Scan Event 1 Backend
-          </Text>
-        )}
-      </TouchableOpacity>
-
-      {/* DEV ONLY - UI only skip */}
-      <TouchableOpacity
-        style={[
-          styles.devButton,
-          {
-            backgroundColor: theme.colors.surfaceSecondary,
-            borderColor: theme.colors.border,
-          },
-        ]}
-        onPress={skipToSuccessUIOnly}
-        disabled={submitting}
-      >
-        <Text style={[styles.devButtonText, { color: theme.colors.text }]}>
-          Skip to Success UI Only
-        </Text>
-      </TouchableOpacity>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
-
-const OVERLAY_COLOR = "rgba(7,9,19,0.62)";
-const QR_BOX = 220;
 
 const styles = StyleSheet.create({
   container: {
@@ -531,210 +432,331 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingTop: 18,
+    paddingBottom: 12,
   },
-  backButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+  iconButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
   },
-  backText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  spacer: {
-    width: 56,
-  },
-  frameHint: {
-    fontSize: 15,
-    textAlign: "center",
-    marginBottom: 12,
-    fontWeight: "500",
-  },
-  scannerContainer: {
+  headerCenter: {
     flex: 1,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 28,
-    overflow: "hidden",
-    backgroundColor: "#000",
-    alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 14,
   },
-  overlayTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "25%",
-    backgroundColor: OVERLAY_COLOR,
-  },
-  overlayBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "28%",
-    backgroundColor: OVERLAY_COLOR,
-  },
-  overlayLeft: {
-    position: "absolute",
-    top: "25%",
-    bottom: "28%",
-    left: 0,
-    width: "10%",
-    backgroundColor: OVERLAY_COLOR,
-  },
-  overlayRight: {
-    position: "absolute",
-    top: "25%",
-    bottom: "28%",
-    right: 0,
-    width: "10%",
-    backgroundColor: OVERLAY_COLOR,
-  },
-  qrFrame: {
-    width: QR_BOX,
-    height: QR_BOX,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  qrAreaLabel: {
-    fontSize: 13,
-    color: "#ffffff",
-  },
-  corner: {
-    position: "absolute",
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-  },
-  cornerTL: {
-    top: 0,
-    left: 0,
-  },
-  cornerTR: {
-    top: 0,
-    right: 0,
-  },
-  cornerBL: {
-    bottom: 0,
-    left: 0,
-  },
-  cornerBR: {
-    bottom: 0,
-    right: 0,
-  },
-  cornerH: {
-    position: "absolute",
-    height: CORNER_THICKNESS,
-    left: 0,
-    right: 0,
-    top: 0,
-    borderRadius: 2,
-  },
-  cornerV: {
-    position: "absolute",
-    width: CORNER_THICKNESS,
-    top: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: 2,
-  },
-  hintBox: {
-    position: "absolute",
-    bottom: 80,
-    left: 20,
-    right: 20,
-    padding: 14,
-    borderRadius: 18,
-    alignItems: "center",
-  },
-  hintTitle: {
-    fontSize: 14,
-    fontWeight: "700",
+  headerMini: {
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.9,
     marginBottom: 2,
   },
-  hintSub: {
-    fontSize: 12,
+  headerTitle: {
+    fontSize: 23,
+    fontWeight: "900",
+    letterSpacing: -0.6,
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    alignItems: "center",
-    justifyContent: "center",
+  page: {
+    paddingHorizontal: 20,
+    paddingBottom: 34,
   },
-  cameraControls: {
+  passCard: {
+    borderRadius: 34,
+    padding: 23,
+    marginTop: 8,
+    marginBottom: 18,
+    overflow: "hidden",
+    position: "relative",
+  },
+  passDecorOne: {
     position: "absolute",
-    bottom: 20,
-    flexDirection: "row",
-    gap: 16,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: "rgba(255,255,255,0.09)",
+    top: -80,
+    right: -60,
   },
-  controlBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  passDecorTwo: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    bottom: -45,
+    left: 20,
+  },
+  passTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    zIndex: 1,
+  },
+  passLabel: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1.3,
+    marginBottom: 8,
+  },
+  passName: {
+    color: "#fff",
+    fontSize: 27,
+    fontWeight: "900",
+    letterSpacing: -0.7,
+    maxWidth: 220,
+  },
+  passEmail: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 5,
+    maxWidth: 230,
+  },
+  avatarCircle: {
+    width: 62,
+    height: 62,
+    borderRadius: 23,
+    backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
   },
-  messageBox: {
+  avatarText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  passStatsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 24,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderRadius: 22,
+    paddingVertical: 15,
+    zIndex: 1,
+  },
+  passStatBox: {
+    flex: 1,
+    alignItems: "center",
+  },
+  passStatValue: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  passStatLabel: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 11,
+    fontWeight: "800",
+    marginTop: 3,
+  },
+  passStatDivider: {
+    width: 1,
+    height: 34,
+    backgroundColor: "rgba(255,255,255,0.22)",
+  },
+  qrCard: {
+    borderRadius: 34,
+    borderWidth: 1,
+    padding: 20,
+    alignItems: "center",
+    marginBottom: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.09,
+    shadowRadius: 18,
+    elevation: 4,
+  },
+  qrTopRow: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+  readyPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#10b981",
+    marginRight: 8,
+  },
+  readyText: {
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  smallRefreshButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  qrOuterFrame: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 34,
+    padding: 12,
+    marginBottom: 18,
+  },
+  qrInnerFrame: {
+    backgroundColor: "#ffffff",
+    borderRadius: 26,
+    padding: 18,
+    minWidth: 270,
+    minHeight: 270,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noQrBox: {
+    width: 230,
+    height: 230,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noQrText: {
+    color: "#6b7280",
+    fontSize: 14,
+    fontWeight: "800",
+    marginTop: 10,
+  },
+  qrTitle: {
+    fontSize: 21,
+    fontWeight: "900",
+    marginBottom: 7,
+    textAlign: "center",
+    letterSpacing: -0.3,
+  },
+  qrSubtitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 20,
+    textAlign: "center",
+    paddingHorizontal: 5,
+  },
+  qrIdBox: {
+    width: "100%",
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 14,
+    marginTop: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  qrIdLabel: {
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+    marginBottom: 4,
+  },
+  qrIdValue: {
+    fontSize: 13,
+    fontWeight: "800",
+    maxWidth: 230,
+  },
+  actionGrid: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 14,
+  },
+  actionCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 16,
+  },
+  actionIconBox: {
+    width: 47,
+    height: 47,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  actionTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    marginBottom: 3,
+  },
+  actionSub: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  infoCard: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 14,
+  },
+  infoIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 13,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    marginBottom: 4,
+  },
+  infoText: {
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  mainButton: {
+    height: 56,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+  mainButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "900",
+    marginLeft: 8,
+  },
+  loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 34,
   },
-  messageText: {
-    fontSize: 16,
-    textAlign: "center",
+  loadingIconBox: {
+    width: 88,
+    height: 88,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 18,
   },
-  retryButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 18,
+  loadingTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    marginBottom: 6,
   },
-  retryText: {
-    fontWeight: "700",
-  },
-  resultBox: {
-    padding: 20,
-    marginHorizontal: 20,
-    marginBottom: 12,
-    borderRadius: 24,
-    borderWidth: 1,
-  },
-  resultLabel: {
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  resultText: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  actionButton: {
-    borderRadius: 18,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  actionButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  devButton: {
-    marginHorizontal: 20,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  devButtonText: {
-    fontSize: 13,
-    fontWeight: "700",
+  loadingText: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
