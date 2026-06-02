@@ -539,6 +539,19 @@ async function createMerchantProduct(merchantId, data) {
 
 // ─── Update createCoupon to generate PINs in batch ─────────
 
+// ─── Update Merchant ────────────────────────────────────
+async function updateMerchant(merchantId, data) {
+  const { rows } = await pool.query(
+    `UPDATE merchants SET name = COALESCE($1, name), contact_person = COALESCE($2, contact_person),
+            contact_email = COALESCE($3, contact_email), contact_phone = COALESCE($4, contact_phone),
+            address = COALESCE($5, address), updated_at = NOW()
+     WHERE id = $6 RETURNING *`,
+    [data.name, data.contact_person, data.contact_email, data.contact_phone, data.address, merchantId]
+  );
+  if (rows.length === 0) throw createError(404, "not_found", "Merchant not found.");
+  return { merchant: rows[0] };
+}
+
 // ─── Get PINs for Coupon ─────────────────────────────────
 async function getCouponPins(couponId) {
   const { rows } = await pool.query(
@@ -650,6 +663,7 @@ module.exports = {
   createMerchantProduct,
   getCouponPins,
   updateUserRole,
+  updateMerchant,
   listProspects,
   createProspect,
   updateProspectStatus,

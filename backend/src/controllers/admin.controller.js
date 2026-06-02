@@ -165,6 +165,9 @@ async function resetPassword(req, res, next) {
 
 
 // ─── GET /api/admin/merchants ───────────────────────────────
+async function updateMerchant(req, res, next) {
+  try { res.json(await adminService.updateMerchant(req.params.id, req.body)); } catch (err) { next(err); }
+}
 async function listMerchants(req, res, next) {
   try {
     const result = await adminService.listMerchants(req.query);

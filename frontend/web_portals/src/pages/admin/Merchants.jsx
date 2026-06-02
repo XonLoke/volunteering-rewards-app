@@ -3,7 +3,7 @@ import Topbar from '../../components/Topbar';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { apiGet, apiPost } from '../../services/api';
+import { apiGet, apiPost, apiPut } from '../../services/api';
 
 const INITIAL_FORM = {
   name: '',
@@ -203,6 +203,9 @@ export default function Merchants() {
   const [prospectForm, setProspectForm] = useState({ name: '', contact_person: '', contact_email: '', contact_phone: '', notes: '' });
   const [accountFormOpen, setAccountFormOpen] = useState(false);
   const [accountForm, setAccountForm] = useState({ name: '', email: '', password: 'password123', phone: '', merchant_id: '' });
+  const [editMerchant, setEditMerchant] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editFormOpen, setEditFormOpen] = useState(false);
 
   const fetchProspects = useCallback(async () => {
     try { const r = await apiGet('/admin/merchants/prospects'); setProspects(r.data || []); } catch {}
@@ -220,6 +223,17 @@ export default function Merchants() {
       setProspectForm({ name: '', contact_person: '', contact_email: '', contact_phone: '', notes: '' });
       fetchProspects();
     } catch (err) { toast(err.message || 'Failed', 'error'); }
+  };
+
+  useEffect(() => {
+    if (editMerchant && editFormOpen) {
+      setEditForm({ name: editMerchant.name || '', contact_person: editMerchant.contact_person || '', contact_email: editMerchant.contact_email || '', contact_phone: editMerchant.contact_phone || '', address: editMerchant.address || '' });
+    }
+  }, [editMerchant, editFormOpen]);
+
+  const handleEditMerchant = async () => {
+    try { await apiPut(`/admin/merchants/${editMerchant.id}`, editForm); toast('Merchant updated', 'success'); setEditFormOpen(false); fetchMerchants(); }
+    catch (err) { toast(err.message || 'Failed', 'error'); }
   };
 
   const handleCreateAccount = async () => {
@@ -258,6 +272,9 @@ export default function Merchants() {
           </button>
           <button className="btn btn-outline btn-sm" onClick={() => handleViewProducts(row)}>
             View Products
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={() => { setEditMerchant(row); setEditFormOpen(true); }}>
+            Edit
           </button>
         </div>
       ),
