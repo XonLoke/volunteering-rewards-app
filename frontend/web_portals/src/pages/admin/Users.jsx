@@ -168,13 +168,29 @@ function UserDetailModal({ userId, isOpen, onClose, onUpdate }) {
                 <StatusBadge status={user.status} />
               </div>
             </div>
-            <div>
-              <div className="form-label">Points Balance</div>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>
-                {user.points_balance ?? 0}
+          </div>
+
+          {user.merchant_business && (
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8, marginBottom: 16 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Linked Merchant Business</h4>
+              <div className="form-row" style={{ marginBottom: 12 }}>
+                <div>
+                  <div className="form-label">Merchant Name</div>
+                  <div style={{ fontSize: 14 }}>{user.merchant_business.name}</div>
+                </div>
+                <div>
+                  <div className="form-label">Contact</div>
+                  <div style={{ fontSize: 14 }}>{user.merchant_business.contact_person || '—'}</div>
+                </div>
+              </div>
+              <div className="form-row">
+                <div>
+                  <div className="form-label">Address</div>
+                  <div style={{ fontSize: 14 }}>{user.merchant_business.address || '—'}</div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
             <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Activity Summary</h4>
@@ -534,32 +550,9 @@ export default function Users() {
                 </button>
               </div>
             )}
-          </>
+          </          </>
         )}
       </div>
-
-      <UserDetailModal
-        userId={selectedUserId}
-        isOpen={detailOpen}
-        onClose={() => {
-          setDetailOpen(false);
-          setSelectedUserId(null);
-        }}
-      />
-
-      <SuspendModal
-        isOpen={!!suspendUser}
-        onClose={() => setSuspendUser(null)}
-        user={suspendUser}
-        onConfirm={confirmSuspend}
-      />
-
-      <ResetPasswordModal
-        isOpen={!!resetPwUser}
-        onClose={() => setResetPwUser(null)}
-        user={resetPwUser}
-        onReset={handleResetPassword}
-      />
     </div>
   );
 }
