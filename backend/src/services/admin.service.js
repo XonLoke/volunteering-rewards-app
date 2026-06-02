@@ -120,7 +120,7 @@ async function listUsers({ page = 1, limit = 15, search, role, status } = {}) {
   };
 }
 
-// ─── Get User Detail ──────────────────────────────────────
+// ─── Get User Detail (includes linked merchant info) ──
 async function getUserDetail(userId) {
   const { rows } = await pool.query(
     `SELECT u.id, u.name, u.email, u.phone, r.role_name AS role, u.points AS points_balance,
@@ -135,7 +135,21 @@ async function getUserDetail(userId) {
   );
 
   if (rows.length === 0) throw createError(404, "not_found", "User not found.");
-  return rows[0];
+  const user = rows[0];
+
+  // If merchant role, also fetch linked merchant business info
+  if (user.role === 'merchant' && user.email) {
+    const { rows: merchantRows } = await pool.query(
+      `SELECT id, name, contact_person, contact_email, contact_phone, address
+       FROM merchants WHERE contact_email = $1 LIMIT 1`,
+      [user.email]
+    );
+    if (merchantRows.length > 0) {
+      user.merchant_business = merchantRows[0];
+    }
+  }
+
+  return user;
 }
 
 // ─── Update User Status ──────────────────────────────────
