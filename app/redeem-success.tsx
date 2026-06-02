@@ -1,61 +1,97 @@
 import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
-import { Svg, Path } from "react-native-svg";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/contexts/ThemeContext";
-
-function TickIcon() {
-  return (
-    <Svg width={60} height={60} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M5 13l4 4L19 7"
-        stroke="#fff"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
 
 export default function RedeemSuccess() {
   const router = useRouter();
   const { theme } = useTheme();
+  const params = useLocalSearchParams();
+
+  const title = typeof params.title === "string" ? params.title : "Coupon";
+  const remainingPoints =
+    typeof params.remainingPoints === "string" ? params.remainingPoints : "0";
+  const pointsCost =
+    typeof params.pointsCost === "string" ? params.pointsCost : "0";
+  const pin = typeof params.pin === "string" ? params.pin : "";
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      {/* Decorative blobs */}
       <View style={styles.decor1} />
       <View style={styles.decor2} />
 
-      {/* Tick */}
       <View style={styles.tickOuter}>
         <View style={styles.tickInner}>
-          <TickIcon />
+          <Ionicons name="checkmark" size={60} color="#fff" />
         </View>
       </View>
 
-      {/* Text */}
-      <Text style={[styles.title, { color: theme.colors.text }]}>All Done!</Text>
-      <Text style={[styles.sub, { color: theme.colors.textSecondary }]}>
-        Your coupon has been{"\n"}redeemed successfully.
+      <Text style={[styles.title, { color: theme.colors.text }]}>
+        Redeemed!
       </Text>
 
-      {/* Coupon card */}
-      <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-        <Text style={styles.cardEmoji}>☕</Text>
-        <View style={styles.cardText}>
-          <Text style={[styles.cardTitle, { color: theme.colors.text }]}>Coffee Shop $5 Voucher</Text>
-          <Text style={[styles.cardSub, { color: theme.colors.textSecondary }]}>Show this at checkout</Text>
+      <Text style={[styles.sub, { color: theme.colors.textSecondary }]}>
+        Your coupon has been redeemed successfully.
+      </Text>
+
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+        ]}
+      >
+        <View style={styles.cardIconBox}>
+          <Ionicons name="ticket-outline" size={32} color="#10b981" />
         </View>
+
+        <View style={styles.cardText}>
+          <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+            {title}
+          </Text>
+          <Text style={[styles.cardSub, { color: theme.colors.textSecondary }]}>
+            Added to My Coupons
+          </Text>
+        </View>
+
         <View style={styles.cardBadge}>
           <Text style={styles.cardBadgeText}>Active</Text>
         </View>
       </View>
 
-      {/* Buttons */}
+      <View
+        style={[
+          styles.balanceCard,
+          { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+        ]}
+      >
+        <View style={styles.balanceRow}>
+          <Text style={[styles.balanceLabel, { color: theme.colors.textSecondary }]}>
+            Points deducted
+          </Text>
+          <Text style={[styles.balanceValue, { color: "#ef4444" }]}>
+            -{Number(pointsCost).toLocaleString()}
+          </Text>
+        </View>
+
+        <View style={styles.balanceRow}>
+          <Text style={[styles.balanceLabel, { color: theme.colors.textSecondary }]}>
+            Remaining balance
+          </Text>
+          <Text style={[styles.balanceValue, { color: theme.colors.text }]}>
+            {Number(remainingPoints).toLocaleString()} pts
+          </Text>
+        </View>
+
+        {pin ? (
+          <Text style={[styles.pinNote, { color: theme.colors.textSecondary }]}>
+            PIN generated. Tap View My Coupons to use it.
+          </Text>
+        ) : null}
+      </View>
+
       <TouchableOpacity
         style={styles.primaryBtn}
-        onPress={() => router.push("/home")}
+        onPress={() => router.replace("/home")}
         activeOpacity={0.85}
       >
         <Text style={styles.primaryBtnText}>Back to Home</Text>
@@ -63,7 +99,7 @@ export default function RedeemSuccess() {
 
       <TouchableOpacity
         style={[styles.secondaryBtn, { borderColor: theme.colors.border }]}
-        onPress={() => router.push("/my-coupons" as any)}
+        onPress={() => router.replace("/my-coupons" as any)}
         activeOpacity={0.85}
       >
         <Text style={[styles.secondaryBtnText, { color: theme.colors.textSecondary }]}>
@@ -127,7 +163,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: "center",
     lineHeight: 22,
-    marginBottom: 32,
+    marginBottom: 28,
   },
   card: {
     width: "100%",
@@ -137,9 +173,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    marginBottom: 32,
+    marginBottom: 14,
   },
-  cardEmoji: { fontSize: 32 },
+  cardIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: "rgba(16,185,129,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cardText: { flex: 1 },
   cardTitle: { fontSize: 15, fontWeight: "700", marginBottom: 4 },
   cardSub: { fontSize: 13 },
@@ -150,6 +193,31 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   cardBadgeText: { color: "#10b981", fontSize: 12, fontWeight: "700" },
+  balanceCard: {
+    width: "100%",
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 28,
+  },
+  balanceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  balanceLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  balanceValue: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  pinNote: {
+    fontSize: 12,
+    marginTop: 8,
+    lineHeight: 18,
+  },
   primaryBtn: {
     width: "100%",
     paddingVertical: 18,

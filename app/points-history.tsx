@@ -1,20 +1,54 @@
-import { Text, View, TouchableOpacity, SafeAreaView, StyleSheet, ScrollView } from "react-native";
+import { Text, View, TouchableOpacity, SafeAreaView, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
+import { useState, useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const history = [
-  { id: "1", label: "Beach Cleanup", date: "May 12, 2026", points: +50, type: "earn" },
-  { id: "2", label: "Coffee Voucher Redeemed", date: "May 10, 2026", points: -200, type: "spend" },
-  { id: "3", label: "Food Bank Volunteer", date: "May 8, 2026", points: +40, type: "earn" },
-  { id: "4", label: "Park Restoration", date: "May 3, 2026", points: +60, type: "earn" },
-  { id: "5", label: "Movie Ticket Redeemed", date: "Apr 28, 2026", points: -150, type: "spend" },
-  { id: "6", label: "Youth Tutoring", date: "Apr 20, 2026", points: +30, type: "earn" },
-];
+const BASE_URL = "http://192.168.72.201:3000/api";
+
+interface HistoryItem {
+  id: number;
+  event_title: string;
+  points_awarded: number;
+  scanned_at: string;
+  type: "earn";
+}
 
 export default function PointsHistory() {
   const router = useRouter();
   const { theme } = useTheme();
   const accent = "#22d3a5";
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("user");
+        if (!stored) return;
+        const user = JSON.parse(stored);
+        setTotalPoints(user.points || 0);
+
+        const res = await fetch(`${BASE_URL}/scans?user_id=${user.id}`);
+        const data = await res.json();
+        const scans = (data.scans || []).map((s: any) => ({
+          id: s.id,
+          event_title: s.event_title,
+          points_awarded: s.points_awarded,
+          scanned_at: s.scanned_at,
+          type: "earn",
+        }));
+        setHistory(scans);
+      } catch (err) {
+        console.error("Failed to load points history:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
@@ -26,7 +60,7 @@ export default function PointsHistory() {
             style={[styles.backBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={() => router.back()}
           >
-            <Text style={[styles.backText, { color: theme.colors.text }]}>←</Text>
+            <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
           </TouchableOpacity>
           <Text style={[styles.pageTitle, { color: theme.colors.text }]}>Points History</Text>
           <View style={styles.spacer} />
@@ -35,35 +69,51 @@ export default function PointsHistory() {
         {/* Total */}
         <View style={[styles.totalCard, { backgroundColor: accent }]}>
           <Text style={styles.totalLabel}>TOTAL POINTS</Text>
-          <Text style={styles.totalNum}>2,450</Text>
+          <Text style={styles.totalNum}>{totalPoints.toLocaleString()}</Text>
           <View style={styles.totalDecor} />
         </View>
 
         {/* List */}
         <View style={styles.listSection}>
           <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>Recent Activity</Text>
-          <View style={[styles.listCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            {history.map((item, index) => (
-              <View
-                key={item.id}
-                style={[
-                  styles.historyRow,
-                  index < history.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-                ]}
-              >
-                <View style={[styles.historyIcon, { backgroundColor: item.type === "earn" ? accent + "20" : "#ef444420" }]}>
-                  <Text style={styles.historyEmoji}>{item.type === "earn" ? "⬆️" : "⬇️"}</Text>
-                </View>
-                <View style={styles.historyText}>
-                  <Text style={[styles.historyLabel, { color: theme.colors.text }]}>{item.label}</Text>
-                  <Text style={[styles.historyDate, { color: theme.colors.textSecondary }]}>{item.date}</Text>
-                </View>
-                <Text style={[styles.historyPoints, { color: item.type === "earn" ? accent : "#ef4444" }]}>
-                  {item.points > 0 ? `+${item.points}` : item.points} pts
-                </Text>
-              </View>
-            ))}
-          </View>
+
+          {loading ? (
+            <ActivityIndicator size="large" color={accent} style={{ marginTop: 40 }} />
+          ) : history.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="stats-chart-outline" size={64} color={theme.colors.textSecondary} />
+              <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No activity yet</Text>
+              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>Start scanning events to earn points!</Text>
+            </View>
+          ) : (
+            <View style={[styles.listCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              {history.map((item, index) => {
+                const date = new Date(item.scanned_at);
+                return (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.historyRow,
+                      index < history.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+                    ]}
+                  >
+                    <View style={[styles.historyIcon, { backgroundColor: accent + "20" }]}>
+                      <Ionicons name="arrow-up-outline" size={18} color={accent} />
+                    </View>
+                    <View style={styles.historyText}>
+                      <Text style={[styles.historyLabel, { color: theme.colors.text }]}>{item.event_title}</Text>
+                      <Text style={[styles.historyDate, { color: theme.colors.textSecondary }]}>
+                        {date.toLocaleDateString()} · {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </Text>
+                    </View>
+                    <Text style={[styles.historyPoints, { color: accent }]}>
+                      +{item.points_awarded} pts
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </View>
 
       </ScrollView>
@@ -82,7 +132,6 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 14,
     alignItems: "center", justifyContent: "center", borderWidth: 1,
   },
-  backText: { fontSize: 18, fontWeight: "700" },
   pageTitle: { fontSize: 18, fontWeight: "900", letterSpacing: 0.5 },
   spacer: { width: 40, height: 40 },
   totalCard: {
@@ -103,9 +152,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14, gap: 12,
   },
   historyIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  historyEmoji: { fontSize: 16 },
   historyText: { flex: 1 },
   historyLabel: { fontSize: 14, fontWeight: "700", marginBottom: 2 },
   historyDate: { fontSize: 11, fontWeight: "500" },
   historyPoints: { fontSize: 14, fontWeight: "800" },
+  empty: { alignItems: "center", marginTop: 40, paddingHorizontal: 40 },
+  emptyTitle: { fontSize: 18, fontWeight: "800", marginTop: 16, marginBottom: 6 },
+  emptyText: { fontSize: 14, textAlign: "center" },
 });
