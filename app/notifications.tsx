@@ -1,18 +1,18 @@
 import {
+  ActivityIndicator,
+  Alert,
   FlatList,
+  RefreshControl,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
@@ -26,6 +26,18 @@ interface Notification {
   is_read: boolean;
   created_at: string;
 }
+
+type NotificationListItem =
+  | {
+      type: "section";
+      id: string;
+      title: string;
+    }
+  | {
+      type: "notification";
+      id: string;
+      notification: Notification;
+    };
 
 export default function Notifications() {
   const router = useRouter();
@@ -64,9 +76,7 @@ export default function Notifications() {
         );
       }
 
-      const latestNotifications = data.notifications || [];
-
-      setNotifications(latestNotifications);
+      setNotifications(data.notifications || []);
     } catch (err: any) {
       console.error("Failed to fetch notifications:", err);
     } finally {
@@ -79,7 +89,6 @@ export default function Notifications() {
     useCallback(() => {
       fetchNotifications(true);
 
-      // Poll every 10 seconds while this screen is open
       pollingRef.current = setInterval(() => {
         fetchNotifications(false);
       }, 10000);
@@ -137,7 +146,6 @@ export default function Notifications() {
       return;
     }
 
-    // Optimistic update: update UI immediately
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     );
@@ -155,7 +163,6 @@ export default function Notifications() {
     } catch (err) {
       console.error("Failed to mark read:", err);
 
-      // Revert if backend failed
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: false } : n))
       );
@@ -191,36 +198,113 @@ export default function Notifications() {
     return "Just now";
   };
 
-  const renderNotification = ({ item }: { item: Notification }) => {
+  const getDateGroup = (dateStr: string) => {
+    const date = new Date(dateStr);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Recent";
+    }
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isSameDay = (a: Date, b: Date) =>
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+
+    if (isSameDay(date, today)) return "Today";
+    if (isSameDay(date, yesterday)) return "Yesterday";
+
+    return "Earlier";
+  };
+
+  const listData: NotificationListItem[] = useMemo(() => {
+    const grouped: Record<string, Notification[]> = {
+      Today: [],
+      Yesterday: [],
+      Earlier: [],
+      Recent: [],
+    };
+
+    notifications.forEach((notification) => {
+      const group = getDateGroup(notification.created_at);
+
+      if (!grouped[group]) {
+        grouped[group] = [];
+      }
+
+      grouped[group].push(notification);
+    });
+
+    const finalList: NotificationListItem[] = [];
+    const order = ["Today", "Yesterday", "Earlier", "Recent"];
+
+    order.forEach((group) => {
+      if (grouped[group] && grouped[group].length > 0) {
+        finalList.push({
+          type: "section",
+          id: `section-${group}`,
+          title: group,
+        });
+
+        grouped[group].forEach((notification) => {
+          finalList.push({
+            type: "notification",
+            id: `notification-${notification.id}`,
+            notification,
+          });
+        });
+      }
+    });
+
+    return finalList;
+  }, [notifications]);
+
+  const renderNotificationCard = (item: Notification) => {
     const iconColor = getSafeColor(item.color);
+    const unread = !item.is_read;
 
     return (
       <TouchableOpacity
         onPress={() => markOneRead(item.id)}
-        activeOpacity={0.85}
+        activeOpacity={0.86}
+        style={styles.cardWrapper}
       >
         <View
           style={[
             styles.card,
             {
-              backgroundColor: theme.colors.surface,
-              borderColor: item.is_read
-                ? theme.colors.border
-                : theme.colors.primary,
+              backgroundColor: unread
+                ? theme.colors.primary + "10"
+                : theme.colors.surface,
+              borderColor: unread
+                ? theme.colors.primary + "55"
+                : theme.colors.border,
             },
           ]}
         >
+          {unread && (
+            <View
+              style={[
+                styles.leftAccent,
+                { backgroundColor: theme.colors.primary },
+              ]}
+            />
+          )}
+
           <View
             style={[
               styles.iconBox,
               {
-                backgroundColor: iconColor + "20",
+                backgroundColor: iconColor + "18",
               },
             ]}
           >
             <Ionicons
               name={getSafeIcon(item.icon) as any}
-              size={22}
+              size={23}
               color={iconColor}
             />
           </View>
@@ -228,20 +312,28 @@ export default function Notifications() {
           <View style={styles.cardContent}>
             <View style={styles.cardHeader}>
               <Text
-                style={[styles.cardTitle, { color: theme.colors.text }]}
+                style={[
+                  styles.cardTitle,
+                  {
+                    color: theme.colors.text,
+                    fontWeight: unread ? "900" : "700",
+                  },
+                ]}
                 numberOfLines={1}
               >
                 {item.title}
               </Text>
 
-              <Text
-                style={[
-                  styles.cardTime,
-                  { color: theme.colors.textSecondary },
-                ]}
-              >
-                {getTimeAgo(item.created_at)}
-              </Text>
+              {unread && (
+                <View
+                  style={[
+                    styles.newBadge,
+                    { backgroundColor: theme.colors.primary },
+                  ]}
+                >
+                  <Text style={styles.newBadgeText}>NEW</Text>
+                </View>
+              )}
             </View>
 
             <Text
@@ -250,19 +342,57 @@ export default function Notifications() {
             >
               {item.description}
             </Text>
-          </View>
 
-          {!item.is_read && (
-            <View
-              style={[
-                styles.unreadDot,
-                { backgroundColor: theme.colors.primary },
-              ]}
-            />
-          )}
+            <View style={styles.cardFooter}>
+              <Ionicons
+                name="time-outline"
+                size={13}
+                color={theme.colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.cardTime,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                {getTimeAgo(item.created_at)}
+              </Text>
+
+              {unread && (
+                <>
+                  <View
+                    style={[
+                      styles.footerDot,
+                      { backgroundColor: theme.colors.textSecondary },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.tapHint,
+                      { color: theme.colors.textSecondary },
+                    ]}
+                  >
+                    Tap to mark read
+                  </Text>
+                </>
+              )}
+            </View>
+          </View>
         </View>
       </TouchableOpacity>
     );
+  };
+
+  const renderItem = ({ item }: { item: NotificationListItem }) => {
+    if (item.type === "section") {
+      return (
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+          {item.title}
+        </Text>
+      );
+    }
+
+    return renderNotificationCard(item.notification);
   };
 
   return (
@@ -279,22 +409,37 @@ export default function Notifications() {
               borderColor: theme.colors.border,
             },
           ]}
+          activeOpacity={0.8}
         >
-          <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+          <Ionicons name="chevron-back" size={23} color={theme.colors.text} />
         </TouchableOpacity>
 
-        <View style={styles.headerCenter}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            Notifications
-          </Text>
-
-          <Text
-            style={[styles.unreadLabel, { color: theme.colors.textSecondary }]}
+        <View style={styles.headerIconWrap}>
+          <View
+            style={[
+              styles.headerIconBox,
+              { backgroundColor: theme.colors.primary + "18" },
+            ]}
           >
-            {unreadCount > 0
-              ? `${unreadCount} unread`
-              : "You're all caught up"}
-          </Text>
+            <Ionicons
+              name="notifications"
+              size={23}
+              color={theme.colors.primary}
+            />
+
+            {unreadCount > 0 && (
+              <View
+                style={[
+                  styles.headerBadge,
+                  { backgroundColor: theme.colors.primary },
+                ]}
+              >
+                <Text style={styles.headerBadgeText}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
 
         <TouchableOpacity
@@ -306,51 +451,75 @@ export default function Notifications() {
               backgroundColor:
                 unreadCount === 0
                   ? theme.colors.surfaceSecondary
-                  : theme.colors.primary + "22",
+                  : theme.colors.primary,
+              opacity: unreadCount === 0 ? 0.65 : 1,
             },
           ]}
+          activeOpacity={0.82}
         >
           {markingAll ? (
-            <ActivityIndicator size="small" color={theme.colors.primary} />
+            <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text
-              style={[
-                styles.markAll,
-                {
-                  color:
-                    unreadCount === 0
-                      ? theme.colors.textTertiary
-                      : theme.colors.primary,
-                },
-              ]}
-            >
-              Read
-            </Text>
+            <Ionicons
+              name="checkmark-done"
+              size={19}
+              color={unreadCount === 0 ? theme.colors.textTertiary : "#fff"}
+            />
           )}
         </TouchableOpacity>
       </View>
 
+      <View style={styles.titleArea}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          Notifications
+        </Text>
+
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+          {unreadCount > 0
+            ? `You have ${unreadCount} unread update${
+                unreadCount > 1 ? "s" : ""
+              }`
+            : "You're all caught up"}
+        </Text>
+      </View>
+
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <View
+            style={[
+              styles.loadingIconBox,
+              { backgroundColor: theme.colors.surface },
+            ]}
+          >
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </View>
+
+          <Text style={[styles.loadingTitle, { color: theme.colors.text }]}>
+            Loading updates
+          </Text>
+
           <Text
             style={[styles.loadingText, { color: theme.colors.textSecondary }]}
           >
-            Loading notifications...
+            Getting your latest activity notifications...
           </Text>
         </View>
       ) : (
         <FlatList
-          data={notifications}
-          keyExtractor={(item) => item.id.toString()}
+          data={listData}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={[
             styles.list,
             notifications.length === 0 && styles.emptyList,
           ]}
-          renderItem={renderNotification}
+          renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+            />
           }
           ListHeaderComponent={
             notifications.length > 0 ? (
@@ -364,22 +533,48 @@ export default function Notifications() {
                 ]}
               >
                 <View style={styles.liveLeft}>
-                  <View style={styles.liveDot} />
-                  <Text
-                    style={[styles.liveText, { color: theme.colors.text }]}
-                  >
-                    Live updates enabled
-                  </Text>
+                  <View style={styles.liveDotOuter}>
+                    <View style={styles.liveDotInner} />
+                  </View>
+
+                  <View>
+                    <Text
+                      style={[styles.liveText, { color: theme.colors.text }]}
+                    >
+                      Live Sync
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.liveSubText,
+                        { color: theme.colors.textSecondary },
+                      ]}
+                    >
+                      Auto-refreshing every 10 seconds
+                    </Text>
+                  </View>
                 </View>
 
-                <Text
+                <View
                   style={[
-                    styles.liveSubText,
-                    { color: theme.colors.textSecondary },
+                    styles.syncPill,
+                    { backgroundColor: theme.colors.primary + "14" },
                   ]}
                 >
-                  Refreshes every 10s
-                </Text>
+                  <Ionicons
+                    name="flash-outline"
+                    size={13}
+                    color={theme.colors.primary}
+                  />
+                  <Text
+                    style={[
+                      styles.syncPillText,
+                      { color: theme.colors.primary },
+                    ]}
+                  >
+                    ON
+                  </Text>
+                </View>
               </View>
             ) : null
           }
@@ -387,15 +582,22 @@ export default function Notifications() {
             <View style={styles.emptyState}>
               <View
                 style={[
-                  styles.emptyIconBox,
-                  { backgroundColor: theme.colors.surface },
+                  styles.emptyIconOuter,
+                  { backgroundColor: theme.colors.primary + "10" },
                 ]}
               >
-                <Ionicons
-                  name="notifications-outline"
-                  size={58}
-                  color={theme.colors.textSecondary}
-                />
+                <View
+                  style={[
+                    styles.emptyIconBox,
+                    { backgroundColor: theme.colors.surface },
+                  ]}
+                >
+                  <Ionicons
+                    name="notifications-outline"
+                    size={56}
+                    color={theme.colors.primary}
+                  />
+                </View>
               </View>
 
               <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
@@ -408,8 +610,33 @@ export default function Notifications() {
                   { color: theme.colors.textSecondary },
                 ]}
               >
-                You&apos;ll see updates about events, scans, and rewards here.
+                Updates about events, scans, rewards, and points will appear
+                here.
               </Text>
+
+              <View
+                style={[
+                  styles.emptyHint,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="arrow-down-outline"
+                  size={14}
+                  color={theme.colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.emptyHintText,
+                    { color: theme.colors.textSecondary },
+                  ]}
+                >
+                  Pull down to refresh
+                </Text>
+              </View>
             </View>
           }
         />
@@ -422,159 +649,340 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingTop: 18,
+    paddingBottom: 10,
   },
+
   backBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
   },
-  headerCenter: {
+
+  headerIconWrap: {
     flex: 1,
     alignItems: "center",
-    paddingHorizontal: 12,
   },
-  title: {
-    fontSize: 21,
-    fontWeight: "900",
-  },
-  unreadLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 2,
-  },
-  markAllBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+
+  headerIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },
-  markAll: {
-    fontSize: 12,
+
+  headerBadge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+
+  headerBadgeText: {
+    color: "#fff",
+    fontSize: 10,
     fontWeight: "900",
   },
+
+  markAllBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  titleArea: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 18,
+  },
+
+  title: {
+    fontSize: 32,
+    fontWeight: "900",
+    letterSpacing: -0.8,
+  },
+
+  subtitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 5,
+  },
+
   list: {
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: 28,
   },
+
   emptyList: {
     flexGrow: 1,
   },
+
   liveBar: {
     borderWidth: 1,
-    borderRadius: 18,
-    padding: 14,
-    marginBottom: 14,
+    borderRadius: 22,
+    padding: 15,
+    marginBottom: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+
   liveLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#10b981",
-  },
-  liveText: {
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  liveSubText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  card: {
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
+
+  liveDotOuter: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#10b98122",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  liveDotInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#10b981",
+  },
+
+  liveText: {
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
+  liveSubText: {
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+
+  syncPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+
+  syncPillText: {
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    marginBottom: 10,
+    marginTop: 4,
+  },
+
+  cardWrapper: {
+    marginBottom: 13,
+  },
+
+  card: {
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 13,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+
+  leftAccent: {
+    width: 4,
+    height: "150%",
+    borderTopLeftRadius: 24,
+    borderBottomLeftRadius: 24,
+    position: "absolute",
+    left: 0,
+    top: 0,
+  },
+
   iconBox: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 50,
+    height: 50,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
+
   cardContent: {
     flex: 1,
   },
+
   cardHeader: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 6,
     gap: 8,
+    marginBottom: 6,
   },
+
   cardTitle: {
     fontSize: 15,
-    fontWeight: "800",
     flex: 1,
   },
-  cardTime: {
-    fontSize: 11,
-    fontWeight: "600",
+
+  newBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
   },
+
+  newBadgeText: {
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+
   cardDesc: {
     fontSize: 13,
     lineHeight: 20,
+    fontWeight: "500",
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    flexShrink: 0,
-  },
-  loadingContainer: {
+
+  cardFooter: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 70,
+    gap: 5,
+    marginTop: 9,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
+
+  cardTime: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  footerDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    opacity: 0.55,
+    marginHorizontal: 2,
+  },
+
+  tapHint: {
+    fontSize: 11,
     fontWeight: "600",
   },
-  emptyState: {
+
+  loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 40,
+    paddingHorizontal: 36,
   },
-  emptyIconBox: {
-    width: 108,
-    height: 108,
-    borderRadius: 34,
+
+  loadingIconBox: {
+    width: 88,
+    height: 88,
+    borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 18,
   },
+
+  loadingTitle: {
+    fontSize: 19,
+    fontWeight: "900",
+    marginBottom: 6,
+  },
+
+  loadingText: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 34,
+  },
+
+  emptyIconOuter: {
+    width: 136,
+    height: 136,
+    borderRadius: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 22,
+  },
+
+  emptyIconBox: {
+    width: 104,
+    height: 104,
+    borderRadius: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "900",
     marginBottom: 8,
   },
+
   emptySubtitle: {
     fontSize: 14,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 21,
+    fontWeight: "600",
+  },
+
+  emptyHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    marginTop: 18,
+  },
+
+  emptyHintText: {
+    fontSize: 12,
+    fontWeight: "700",
   },
 });
