@@ -35,6 +35,7 @@ async function updateUserRole(req, res, next) { try { res.json(await adminServic
 async function listProspects(req, res, next) { try { res.json(await adminService.listProspects(req.query)); } catch (err) { next(err); } }
 async function createProspect(req, res, next) { try { const r = await adminService.createProspect(req.body, req.user.id); res.status(201).json(r); } catch (err) { next(err); } }
 async function updateProspectStatus(req, res, next) { try { res.json(await adminService.updateProspectStatus(req.params.id, req.body)); } catch (err) { next(err); } }
+async function createOrganiserAccount(req, res, next) { try { const r = await adminService.createOrganiserAccount(req.body, req.user.id); res.status(201).json(r); } catch (err) { next(err); } }
 async function createMerchantAccount(req, res, next) { try { const r = await adminService.createMerchantAccount(req.body, req.user.id); res.status(201).json(r); } catch (err) { next(err); } }
 
 module.exports = {
@@ -47,5 +48,6 @@ module.exports = {
   listMerchantProducts, createMerchantProduct,
   getCouponPins, updateUserRole, listRedemptions,
   listProspects, createProspect, updateProspectStatus,
-  createMerchantAccount, resetPassword,
+  createMerchantAccount,
+  createOrganiserAccount, resetPassword,
 };

@@ -1,90 +1,78 @@
 /**
  * Organiser Controller — Web portal for event organisers
- *
- * Response shapes defined in API_CONTRACTS.md (Organiser Web Portal section).
+ * Wired to organiser.service.js
  */
+const organiserService = require("../services/organiser.service");
 
-// ─── GET /api/organiser/dashboard ────────────────────────────
 async function dashboard(req, res, next) {
   try {
-    // TODO: Return org info + stats + recent activity
-    res.json({ organisation: {}, stats: {}, recent_activity: [] });
+    const result = await organiserService.getDashboard(req.user.id);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
-// ─── GET /api/organiser/events ───────────────────────────────
 async function listEvents(req, res, next) {
   try {
-    // TODO: List events belonging to this organiser
-    // Query: ?status=upcoming|past|draft&page=1&limit=20
-    res.json({ data: [], total: 0, page: 1, limit: 20 });
+    const result = await organiserService.getMyEvents(req.user.id, req.query);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
-// ─── POST /api/organiser/events ──────────────────────────────
 async function createEvent(req, res, next) {
   try {
-    // TODO: Create event with organiser's org
-    res.status(201).json({ event: { id: "", title: "", status: "published", created_at: "" } });
+    const event = await organiserService.createEvent(req.user.id, req.body);
+    res.status(201).json({ data: event, message: "Event created." });
   } catch (err) { next(err); }
 }
 
-// ─── GET /api/organiser/events/:id ───────────────────────────
 async function getEvent(req, res, next) {
   try {
-    // TODO: Full event detail with stats
-    res.json({ id: req.params.id });
+    const result = await organiserService.getMyEvents(req.user.id, { page: 1, limit: 1 });
+    const event = result.data.find(e => e.id == req.params.id);
+    if (!event) return next(require("../middleware/errorHandler.middleware").createError(404, "not_found", "Event not found."));
+    res.json({ data: event });
   } catch (err) { next(err); }
 }
 
-// ─── PUT /api/organiser/events/:id ───────────────────────────
 async function updateEvent(req, res, next) {
   try {
-    // TODO: Update event fields (partial)
-    // Errors: not_found, not_owned
-    res.json({ event: { id: req.params.id, updated_at: "" } });
+    const event = await organiserService.updateEvent(req.user.id, req.params.id, req.body);
+    res.json({ data: event, message: "Event updated." });
   } catch (err) { next(err); }
 }
 
-// ─── DELETE /api/organiser/events/:id ────────────────────────
 async function deleteEvent(req, res, next) {
   try {
-    // TODO: Delete event (only if no registrations)
-    // Errors: not_found, not_owned, has_registrations
-    res.json({ message: "Event deleted" });
+    await organiserService.deleteEvent(req.user.id, req.params.id);
+    res.json({ message: "Event deleted." });
   } catch (err) { next(err); }
 }
 
-// ─── GET /api/organiser/events/:id/roster ────────────────────
 async function roster(req, res, next) {
   try {
-    // TODO: Registered volunteers with check-in status
-    res.json({ event_id: req.params.id, event_title: "", total_registered: 0, total_checked_in: 0, volunteers: [] });
+    const result = await organiserService.getRoster(req.user.id, req.params.id);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
-// ─── GET /api/organiser/events/:id/feedback ──────────────────
 async function viewFeedback(req, res, next) {
   try {
-    // TODO: Feedback list with average rating
-    res.json({ data: [], average_rating: 0, total: 0 });
+    const result = await organiserService.getFeedback(req.user.id, req.params.id);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
-// ─── GET /api/organiser/events/:id/qna ───────────────────────
 async function viewQna(req, res, next) {
   try {
-    // TODO: Q&A for organiser to answer
-    res.json({ data: [] });
+    const result = await organiserService.getQna(req.user.id, req.params.id);
+    res.json(result);
   } catch (err) { next(err); }
 }
 
-// ─── POST /api/organiser/events/:id/qna/:qid/answer ─────────
 async function answerQuestion(req, res, next) {
   try {
-    // TODO: Post answer to a question
-    // Body: { answer: string }
-    res.json({ qna: { id: "", question: "", answer: "", answered_at: "" } });
+    const result = await organiserService.answerQuestion(req.user.id, req.params.qid, req.body.answer);
+    res.json({ data: result, message: "Answer posted." });
   } catch (err) { next(err); }
 }
 

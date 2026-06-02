@@ -71,6 +71,7 @@ router.post("/merchants/prospects", controller.createProspect);
 router.put("/merchants/prospects/:id/status", controller.updateProspectStatus);
 router.post("/merchants", controller.createMerchant);
 router.post("/merchants/create-account", controller.createMerchantAccount);
+router.post("/organisers/create-account", controller.createOrganiserAccount);
 router.get("/merchants/:id/products", controller.listMerchantProducts);
 router.post("/merchants/:id/products", controller.createMerchantProduct);
 

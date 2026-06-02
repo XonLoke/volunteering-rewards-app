@@ -106,7 +106,13 @@ async function listUsers({ page = 1, limit = 15, search, role, status } = {}) {
      FROM users u
      JOIN roles r ON u.role_id = r.id
      ${where}
-     ORDER BY u.created_at DESC
+     ORDER BY CASE r.role_name
+       WHEN 'admin' THEN 1
+       WHEN 'organizer' THEN 2
+       WHEN 'merchant' THEN 3
+       WHEN 'volunteer' THEN 4
+       ELSE 5
+     END, LOWER(u.name) ASC
      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
     [...params, limit, offset]
   );
@@ -656,6 +662,36 @@ async function resetUserPassword(userId, { newPassword }) {
   return { message: "Password reset successfully.", user: rows[0] };
 }
 
+// ─── Create Organiser Account (admin creates organiser) ─
+async function createOrganiserAccount(data, adminId) {
+  const bcrypt = require("bcrypt");
+  const { v4: uuidv4 } = require("uuid");
+
+  const { rows: existing } = await pool.query("SELECT id FROM users WHERE email = $1", [data.email]);
+  if (existing.length > 0) throw createError(409, "email_taken", "Email already in use.");
+
+  const roleId = (await pool.query("SELECT id FROM roles WHERE role_name = 'organizer'")).rows[0].id;
+  const hash = await bcrypt.hash(data.password || "password123", 12);
+  const qr = uuidv4();
+
+  // Create user
+  const { rows: userRows } = await pool.query(
+    `INSERT INTO users (email, password_hash, name, phone, role_id, points, volunteer_qr_code, status)
+     VALUES ($1, $2, $3, $4, $5, 0, $6, 'active') RETURNING id, email, name`,
+    [data.email, hash, data.name, data.phone || null, roleId, qr]
+  );
+
+  // Create organisation with approved status
+  const { rows: orgRows } = await pool.query(
+    `INSERT INTO organizations (org_name, org_type, contact_person, contact_email, approval_status, approved_by, approved_at, status)
+     VALUES ($1, $2, $3, $4, 'approved', $5, NOW(), 'active') RETURNING id, org_name`,
+    [data.organisation_name || data.name + "'s Org", data.organisation_type || "community_group", data.name, data.email, adminId]
+  );
+
+  return { user: userRows[0], organisation: orgRows[0], message: "Organiser account created. Login: " + data.email + " / password123" };
+}
+
+
 module.exports = {
   getDashboardStats, getRecentActivity,
   listUsers, getUserDetail, updateUserStatus,
@@ -675,5 +711,6 @@ module.exports = {
   createProspect,
   updateProspectStatus,
   createMerchantAccount,
+  createOrganiserAccount,
   resetUserPassword,
 };

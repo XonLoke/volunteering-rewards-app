@@ -223,6 +223,13 @@ export default function Users() {
         <button className={"btn btn-sm " + (row.status === "active" ? "btn-danger" : "btn-primary")}
           onClick={(e) => { e.stopPropagation(); handleSuspendUser(row); }}>{row.status === "active" ? "Suspend" : "Reactivate"}</button>
         <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); setResetPwUser(row); }}>Reset PW</button>
+        <select className="btn btn-sm" style={{ fontSize: 12, padding: '2px 6px', border: '1px solid #ddd', borderRadius: 4, cursor: 'pointer' }}
+          value={row.role} onChange={(e) => { e.stopPropagation(); handleChangeRole(row, e.target.value); }}>
+          <option value="admin">Admin</option>
+          <option value="organizer">Organiser</option>
+          <option value="merchant">Merchant</option>
+          <option value="volunteer">Volunteer</option>
+        </select>
       </div>
     )},
   ];
