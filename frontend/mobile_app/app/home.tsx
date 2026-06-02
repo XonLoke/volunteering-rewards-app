@@ -1,260 +1,1402 @@
-import { Text, View, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, Image } from "react-native";
-import { useRouter } from "expo-router";
-import { useTheme } from "@/contexts/ThemeContext";
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  Alert,
+} from "react-native";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useState, useCallback } from "react";
+import { useTheme } from "../../contexts/ThemeContext";
+import { api } from "../../src/services/api";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-interface FeaturedEvent {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-  points: number;
-  category: string;
-  emoji?: string;
-  image?: any;
-  color: string;
-  participants: number;
-  maxParticipants: number;
-}
+const CANCELLED_BOOKINGS_KEY = "cancelledBookingIds";
 
-const featuredEvents: FeaturedEvent[] = [
-  {
-    id: "1",
-    title: "Beach Cleanup",
-    date: "May 18",
-    location: "East Coast Park",
-    points: 50,
-    category: "Environment",
-    image: require("@/assets/images/beach.webp"),
-    color: "#10b981",
-    participants: 24,
-    maxParticipants: 30,
-  },
-  {
-    id: "2",
-    title: "Food Bank Volunteer",
-    date: "May 20",
-    location: "Downtown Food Bank",
-    points: 40,
-    category: "Food & Hunger",
-    image: require("@/assets/images/foodbank.jpg"),
-    color: "#f97316",
-    participants: 18,
-    maxParticipants: 25,
-  },
-  {
-    id: "3",
-    title: "Park Restoration",
-    date: "May 25",
-    location: "Botanic Gardens",
-    points: 60,
-    category: "Environment",
-    image: require("@/assets/images/park.jpg"),
-    color: "#6366f1",
-    participants: 32,
-    maxParticipants: 40,
-  },
-];
-
-const updates = [
-  { id: "1", emoji: "🎉", title: "You earned 50 pts!", subtitle: "Beach Cleanup — 2 days ago" },
-  { id: "2", emoji: "🆕", title: "New event added", subtitle: "Youth Tutoring — May 22" },
-];
-
-const UNREAD_COUNT = 3; // ← change this to 0 when no unread notifications
 const CARD_IMAGE_HEIGHT = 120;
 const CARD_WIDTH = 200;
+
+interface FeaturedEvent {
+  id: number;
+  title: string;
+  description?: string;
+  event_date?: string;
+  location: string;
+  points_value: number;
+  category: string;
+  org_name?: string;
+  registrations?: number;
+  capacity?: number;
+  registered?: boolean;
+}
+
+interface UpdateItem {
+  id: number;
+  title: string;
+  description: string;
+  icon?: string;
+  color?: string;
+  is_read?: boolean;
+  created_at?: string;
+}
+
+const getCancelledBookingIds = async (): Promise<number[]> => {
+  const stored = await AsyncStorage.getItem(CANCELLED_BOOKINGS_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveCancelledBookingId = async (eventId: number) => {
+  const ids = await getCancelledBookingIds();
+
+  if (!ids.includes(eventId)) {
+    await AsyncStorage.setItem(
+      CANCELLED_BOOKINGS_KEY,
+      JSON.stringify([...ids, eventId])
+    );
+  }
+};
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+};
+
+const getEventImage = (category?: string, title?: string) => {
+  const text = `${category || ""} ${title || ""}`.toLowerCase();
+
+  if (text.includes("beach") || text.includes("cleanup")) {
+    return require("@/assets/images/beach.webp");
+  }
+
+  if (
+    text.includes("food bank") ||
+    text.includes("sorting") ||
+    text.includes("packing")
+  ) {
+    return require("@/assets/images/foodbank.jpg");
+  }
+
+  if (text.includes("blood") || text.includes("donation")) {
+    return require("@/assets/images/blooddonation.jpg");
+  }
+
+  if (
+    text.includes("disaster") ||
+    text.includes("preparedness") ||
+    text.includes("workshop")
+  ) {
+    return require("@/assets/images/disasterprep.png");
+  }
+
+  if (
+    text.includes("guided") ||
+    text.includes("walk") ||
+    text.includes("botanic")
+  ) {
+    return require("@/assets/images/guidedwalk.webp");
+  }
+
+  if (
+    text.includes("soup") ||
+    text.includes("kitchen") ||
+    text.includes("willing hearts") ||
+    text.includes("elderly")
+  ) {
+    return require("@/assets/images/soup kitchen.webp");
+  }
+
+  if (text.includes("youth") || text.includes("mentor")) {
+    return require("@/assets/images/youthmentoring.jpg");
+  }
+
+  if (
+    text.includes("park") ||
+    text.includes("garden") ||
+    text.includes("wetland") ||
+    text.includes("restoration") ||
+    text.includes("environment")
+  ) {
+    return require("@/assets/images/park.jpg");
+  }
+
+  return require("@/assets/images/beach.webp");
+};
+
+const getEventColor = (category?: string) => {
+  const lower = (category || "").toLowerCase();
+
+  if (lower.includes("environment")) return "#10b981";
+  if (lower.includes("community")) return "#f97316";
+  if (lower.includes("health")) return "#ef4444";
+  if (lower.includes("youth")) return "#6366f1";
+  if (lower.includes("elderly")) return "#ec4899";
+  if (lower.includes("food")) return "#f59e0b";
+  if (lower.includes("education")) return "#3b82f6";
+
+  return "#6366f1";
+};
+
+const getEventIcon = (category?: string, title?: string) => {
+  const text = `${category || ""} ${title || ""}`.toLowerCase();
+
+  if (
+    text.includes("environment") ||
+    text.includes("beach") ||
+    text.includes("park")
+  ) {
+    return "leaf-outline";
+  }
+
+  if (
+    text.includes("food") ||
+    text.includes("soup") ||
+    text.includes("kitchen")
+  ) {
+    return "restaurant-outline";
+  }
+
+  if (text.includes("blood") || text.includes("health")) {
+    return "heart-outline";
+  }
+
+  if (
+    text.includes("youth") ||
+    text.includes("mentor") ||
+    text.includes("education")
+  ) {
+    return "school-outline";
+  }
+
+  if (text.includes("elderly")) {
+    return "people-outline";
+  }
+
+  if (text.includes("disaster")) {
+    return "shield-checkmark-outline";
+  }
+
+  return "calendar-outline";
+};
+
+const formatEventDate = (dateString?: string) => {
+  if (!dateString) return "Upcoming";
+
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Upcoming";
+  }
+
+  return date.toLocaleDateString("en-SG", {
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const formatEventFullDate = (dateString?: string) => {
+  if (!dateString) return "Upcoming";
+
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Upcoming";
+  }
+
+  return date.toLocaleDateString("en-SG", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatEventTime = (dateString?: string) => {
+  if (!dateString) return "Time TBA";
+
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Time TBA";
+  }
+
+  return date.toLocaleTimeString("en-SG", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getUpdateIcon = (icon?: string) => {
+  if (!icon) return "notifications-outline";
+  return icon;
+};
+
+const getUpdateColor = (color?: string) => {
+  if (!color) return "#6366f1";
+  return color;
+};
 
 export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
 
-  return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.page}>
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("Volunteer");
+  const [userPoints, setUserPoints] = useState(0);
+  const [activeCoupons, setActiveCoupons] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [featuredEvents, setFeaturedEvents] = useState<FeaturedEvent[]>([]);
+  const [bookedEvents, setBookedEvents] = useState<FeaturedEvent[]>([]);
+  const [updates, setUpdates] = useState<UpdateItem[]>([]);
+  const [manageModalVisible, setManageModalVisible] = useState(false);
+  const [cancelingId, setCancelingId] = useState<number | null>(null);
 
-        {/* ── HEADER ── */}
+  const syncBookedEvents = async (latestEvents: FeaturedEvent[]) => {
+    const cancelledIds = await getCancelledBookingIds();
+
+    const latestBookedEvents = latestEvents.filter(
+      (event) => event.registered && !cancelledIds.includes(Number(event.id))
+    );
+
+    setBookedEvents(latestBookedEvents);
+
+    await AsyncStorage.setItem(
+      "bookedEvents",
+      JSON.stringify(latestBookedEvents)
+    );
+  };
+
+  const refreshEventsAndBookings = async (userId: number) => {
+    const eventsRes = await api.get("/events");
+    const eventsData = await eventsRes.json();
+
+    if (!eventsRes.ok) {
+      throw new Error(
+        eventsData.message || eventsData.error || "Failed to refresh events."
+      );
+    }
+
+    const cancelledIds = await getCancelledBookingIds();
+
+    const latestEvents: FeaturedEvent[] = (eventsData.events || []).map(
+      (event: FeaturedEvent) => {
+        if (cancelledIds.includes(Number(event.id))) {
+          return {
+            ...event,
+            registered: false,
+          };
+        }
+
+        return event;
+      }
+    );
+
+    setFeaturedEvents(latestEvents.slice(0, 8));
+    await syncBookedEvents(latestEvents);
+  };
+
+  const removeBookingFromHome = async (
+    eventId: number,
+    registrations?: number
+  ) => {
+    setBookedEvents((prev) => {
+      const updated = prev.filter(
+        (event) => Number(event.id) !== Number(eventId)
+      );
+
+      AsyncStorage.setItem("bookedEvents", JSON.stringify(updated));
+
+      return updated;
+    });
+
+    setFeaturedEvents((prev) =>
+      prev.map((event) =>
+        Number(event.id) === Number(eventId)
+          ? {
+              ...event,
+              registered: false,
+              registrations: Number(registrations ?? 0),
+            }
+          : event
+      )
+    );
+  };
+
+  const cancelBooking = async (event: FeaturedEvent) => {
+    try {
+      setCancelingId(event.id);
+
+      const stored = await AsyncStorage.getItem("user");
+
+      if (!stored) {
+        Alert.alert("Login required", "Please login again.");
+        router.replace("/login");
+        return;
+      }
+
+      const user = JSON.parse(stored);
+
+      const response = await fetch(
+        `/events/${event.id}/register`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": String(user.id),
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            userId: user.id,
+          }),
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      console.log("HOME DELETE STATUS:", response.status);
+      console.log("HOME DELETE DATA:", data);
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || data.error || "Failed to cancel booking."
+        );
+      }
+
+      await saveCancelledBookingId(Number(event.id));
+      await removeBookingFromHome(Number(event.id), data.registrations);
+
+      Alert.alert(
+        "Booking cancelled",
+        `"${event.title}" has been removed from your bookings.`
+      );
+    } catch (error: any) {
+      console.error("Failed to cancel booking:", error);
+      Alert.alert("Error", error.message || "Failed to cancel booking.");
+    } finally {
+      setCancelingId(null);
+    }
+  };
+
+  const confirmCancelBooking = (event: FeaturedEvent) => {
+    Alert.alert(
+      "Cancel booking?",
+      `Remove "${event.title}" from your bookings?`,
+      [
+        {
+          text: "Keep",
+          style: "cancel",
+        },
+        {
+          text: "Cancel Booking",
+          style: "destructive",
+          onPress: () => cancelBooking(event),
+        },
+      ]
+    );
+  };
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      const stored = await AsyncStorage.getItem("user");
+
+      if (!stored) {
+        setUserName("Volunteer");
+        setUserPoints(0);
+        setActiveCoupons(0);
+        setUnreadCount(0);
+        setFeaturedEvents([]);
+        setBookedEvents([]);
+        setUpdates([]);
+        await AsyncStorage.removeItem("bookedEvents");
+        return;
+      }
+
+      const user = JSON.parse(stored);
+
+      setUserName(user.name || "Volunteer");
+
+      const storedPoints = await AsyncStorage.getItem("userPoints");
+      setUserPoints(Number(storedPoints ?? user.points ?? 0));
+
+      try {
+        const profileRes = await api.get("/auth/me");
+        const profileData = await profileRes.json();
+
+        if (profileRes.ok && profileData.user) {
+          const freshPoints = Number(profileData.user.points ?? 0);
+
+          setUserPoints(freshPoints);
+
+          const updatedUser = {
+            ...user,
+            ...profileData.user,
+          };
+
+          await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+          await AsyncStorage.setItem("userPoints", String(freshPoints));
+        }
+      } catch (profileErr) {
+        console.log("Profile refresh skipped:", profileErr);
+      }
+
+      try {
+        const couponsRes = await fetch(
+          "/me/coupons"
+        );
+        const couponsData = await couponsRes.json();
+
+        if (couponsRes.ok) {
+          const active = (couponsData.coupons || []).filter(
+            (c: any) => c.status === "unused"
+          ).length;
+
+          setActiveCoupons(active);
+        }
+      } catch (couponsErr) {
+        console.log("Coupons refresh skipped:", couponsErr);
+      }
+
+      try {
+        const notifRes = await fetch(
+          "/me/events"
+        );
+        const notifData = await notifRes.json();
+
+        if (notifRes.ok) {
+          const notifications = notifData.notifications || [];
+
+          const unread = notifications.filter((n: any) => !n.is_read).length;
+          setUnreadCount(unread);
+
+          setUpdates(notifications.slice(0, 3));
+        }
+      } catch (notifErr) {
+        console.log("Notifications refresh skipped:", notifErr);
+      }
+
+      try {
+        await refreshEventsAndBookings(user.id);
+      } catch (eventsErr) {
+        console.log("Events refresh skipped:", eventsErr);
+
+        const storedBookedEvents = await AsyncStorage.getItem("bookedEvents");
+        const parsedBookedEvents: FeaturedEvent[] = storedBookedEvents
+          ? JSON.parse(storedBookedEvents)
+          : [];
+
+        const cancelledIds = await getCancelledBookingIds();
+
+        const filteredBookedEvents = parsedBookedEvents.filter(
+          (event) => !cancelledIds.includes(Number(event.id))
+        );
+
+        setBookedEvents(filteredBookedEvents);
+
+        await AsyncStorage.setItem(
+          "bookedEvents",
+          JSON.stringify(filteredBookedEvents)
+        );
+      }
+    } catch (err) {
+      console.error("Failed to load home data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+
+  const visibleBookedEvents = bookedEvents.slice(0, 3);
+  const hiddenBookingCount = Math.max(
+    bookedEvents.length - visibleBookedEvents.length,
+    0
+  );
+
+  return (
+    <SafeAreaView
+      style={[styles.screen, { backgroundColor: theme.colors.background }]}
+    >
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.page}
+      >
         <View style={styles.header}>
           <View>
-            <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>Good morning 👋</Text>
-            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Volunteer Rewards</Text>
-          </View>
-          <View style={styles.headerRight}>
+            <Text
+              style={[styles.greeting, { color: theme.colors.textSecondary }]}
+            >
+              {getGreeting()}, {userName}
+            </Text>
 
-            {/* Bell with red badge */}
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+              Volunteer Rewards
+            </Text>
+          </View>
+
+          <View style={styles.headerRight}>
             <TouchableOpacity
-              style={[styles.notifBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+              style={[
+                styles.notifBtn,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
               onPress={() => router.push("/notifications")}
             >
-              <Text style={styles.notifEmoji}>🔔</Text>
-              {UNREAD_COUNT > 0 && (
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color={theme.colors.text}
+              />
+
+              {unreadCount > 0 && (
                 <View style={styles.notifBadge}>
-                  <Text style={styles.notifBadgeText}>{UNREAD_COUNT}</Text>
+                  <Text style={styles.notifBadgeText}>{unreadCount}</Text>
                 </View>
               )}
             </TouchableOpacity>
 
-            {/* Avatar → Profile */}
             <TouchableOpacity
-              style={[styles.avatarBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.primary }]}
+              style={[
+                styles.avatarBtn,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.primary,
+                },
+              ]}
               onPress={() => router.push("/profile" as any)}
               activeOpacity={0.8}
             >
-              <View style={styles.avatarInner}>
-                <View style={[styles.avatarHead, { backgroundColor: theme.colors.textSecondary }]} />
-                <View style={[styles.avatarBody, { backgroundColor: theme.colors.textSecondary }]} />
-              </View>
+              <Ionicons
+                name="person"
+                size={22}
+                color={theme.colors.textSecondary}
+              />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* ── POINTS HERO CARD ── */}
-        <View style={[styles.heroCard, { backgroundColor: theme.colors.primary }]}>
-          <View style={styles.heroCardDecor1} />
-          <View style={styles.heroCardDecor2} />
-          <View style={styles.heroLeft}>
-            <Text style={styles.heroLabel}>YOUR POINTS</Text>
-            <Text style={styles.heroPoints}>214</Text>
-            <Text style={styles.heroCaption}>86 pts to next reward 🎁</Text>
-          </View>
-          <View style={styles.heroRight}>
-            <View style={styles.heroActions}>
-              <TouchableOpacity style={styles.heroActionBtn} onPress={() => router.push("/scan")}>
-                <Text style={styles.heroActionEmoji}>📷</Text>
-                <Text style={styles.heroActionText}>Scan</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.heroActionBtn} onPress={() => router.push("/rewards")}>
-                <Text style={styles.heroActionEmoji}>🎁</Text>
-                <Text style={styles.heroActionText}>Redeem</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.heroActionBtn} onPress={() => router.push("/my-coupons" as any)}>
-                <Text style={styles.heroActionEmoji}>🎟️</Text>
-                <Text style={styles.heroActionText}>Coupons</Text>
-              </TouchableOpacity>
+        <View
+          style={[
+            styles.walletCard,
+            {
+              backgroundColor: theme.colors.primary,
+            },
+          ]}
+        >
+          <View style={styles.walletDecorOne} />
+          <View style={styles.walletDecorTwo} />
+
+          <View style={styles.walletTop}>
+            <View>
+              <Text style={styles.walletLabel}>POINTS WALLET</Text>
+
+              {loading ? (
+                <ActivityIndicator
+                  color="#fff"
+                  size="small"
+                  style={{ marginVertical: 16 }}
+                />
+              ) : (
+                <Text style={styles.walletPoints}>
+                  {userPoints.toLocaleString()}
+                </Text>
+              )}
+
+              <Text style={styles.walletCaption}>
+                Earn points by volunteering and scanning QR codes.
+              </Text>
             </View>
+
+            <View style={styles.walletIconCircle}>
+              <Ionicons name="sparkles-outline" size={28} color="#fff" />
+            </View>
+          </View>
+
+          <View style={styles.walletActions}>
+            <TouchableOpacity
+              style={styles.walletActionBtn}
+              onPress={() => router.push("/scan" as any)}
+            >
+              <Ionicons name="qr-code-outline" size={20} color="#fff" />
+              <Text style={styles.walletActionText}>Scan</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.walletActionBtn}
+              onPress={() => router.push("/rewards")}
+            >
+              <Ionicons name="gift-outline" size={20} color="#fff" />
+              <Text style={styles.walletActionText}>Redeem</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.walletActionBtn}
+              onPress={() => router.push("/my-coupons" as any)}
+            >
+              <Ionicons name="ticket-outline" size={20} color="#fff" />
+              <Text style={styles.walletActionText}>Coupons</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* ── STATS ROW ── */}
-        <View style={styles.statsRow}>
-          {[
-            { emoji: "⏱️", value: "18", label: "Hours" },
-            { emoji: "📅", value: "4", label: "Events" },
-            { emoji: "🏆", value: "9", label: "Rewards" },
-          ].map((s) => (
-            <View key={s.label} style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-              <Text style={styles.statEmoji}>{s.emoji}</Text>
-              <Text style={[styles.statValue, { color: theme.colors.text }]}>{s.value}</Text>
-              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
+        {bookedEvents.length > 0 ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                  Your Bookings
+                </Text>
+                <Text
+                  style={[
+                    styles.sectionSubtitle,
+                    { color: theme.colors.textSecondary },
+                  ]}
+                >
+                  {bookedEvents.length} upcoming event
+                  {bookedEvents.length !== 1 ? "s" : ""}
+                </Text>
+              </View>
 
-        {/* ── FEATURED EVENTS ── */}
+              <TouchableOpacity onPress={() => setManageModalVisible(true)}>
+                <Text style={[styles.seeAll, { color: theme.colors.primary }]}>
+                  Manage
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View
+              style={[
+                styles.bookingPreviewCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View style={styles.bookingPreviewTop}>
+                <View>
+                  <Text
+                    style={[
+                      styles.bookingPreviewTitle,
+                      { color: theme.colors.text },
+                    ]}
+                  >
+                    Upcoming Schedule
+                  </Text>
+                  <Text
+                    style={[
+                      styles.bookingPreviewSub,
+                      { color: theme.colors.textSecondary },
+                    ]}
+                  >
+                    Manage or cancel confirmed bookings
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.bookingCountPill,
+                    { backgroundColor: theme.colors.primary + "22" },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.bookingCountText,
+                      { color: theme.colors.primary },
+                    ]}
+                  >
+                    {bookedEvents.length}
+                  </Text>
+                </View>
+              </View>
+
+              {visibleBookedEvents.map((event, index) => {
+                const color = getEventColor(event.category);
+                const icon = getEventIcon(event.category, event.title);
+
+                return (
+                  <View key={`${event.id}-${index}`}>
+                    <View style={styles.bookingRow}>
+                      <View
+                        style={[
+                          styles.bookedIcon,
+                          { backgroundColor: color + "22" },
+                        ]}
+                      >
+                        <Ionicons name={icon as any} size={22} color={color} />
+                      </View>
+
+                      <View style={styles.bookedText}>
+                        <Text
+                          style={[
+                            styles.bookedTitle,
+                            { color: theme.colors.text },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {event.title}
+                        </Text>
+
+                        <Text
+                          style={[
+                            styles.bookedSub,
+                            { color: theme.colors.textSecondary },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {formatEventDate(event.event_date)} ·{" "}
+                          {formatEventTime(event.event_date)}
+                        </Text>
+
+                        <Text
+                          style={[
+                            styles.bookedLocation,
+                            { color: theme.colors.textSecondary },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {event.location}
+                        </Text>
+                      </View>
+
+                      <View style={styles.bookedRight}>
+                        <Text style={[styles.bookedPoints, { color }]}>
+                          +{event.points_value ?? 0}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.bookedPointsLabel,
+                            { color: theme.colors.textSecondary },
+                          ]}
+                        >
+                          pts
+                        </Text>
+                      </View>
+                    </View>
+
+                    {index !== visibleBookedEvents.length - 1 && (
+                      <View
+                        style={[
+                          styles.bookingDivider,
+                          { backgroundColor: theme.colors.border },
+                        ]}
+                      />
+                    )}
+                  </View>
+                );
+              })}
+
+              <TouchableOpacity
+                style={[
+                  styles.manageBookingsBtn,
+                  {
+                    backgroundColor: theme.colors.primary,
+                  },
+                ]}
+                onPress={() => setManageModalVisible(true)}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="settings-outline" size={18} color="#fff" />
+                <Text style={styles.manageBookingsText}>Manage Bookings</Text>
+
+                {hiddenBookingCount > 0 && (
+                  <View style={styles.hiddenCountBadge}>
+                    <Text style={styles.hiddenCountText}>
+                      +{hiddenBookingCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.section}>
+            <View
+              style={[
+                styles.emptyBookingCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.emptyBookingIcon,
+                  { backgroundColor: theme.colors.primary + "22" },
+                ]}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={30}
+                  color={theme.colors.primary}
+                />
+              </View>
+
+              <Text style={[styles.emptyBookingTitle, { color: theme.colors.text }]}>
+                No bookings yet
+              </Text>
+
+              <Text
+                style={[
+                  styles.emptyBookingText,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                Explore volunteer events and book your first opportunity.
+              </Text>
+
+              <TouchableOpacity
+                style={[
+                  styles.emptyBookingBtn,
+                  { backgroundColor: theme.colors.primary },
+                ]}
+                onPress={() => router.push("/events")}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.emptyBookingBtnText}>Browse Events</Text>
+                <Ionicons name="arrow-forward" size={16} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Featured Events</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Featured Events
+            </Text>
+
             <TouchableOpacity onPress={() => router.push("/events")}>
-              <Text style={[styles.seeAll, { color: theme.colors.primary }]}>View All</Text>
+              <Text style={[styles.seeAll, { color: theme.colors.primary }]}>
+                View All
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-            {featuredEvents.map((event) => (
-              <TouchableOpacity
-                key={event.id}
-                style={styles.eventCard}
-                activeOpacity={0.88}
-                onPress={() => router.push("/events")}
+          {loading ? (
+            <View
+              style={[
+                styles.loadingCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <ActivityIndicator color={theme.colors.primary} />
+              <Text
+                style={[
+                  styles.loadingText,
+                  { color: theme.colors.textSecondary },
+                ]}
               >
-                <View style={[styles.eventCardTop, { backgroundColor: event.color }]}>
-                  {event.image && (
-                    <Image
-                      source={event.image}
-                      style={{ width: CARD_WIDTH, height: CARD_IMAGE_HEIGHT, position: "absolute", top: 0, left: 0 }}
-                      resizeMode="cover"
-                    />
-                  )}
-                  {!event.image && event.emoji && (
-                    <Text style={styles.eventCardEmoji}>{event.emoji}</Text>
-                  )}
-                  <View style={styles.eventCardOverlay} />
-                  <View style={styles.eventCardBadge}>
-                    <Text style={styles.eventCardBadgeText}>{event.category}</Text>
-                  </View>
-                </View>
+                Loading events...
+              </Text>
+            </View>
+          ) : featuredEvents.length === 0 ? (
+            <View
+              style={[
+                styles.emptyCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={28}
+                color={theme.colors.textSecondary}
+              />
+              <Text
+                style={[styles.emptyText, { color: theme.colors.textSecondary }]}
+              >
+                No upcoming events yet
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.horizontalScroll}
+            >
+              {featuredEvents.map((event) => {
+                const color = getEventColor(event.category);
+                const image = getEventImage(event.category, event.title);
+                const participants = event.registrations ?? 0;
+                const maxParticipants = event.capacity ?? 1;
+                const progress =
+                  maxParticipants > 0
+                    ? Math.min((participants / maxParticipants) * 100, 100)
+                    : 0;
 
-                <View style={[styles.eventCardBody, { backgroundColor: theme.colors.surface }]}>
-                  <Text style={[styles.eventCardDate, { color: event.color }]}>{event.date}</Text>
-                  <Text style={[styles.eventCardTitle, { color: theme.colors.text }]}>{event.title}</Text>
-                  <Text style={[styles.eventCardLocation, { color: theme.colors.textSecondary }]}>📍 {event.location}</Text>
-                  <View style={[styles.progressBg, { backgroundColor: theme.colors.border }]}>
-                    <View style={[styles.progressFill, {
-                      width: `${(event.participants / event.maxParticipants) * 100}%` as any,
-                      backgroundColor: event.color,
-                    }]} />
-                  </View>
-                  <View style={styles.eventCardFooter}>
-                    <Text style={[styles.eventParticipants, { color: theme.colors.textSecondary }]}>
-                      {event.participants}/{event.maxParticipants} joined
-                    </Text>
-                    <Text style={[styles.eventPoints, { color: event.color }]}>+{event.points} pts</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                return (
+                  <TouchableOpacity
+                    key={`${event.id}-${participants}`}
+                    style={styles.eventCard}
+                    activeOpacity={0.88}
+                    onPress={() => router.push("/events")}
+                  >
+                    <View
+                      style={[styles.eventCardTop, { backgroundColor: color }]}
+                    >
+                      <Image
+                        source={image}
+                        style={styles.eventImage}
+                        resizeMode="cover"
+                      />
+
+                      <View style={styles.eventCardOverlay} />
+
+                      <View style={styles.eventCardBadge}>
+                        <Text style={styles.eventCardBadgeText}>
+                          {event.category || "Event"}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.eventCardBody,
+                        { backgroundColor: theme.colors.surface },
+                      ]}
+                    >
+                      <Text style={[styles.eventCardDate, { color }]}>
+                        {formatEventDate(event.event_date)}
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.eventCardTitle,
+                          { color: theme.colors.text },
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {event.title}
+                      </Text>
+
+                      <View style={styles.locationRow}>
+                        <Ionicons
+                          name="location-outline"
+                          size={11}
+                          color={theme.colors.textSecondary}
+                        />
+                        <Text
+                          style={[
+                            styles.eventCardLocation,
+                            { color: theme.colors.textSecondary },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {event.location}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.progressBg,
+                          { backgroundColor: theme.colors.border },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.progressFill,
+                            {
+                              width: `${progress}%` as any,
+                              backgroundColor: color,
+                            },
+                          ]}
+                        />
+                      </View>
+
+                      <View style={styles.eventCardFooter}>
+                        <Text
+                          style={[
+                            styles.eventParticipants,
+                            { color: theme.colors.textSecondary },
+                          ]}
+                        >
+                          {participants}/{maxParticipants} joined
+                        </Text>
+
+                        <Text style={[styles.eventPoints, { color }]}>
+                          +{event.points_value ?? 0} pts
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
 
-        {/* ── MY COUPONS BANNER ── */}
         <View style={styles.section}>
           <TouchableOpacity
-            style={[styles.couponsBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            style={[
+              styles.couponsBanner,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
             onPress={() => router.push("/my-coupons" as any)}
             activeOpacity={0.85}
           >
-            <View style={[styles.couponsBannerIcon, { backgroundColor: "#ec489922" }]}>
-              <Text style={styles.couponsBannerEmoji}>🎟️</Text>
+            <View
+              style={[
+                styles.couponsBannerIcon,
+                { backgroundColor: "#ec489922" },
+              ]}
+            >
+              <Ionicons name="ticket" size={24} color="#ec4899" />
             </View>
+
             <View style={styles.couponsBannerText}>
-              <Text style={[styles.couponsBannerTitle, { color: theme.colors.text }]}>My Coupons</Text>
-              <Text style={[styles.couponsBannerSub, { color: theme.colors.textSecondary }]}>2 active coupons ready to use</Text>
+              <Text
+                style={[styles.couponsBannerTitle, { color: theme.colors.text }]}
+              >
+                My Coupons
+              </Text>
+
+              <Text
+                style={[
+                  styles.couponsBannerSub,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                {activeCoupons} active coupon{activeCoupons !== 1 ? "s" : ""}{" "}
+                ready to use
+              </Text>
             </View>
-            <Text style={[styles.couponsBannerArrow, { color: theme.colors.textSecondary }]}>›</Text>
+
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={theme.colors.textSecondary}
+            />
           </TouchableOpacity>
         </View>
 
-        {/* ── UPDATES ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Updates</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Latest Updates
+            </Text>
+
             <TouchableOpacity onPress={() => router.push("/notifications")}>
-              <Text style={[styles.seeAll, { color: theme.colors.primary }]}>View All</Text>
+              <Text style={[styles.seeAll, { color: theme.colors.primary }]}>
+                View All
+              </Text>
             </TouchableOpacity>
           </View>
 
-          {updates.map((update) => (
-            <View key={update.id} style={[styles.updateCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-              <View style={[styles.updateIconBox, { backgroundColor: theme.colors.surfaceSecondary }]}>
-                <Text style={styles.updateEmoji}>{update.emoji}</Text>
-              </View>
-              <View style={styles.updateText}>
-                <Text style={[styles.updateTitle, { color: theme.colors.text }]}>{update.title}</Text>
-                <Text style={[styles.updateSubtitle, { color: theme.colors.textSecondary }]}>{update.subtitle}</Text>
-              </View>
+          {loading ? (
+            <View
+              style={[
+                styles.loadingCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <ActivityIndicator color={theme.colors.primary} />
+              <Text
+                style={[
+                  styles.loadingText,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                Loading updates...
+              </Text>
             </View>
-          ))}
-        </View>
+          ) : updates.length === 0 ? (
+            <View
+              style={[
+                styles.emptyCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={28}
+                color={theme.colors.textSecondary}
+              />
+              <Text
+                style={[styles.emptyText, { color: theme.colors.textSecondary }]}
+              >
+                No updates yet
+              </Text>
+            </View>
+          ) : (
+            updates.map((update) => {
+              const color = getUpdateColor(update.color);
 
+              return (
+                <View
+                  key={update.id}
+                  style={[
+                    styles.updateCard,
+                    {
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.border,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.updateIconBox,
+                      { backgroundColor: color + "22" },
+                    ]}
+                  >
+                    <Ionicons
+                      name={getUpdateIcon(update.icon) as any}
+                      size={22}
+                      color={color}
+                    />
+                  </View>
+
+                  <View style={styles.updateText}>
+                    <Text
+                      style={[styles.updateTitle, { color: theme.colors.text }]}
+                      numberOfLines={1}
+                    >
+                      {update.title}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.updateSubtitle,
+                        { color: theme.colors.textSecondary },
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {update.description}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
       </ScrollView>
+
+      <Modal
+        visible={manageModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setManageModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setManageModalVisible(false)}
+        />
+
+        <View
+          style={[
+            styles.manageSheet,
+            {
+              backgroundColor: theme.colors.background,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
+          <View style={styles.sheetHandle} />
+
+          <View style={styles.sheetHeader}>
+            <View>
+              <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>
+                Manage Bookings
+              </Text>
+              <Text
+                style={[
+                  styles.sheetSubtitle,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                Cancel bookings directly from here
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.sheetCloseBtn,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+              onPress={() => setManageModalVisible(false)}
+            >
+              <Ionicons name="close" size={20} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          {bookedEvents.length === 0 ? (
+            <View style={styles.sheetEmpty}>
+              <Ionicons
+                name="calendar-outline"
+                size={38}
+                color={theme.colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.sheetEmptyText,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                You have no active bookings.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.sheetList}
+            >
+              {bookedEvents.map((event) => {
+                const color = getEventColor(event.category);
+                const icon = getEventIcon(event.category, event.title);
+                const isCanceling = cancelingId === event.id;
+
+                return (
+                  <View
+                    key={event.id}
+                    style={[
+                      styles.manageItem,
+                      {
+                        backgroundColor: theme.colors.surface,
+                        borderColor: theme.colors.border,
+                      },
+                    ]}
+                  >
+                    <View style={styles.manageItemTop}>
+                      <View
+                        style={[
+                          styles.manageIconBox,
+                          { backgroundColor: color + "22" },
+                        ]}
+                      >
+                        <Ionicons name={icon as any} size={22} color={color} />
+                      </View>
+
+                      <View style={styles.manageText}>
+                        <Text
+                          style={[
+                            styles.manageTitle,
+                            { color: theme.colors.text },
+                          ]}
+                          numberOfLines={2}
+                        >
+                          {event.title}
+                        </Text>
+
+                        <Text
+                          style={[
+                            styles.manageDate,
+                            { color: theme.colors.textSecondary },
+                          ]}
+                        >
+                          {formatEventFullDate(event.event_date)} ·{" "}
+                          {formatEventTime(event.event_date)}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.managePointsPill,
+                          { backgroundColor: color + "22" },
+                        ]}
+                      >
+                        <Text style={[styles.managePoints, { color }]}>
+                          +{event.points_value ?? 0}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.manageLocationRow}>
+                      <Ionicons
+                        name="location-outline"
+                        size={14}
+                        color={theme.colors.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.manageLocation,
+                          { color: theme.colors.textSecondary },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {event.location}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.cancelBookingBtn,
+                        {
+                          backgroundColor: "#ef444422",
+                          borderColor: "#ef444455",
+                        },
+                      ]}
+                      onPress={() => confirmCancelBooking(event)}
+                      disabled={isCanceling}
+                      activeOpacity={0.85}
+                    >
+                      {isCanceling ? (
+                        <ActivityIndicator size="small" color="#ef4444" />
+                      ) : (
+                        <>
+                          <Ionicons
+                            name="trash-outline"
+                            size={16}
+                            color="#ef4444"
+                          />
+                          <Text style={styles.cancelBookingText}>
+                            Cancel Booking
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  page: { paddingBottom: 40 },
-
-  // Header
+  screen: {
+    flex: 1,
+  },
+  page: {
+    paddingBottom: 40,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -263,15 +1405,20 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 20,
   },
-  greeting: { fontSize: 13, fontWeight: "500", marginBottom: 2 },
-  headerTitle: { fontSize: 22, fontWeight: "900" },
+  greeting: {
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+  },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
-
-  // Bell with badge
   notifBtn: {
     width: 44,
     height: 44,
@@ -281,7 +1428,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     position: "relative",
   },
-  notifEmoji: { fontSize: 18 },
   notifBadge: {
     position: "absolute",
     top: -4,
@@ -299,8 +1445,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "800",
   },
-
-  // Avatar
   avatarBtn: {
     width: 44,
     height: 44,
@@ -310,82 +1454,90 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  avatarInner: { alignItems: "center", justifyContent: "center" },
-  avatarHead: { width: 16, height: 16, borderRadius: 8, marginBottom: 2 },
-  avatarBody: { width: 24, height: 12, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
 
-  // Hero Card
-  heroCard: {
+  walletCard: {
     marginHorizontal: 24,
-    borderRadius: 28,
+    borderRadius: 30,
     padding: 24,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 28,
     overflow: "hidden",
     position: "relative",
   },
-  heroCardDecor1: {
+  walletDecorOne: {
     position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 210,
+    height: 210,
+    borderRadius: 105,
     backgroundColor: "rgba(255,255,255,0.08)",
-    top: -80,
-    right: -60,
+    top: -90,
+    right: -70,
   },
-  heroCardDecor2: {
+  walletDecorTwo: {
     position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    bottom: -40,
-    left: 20,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    bottom: -45,
+    left: 18,
   },
-  heroLeft: { flex: 1, zIndex: 1 },
-  heroLabel: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.4,
-    marginBottom: 6,
-  },
-  heroPoints: { color: "#fff", fontSize: 52, fontWeight: "900", lineHeight: 56, marginBottom: 6 },
-  heroCaption: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
-  heroRight: { zIndex: 1 },
-  heroActions: { gap: 8 },
-  heroActionBtn: {
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    alignItems: "center",
-    width: 76,
-  },
-  heroActionEmoji: { fontSize: 20, marginBottom: 3 },
-  heroActionText: { color: "#fff", fontSize: 11, fontWeight: "700" },
-
-  // Stats
-  statsRow: {
+  walletTop: {
     flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 24,
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    zIndex: 1,
+  },
+  walletLabel: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+    marginBottom: 8,
+  },
+  walletPoints: {
+    color: "#fff",
+    fontSize: 52,
+    fontWeight: "900",
+    lineHeight: 58,
+  },
+  walletCaption: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 8,
+    maxWidth: 230,
+  },
+  walletIconCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  walletActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 24,
+    zIndex: 1,
+  },
+  walletActionBtn: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 18,
+    paddingVertical: 12,
+    alignItems: "center",
+    gap: 5,
+  },
+  walletActionText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+
+  section: {
     marginBottom: 28,
   },
-  statCard: {
-    flex: 1,
-    borderRadius: 20,
-    padding: 14,
-    alignItems: "center",
-    borderWidth: 1,
-  },
-  statEmoji: { fontSize: 20, marginBottom: 4 },
-  statValue: { fontSize: 22, fontWeight: "900", marginBottom: 2 },
-  statLabel: { fontSize: 11, fontWeight: "600" },
-
-  // Sections
-  section: { marginBottom: 28 },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -393,11 +1545,167 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     marginBottom: 14,
   },
-  sectionTitle: { fontSize: 18, fontWeight: "900" },
-  seeAll: { fontSize: 13, fontWeight: "700" },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  seeAll: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
 
-  // Events
-  horizontalScroll: { paddingLeft: 24 },
+  bookingPreviewCard: {
+    marginHorizontal: 24,
+    padding: 16,
+    borderRadius: 26,
+    borderWidth: 1,
+  },
+  bookingPreviewTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  bookingPreviewTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  bookingPreviewSub: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 3,
+  },
+  bookingCountPill: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bookingCountText: {
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  bookingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+  },
+  bookedIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bookedText: {
+    flex: 1,
+  },
+  bookedTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    marginBottom: 3,
+  },
+  bookedSub: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  bookedLocation: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  bookedRight: {
+    alignItems: "center",
+  },
+  bookedPoints: {
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  bookedPointsLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  bookingDivider: {
+    height: 1,
+    marginLeft: 60,
+  },
+  manageBookingsBtn: {
+    marginTop: 14,
+    borderRadius: 18,
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  manageBookingsText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  hiddenCountBadge: {
+    backgroundColor: "rgba(255,255,255,0.22)",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: 4,
+  },
+  hiddenCountText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  emptyBookingCard: {
+    marginHorizontal: 24,
+    padding: 24,
+    borderRadius: 26,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  emptyBookingIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  emptyBookingTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    marginBottom: 6,
+  },
+  emptyBookingText: {
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 19,
+    marginBottom: 16,
+  },
+  emptyBookingBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+  },
+  emptyBookingBtnText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  horizontalScroll: {
+    paddingLeft: 24,
+  },
   eventCard: {
     width: CARD_WIDTH,
     borderRadius: 24,
@@ -411,6 +1719,13 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
   },
+  eventImage: {
+    width: CARD_WIDTH,
+    height: CARD_IMAGE_HEIGHT,
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
   eventCardOverlay: {
     position: "absolute",
     bottom: 0,
@@ -420,7 +1735,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
     zIndex: 1,
   },
-  eventCardEmoji: { fontSize: 40, zIndex: 1 },
   eventCardBadge: {
     position: "absolute",
     bottom: 8,
@@ -431,18 +1745,59 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     zIndex: 2,
   },
-  eventCardBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  eventCardBody: { padding: 14 },
-  eventCardDate: { fontSize: 12, fontWeight: "800", marginBottom: 4 },
-  eventCardTitle: { fontSize: 15, fontWeight: "900", marginBottom: 4 },
-  eventCardLocation: { fontSize: 11, marginBottom: 10 },
-  progressBg: { height: 5, borderRadius: 3, marginBottom: 6, overflow: "hidden" },
-  progressFill: { height: "100%", borderRadius: 3 },
-  eventCardFooter: { flexDirection: "row", justifyContent: "space-between" },
-  eventParticipants: { fontSize: 10, fontWeight: "600" },
-  eventPoints: { fontSize: 12, fontWeight: "800" },
+  eventCardBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "capitalize",
+  },
+  eventCardBody: {
+    padding: 14,
+  },
+  eventCardDate: {
+    fontSize: 12,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  eventCardTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    marginBottom: 4,
+    minHeight: 36,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 10,
+  },
+  eventCardLocation: {
+    fontSize: 11,
+    flex: 1,
+  },
+  progressBg: {
+    height: 5,
+    borderRadius: 3,
+    marginBottom: 6,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  eventCardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  eventParticipants: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  eventPoints: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
 
-  // Coupons Banner
   couponsBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -459,11 +1814,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  couponsBannerEmoji: { fontSize: 24 },
-  couponsBannerText: { flex: 1 },
-  couponsBannerTitle: { fontSize: 15, fontWeight: "800", marginBottom: 2 },
-  couponsBannerSub: { fontSize: 12 },
-  couponsBannerArrow: { fontSize: 24, fontWeight: "300" },
+  couponsBannerText: {
+    flex: 1,
+  },
+  couponsBannerTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 2,
+  },
+  couponsBannerSub: {
+    fontSize: 12,
+  },
 
   updateCard: {
     flexDirection: "row",
@@ -482,8 +1843,165 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  updateEmoji: { fontSize: 22 },
-  updateText: { flex: 1 },
-  updateTitle: { fontSize: 14, fontWeight: "700", marginBottom: 2 },
-  updateSubtitle: { fontSize: 12 },
+  updateText: {
+    flex: 1,
+  },
+  updateTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  updateSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  loadingCard: {
+    marginHorizontal: 24,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 22,
+    alignItems: "center",
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  emptyCard: {
+    marginHorizontal: 24,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 22,
+    alignItems: "center",
+    gap: 8,
+  },
+  emptyText: {
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  manageSheet: {
+    maxHeight: "82%",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 28,
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 44,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(148,163,184,0.8)",
+    marginBottom: 18,
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+  sheetTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  sheetSubtitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 3,
+  },
+  sheetCloseBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  sheetList: {
+    paddingBottom: 20,
+  },
+  sheetEmpty: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 50,
+  },
+  sheetEmptyText: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginTop: 10,
+  },
+  manageItem: {
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 14,
+    marginBottom: 12,
+  },
+  manageItemTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  manageIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  manageText: {
+    flex: 1,
+  },
+  manageTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 20,
+  },
+  manageDate: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  managePointsPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  managePoints: {
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  manageLocationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 12,
+  },
+  manageLocation: {
+    fontSize: 12,
+    fontWeight: "600",
+    flex: 1,
+  },
+  cancelBookingBtn: {
+    marginTop: 14,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  cancelBookingText: {
+    color: "#ef4444",
+    fontSize: 13,
+    fontWeight: "900",
+  },
 });

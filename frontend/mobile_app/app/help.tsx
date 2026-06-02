@@ -1,6 +1,7 @@
 import { Text, View, TouchableOpacity, SafeAreaView, StyleSheet, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 
 const faqs = [
@@ -27,7 +28,7 @@ export default function Help() {
             style={[styles.backBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={() => router.back()}
           >
-            <Text style={[styles.backText, { color: theme.colors.text }]}>←</Text>
+            <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
           </TouchableOpacity>
           <Text style={[styles.pageTitle, { color: theme.colors.text }]}>Help & FAQ</Text>
           <View style={styles.spacer} />
@@ -35,7 +36,9 @@ export default function Help() {
 
         {/* Banner */}
         <View style={[styles.banner, { backgroundColor: accent }]}>
-          <Text style={styles.bannerEmoji}>❓</Text>
+          <View style={styles.bannerIconBox}>
+            <Ionicons name="help-circle-outline" size={42} color="#fff" />
+          </View>
           <Text style={styles.bannerTitle}>Got questions?</Text>
           <Text style={styles.bannerSub}>Find answers to the most common questions below</Text>
           <View style={styles.bannerDecor} />
@@ -59,9 +62,11 @@ export default function Help() {
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.faqQ, { color: theme.colors.text }]}>{faq.q}</Text>
-                  <Text style={[styles.faqChevron, { color: accent }]}>
-                    {openIndex === index ? "▲" : "▼"}
-                  </Text>
+                  <Ionicons
+                    name={openIndex === index ? "chevron-up" : "chevron-down"}
+                    size={16}
+                    color={accent}
+                  />
                 </TouchableOpacity>
                 {openIndex === index && (
                   <Text style={[styles.faqA, { color: theme.colors.textSecondary }]}>{faq.a}</Text>
@@ -87,14 +92,13 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 14,
     alignItems: "center", justifyContent: "center", borderWidth: 1,
   },
-  backText: { fontSize: 18, fontWeight: "700" },
   pageTitle: { fontSize: 18, fontWeight: "900", letterSpacing: 0.5 },
   spacer: { width: 40, height: 40 },
   banner: {
     marginHorizontal: 20, borderRadius: 24, padding: 24,
     marginBottom: 28, overflow: "hidden", position: "relative", alignItems: "center",
   },
-  bannerEmoji: { fontSize: 36, marginBottom: 8 },
+  bannerIconBox: { marginBottom: 8 },
   bannerTitle: { color: "#fff", fontSize: 20, fontWeight: "900", marginBottom: 6 },
   bannerSub: { color: "rgba(255,255,255,0.85)", fontSize: 13, textAlign: "center" },
   bannerDecor: {
@@ -110,6 +114,5 @@ const styles = StyleSheet.create({
   faqItem: { paddingHorizontal: 16, paddingVertical: 14 },
   faqQuestion: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   faqQ: { flex: 1, fontSize: 14, fontWeight: "700", marginRight: 12 },
-  faqChevron: { fontSize: 11, fontWeight: "700" },
   faqA: { fontSize: 13, fontWeight: "500", marginTop: 10, lineHeight: 20 },
 });

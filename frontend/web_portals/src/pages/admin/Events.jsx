@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Topbar from '../../components/Topbar';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
@@ -128,6 +129,7 @@ function DeleteEventModal({ isOpen, onClose, event, onConfirm }) {
 }
 
 export default function Events() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -272,7 +274,9 @@ export default function Events() {
                           {expandedId === row.id ? '▼' : '▶'} {row.title}
                         </button>
                       </td>
-                      <td>{row.organiser_name || '--'}</td>
+                      <td><button onClick={() => navigate('/admin/users', { state: { search: row.organiser_name } })}
+                        style={{ background:'none', border:'none', padding:0, fontSize:13, fontWeight:500, color:'var(--accent)', cursor:'pointer', textDecoration:'underline' }}>
+                        {row.organiser_name || '--'}</button></td>
                       <td>{row.date ? new Date(row.date).toLocaleDateString() : '--'}</td>
                       <td>{row.registered_count ?? 0}</td>
                       <td>{row.checked_in_count ?? 0}</td>
@@ -317,22 +321,4 @@ export default function Events() {
                 <button
                   className="page-btn"
                   disabled={page === totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  &rsaquo;
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      <DeleteEventModal
-        isOpen={!!deleteEvent}
-        onClose={() => setDeleteEvent(null)}
-        event={deleteEvent}
-        onConfirm={handleDeleteEvent}
-      />
-    </div>
-  );
-}
+                  onClick={() =

@@ -1,13 +1,7 @@
 import { Text, View, TouchableOpacity, SafeAreaView, StyleSheet, ScrollView, Alert, Clipboard } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
-
-// Generate a random 6-digit PIN
-function generatePIN(): string[] {
-  return Array.from({ length: 6 }, () => Math.floor(Math.random() * 10).toString());
-}
-
-const PIN = generatePIN();
+import { Ionicons } from "@expo/vector-icons";
 
 export default function PINDisplay() {
   const router = useRouter();
@@ -15,15 +9,17 @@ export default function PINDisplay() {
   const params = useLocalSearchParams();
 
   const coupon = {
-    emoji: (params.emoji as string) || "☕",
-    title: (params.title as string) || "Coffee Shop $5 Voucher",
+    icon: (params.emoji as string) || "ticket-outline",
+    title: (params.title as string) || "Voucher",
     description: (params.description as string) || "Show this PIN at checkout",
-    validUntil: (params.validUntil as string) || "May 15, 2026",
-    code: (params.code as string) || "COFFEE5OFF",
+    validUntil: (params.validUntil as string) || "Dec 31, 2026",
+    code: (params.code as string) || "VR-000000",
     color: (params.color as string) || "#f97316",
   };
 
-  const pinString = PIN.join("");
+  // ← Use real PIN from backend, split into array
+  const pinString = (params.pin as string) || "000000";
+  const PIN = pinString.split("");
 
   const handleCopyPIN = () => {
     Clipboard.setString(pinString);
@@ -42,15 +38,15 @@ export default function PINDisplay() {
           style={[styles.backBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
           onPress={() => router.back()}
         >
-          <Text style={[styles.backText, { color: theme.colors.text }]}>←</Text>
+          <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Emoji circle */}
-        <View style={[styles.emojiCircle, { backgroundColor: coupon.color + "22" }]}>
-          <Text style={styles.emojiText}>{coupon.emoji}</Text>
+        {/* Icon circle */}
+        <View style={[styles.iconCircle, { backgroundColor: coupon.color + "22" }]}>
+          <Ionicons name={coupon.icon as any} size={52} color={coupon.color} />
         </View>
 
         {/* Title */}
@@ -93,14 +89,14 @@ export default function PINDisplay() {
             style={[styles.actionBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={handleCopyPIN}
           >
-            <Text style={styles.actionBtnEmoji}>📋</Text>
+            <Ionicons name="copy-outline" size={18} color={theme.colors.text} />
             <Text style={[styles.actionBtnText, { color: theme.colors.text }]}>Copy PIN</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={handleLocations}
           >
-            <Text style={styles.actionBtnEmoji}>📍</Text>
+            <Ionicons name="location-outline" size={18} color={theme.colors.text} />
             <Text style={[styles.actionBtnText, { color: theme.colors.text }]}>Locations</Text>
           </TouchableOpacity>
         </View>
@@ -121,113 +117,52 @@ export default function PINDisplay() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
+    width: 40, height: 40, borderRadius: 12,
+    alignItems: "center", justifyContent: "center", borderWidth: 1,
   },
-  backText: { fontSize: 18, fontWeight: "700" },
-
-  scroll: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    alignItems: "center",
+  scroll: { paddingHorizontal: 24, paddingBottom: 40, alignItems: "center" },
+  iconCircle: {
+    width: 100, height: 100, borderRadius: 50,
+    alignItems: "center", justifyContent: "center",
+    marginBottom: 20, marginTop: 10,
   },
-
-  emojiCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-    marginTop: 10,
-  },
-  emojiText: { fontSize: 48 },
-
   titleBox: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    marginBottom: 10,
-    width: "100%",
-    alignItems: "center",
+    paddingVertical: 12, paddingHorizontal: 24,
+    borderRadius: 12, marginBottom: 10,
+    width: "100%", alignItems: "center",
   },
   titleText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   subtitle: { fontSize: 14, marginBottom: 28, textAlign: "center" },
-
   pinLabel: { fontSize: 13, fontWeight: "600", marginBottom: 16 },
-
-  pinRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 28,
-  },
+  pinRow: { flexDirection: "row", gap: 10, marginBottom: 28 },
   pinBox: {
-    width: 48,
-    height: 58,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 48, height: 58, borderRadius: 12,
+    alignItems: "center", justifyContent: "center",
   },
   pinDigit: { fontSize: 24, fontWeight: "900" },
-
   detailsCard: {
-    width: "100%",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 20,
-    gap: 12,
+    width: "100%", borderRadius: 16, padding: 16,
+    borderWidth: 1, marginBottom: 20, gap: 12,
   },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+  detailRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   detailLabel: { fontSize: 14, fontWeight: "600" },
   detailValue: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    minWidth: 120,
-    alignItems: "center",
+    paddingVertical: 8, paddingHorizontal: 16,
+    borderRadius: 10, minWidth: 120, alignItems: "center",
   },
   detailValueText: { color: "#fff", fontSize: 13, fontWeight: "700" },
-
-  actionRow: {
-    flexDirection: "row",
-    gap: 12,
-    width: "100%",
-    marginBottom: 20,
-  },
+  actionRow: { flexDirection: "row", gap: 12, width: "100%", marginBottom: 20 },
   actionBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 14,
-    borderWidth: 1,
+    flex: 1, flexDirection: "row", alignItems: "center",
+    justifyContent: "center", gap: 8,
+    paddingVertical: 16, borderRadius: 14, borderWidth: 1,
   },
-  actionBtnEmoji: { fontSize: 18 },
   actionBtnText: { fontSize: 14, fontWeight: "600" },
-
   doneBtn: {
-    width: "100%",
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
+    width: "100%", paddingVertical: 18,
+    borderRadius: 16, alignItems: "center", borderWidth: 1,
   },
   doneBtnText: { fontSize: 15, fontWeight: "700", letterSpacing: 1 },
 });

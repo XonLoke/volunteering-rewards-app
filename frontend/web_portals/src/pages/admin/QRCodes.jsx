@@ -85,6 +85,7 @@ export default function QRCodes() {
                 <tr>
                   <th>Event Title</th>
                   <th>Date</th>
+                  <th>Participants</th>
                   <th>Status</th>
                   <th>QR Code Status</th>
                 </tr>
@@ -96,21 +97,13 @@ export default function QRCodes() {
                     <td>
                       {event.date ? new Date(event.date).toLocaleDateString() : '--'}
                     </td>
+                    <td style={{ textAlign: 'center', fontWeight: 500 }}>
+                      {event.registered_count ?? 0}
+                    </td>
                     <td>
                       <span className="status-badge approved">{event.status || 'upcoming'}</span>
                     </td>
                     <td>
                       <span className="status-badge active">
                         {event.status === 'upcoming' ? 'Generated' : 'Archived'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+           

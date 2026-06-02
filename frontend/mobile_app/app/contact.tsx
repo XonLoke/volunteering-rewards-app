@@ -1,6 +1,7 @@
 import { Text, View, TouchableOpacity, SafeAreaView, StyleSheet, ScrollView, TextInput, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 
 export default function Contact() {
@@ -21,6 +22,11 @@ export default function Contact() {
     ]);
   };
 
+  const infoItems = [
+    { icon: "mail-outline", label: "Email", value: "help@volunteerrewards.sg", color: accent },
+    { icon: "time-outline", label: "Response", value: "1–2 business days", color: gold },
+  ];
+
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -31,7 +37,7 @@ export default function Contact() {
             style={[styles.backBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={() => router.back()}
           >
-            <Text style={[styles.backText, { color: theme.colors.text }]}>←</Text>
+            <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
           </TouchableOpacity>
           <Text style={[styles.pageTitle, { color: theme.colors.text }]}>Contact Us</Text>
           <View style={styles.spacer} />
@@ -39,13 +45,10 @@ export default function Contact() {
 
         {/* Info cards */}
         <View style={styles.infoRow}>
-          {[
-            { emoji: "📧", label: "Email", value: "help@volunteerrewards.sg", color: accent },
-            { emoji: "⏰", label: "Response", value: "1–2 business days", color: gold },
-          ].map((item) => (
+          {infoItems.map((item) => (
             <View key={item.label} style={[styles.infoCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <View style={[styles.infoIconBg, { backgroundColor: item.color + "20" }]}>
-                <Text style={styles.infoEmoji}>{item.emoji}</Text>
+                <Ionicons name={item.icon as any} size={22} color={item.color} />
               </View>
               <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>{item.label}</Text>
               <Text style={[styles.infoValue, { color: theme.colors.text }]}>{item.value}</Text>
@@ -87,7 +90,8 @@ export default function Contact() {
             onPress={handleSend}
             activeOpacity={0.85}
           >
-            <Text style={styles.sendBtnText}>Send Message 📤</Text>
+            <Ionicons name="send-outline" size={18} color="#fff" />
+            <Text style={styles.sendBtnText}>Send Message</Text>
           </TouchableOpacity>
         </View>
 
@@ -107,7 +111,6 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 14,
     alignItems: "center", justifyContent: "center", borderWidth: 1,
   },
-  backText: { fontSize: 18, fontWeight: "700" },
   pageTitle: { fontSize: 18, fontWeight: "900", letterSpacing: 0.5 },
   spacer: { width: 40, height: 40 },
   infoRow: { flexDirection: "row", paddingHorizontal: 20, gap: 12, marginBottom: 28 },
@@ -116,13 +119,10 @@ const styles = StyleSheet.create({
     padding: 16, alignItems: "center", gap: 6,
   },
   infoIconBg: { width: 44, height: 44, borderRadius: 13, alignItems: "center", justifyContent: "center" },
-  infoEmoji: { fontSize: 20 },
   infoLabel: { fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
   infoValue: { fontSize: 11, fontWeight: "700", textAlign: "center" },
   form: { paddingHorizontal: 20, gap: 20 },
-  sectionLabel: {
-    fontSize: 11, fontWeight: "800", letterSpacing: 1.2, textTransform: "uppercase",
-  },
+  sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1.2, textTransform: "uppercase" },
   fieldGroup: { gap: 8 },
   fieldLabel: { fontSize: 12, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
   input: {
@@ -136,7 +136,8 @@ const styles = StyleSheet.create({
     fontSize: 15, fontWeight: "600", minHeight: 120,
   },
   sendBtn: {
-    borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 8,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, borderRadius: 16, paddingVertical: 16, marginTop: 8,
   },
   sendBtnText: { color: "#fff", fontSize: 15, fontWeight: "800", letterSpacing: 0.3 },
 });

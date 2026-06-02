@@ -13,14 +13,15 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useTheme } from "@/contexts/ThemeContext";
+import { api } from "../../src/services/api";
+import { useTheme } from "../../contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000/api";
+import { api, setAuthToken } from "../../src/services/api";
 
 export default function Login() {
   const router = useRouter();
   const { theme } = useTheme();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,29 +33,40 @@ export default function Login() {
     }
 
     setLoading(true);
+
     try {
-      const response = await fetch(`${BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
-      });
+      const data = await api.post("/auth/login", { email: email.trim().toLowerCase(), password });
+      setAuthToken(data.token);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || "Login failed");
+      if (!data.token || !data.user) {
+        throw new Error("Invalid login response from server.");
       }
 
-      // ← Save user data so profile can read it
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      // Save token for backend requests
       await AsyncStorage.setItem("token", data.token);
 
-      router.push("/home");
+      // Save full user object for profile/home
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+
+      // Save points separately so Home can show it immediately
+      await AsyncStorage.setItem(
+        "userPoints",
+        String(data.user.points ?? 0)
+      );
+
+      // Save user id separately if other pages need it
+      await AsyncStorage.setItem(
+        "userId",
+        String(data.user.id)
+      );
+
+      // Replace instead of push so user cannot go back to login screen
+      router.replace("/home");
     } catch (err: any) {
-      Alert.alert("Login failed", err.message || "Invalid email or password.");
+      Alert.alert(
+        "Login failed",
+        err.message || "Invalid email or password."
+      );
     } finally {
       setLoading(false);
     }
@@ -65,20 +77,41 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView
+      style={[styles.screen, { backgroundColor: theme.colors.background }]}
+    >
       <KeyboardAvoidingView
         style={styles.screen}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView contentContainerStyle={styles.container}>
-          <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>Welcome Back</Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              Welcome Back
+            </Text>
+
+            <Text
+              style={[
+                styles.subtitle,
+                { color: theme.colors.textSecondary },
+              ]}
+            >
               Sign in to continue
             </Text>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>Email address</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>
+                Email address
+              </Text>
+
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -86,6 +119,7 @@ export default function Login() {
                 placeholderTextColor={theme.colors.textSecondary}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoCorrect={false}
                 style={[
                   styles.input,
                   {
@@ -98,13 +132,18 @@ export default function Login() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>Password</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>
+                Password
+              </Text>
+
               <TextInput
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Enter your password"
                 placeholderTextColor={theme.colors.textSecondary}
                 secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
                 style={[
                   styles.input,
                   {
@@ -116,8 +155,16 @@ export default function Login() {
               />
             </View>
 
-            <TouchableOpacity style={styles.forgotButton} onPress={handleForgotPassword}>
-              <Text style={[styles.forgotText, { color: theme.colors.primaryLight }]}>
+            <TouchableOpacity
+              style={styles.forgotButton}
+              onPress={handleForgotPassword}
+            >
+              <Text
+                style={[
+                  styles.forgotText,
+                  { color: theme.colors.primaryLight },
+                ]}
+              >
                 Forgot Password?
               </Text>
             </TouchableOpacity>
@@ -125,7 +172,10 @@ export default function Login() {
             <TouchableOpacity
               style={[
                 styles.loginButton,
-                { backgroundColor: theme.colors.primary, opacity: loading ? 0.7 : 1 },
+                {
+                  backgroundColor: theme.colors.primary,
+                  opacity: loading ? 0.7 : 1,
+                },
               ]}
               onPress={handleLogin}
               disabled={loading}
@@ -133,17 +183,31 @@ export default function Login() {
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={[styles.loginButtonText, { color: theme.colors.text }]}>LOGIN</Text>
+                <Text style={[styles.loginButtonText, { color: "#fff" }]}>
+                  LOGIN
+                </Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
-                Don't have an account?
+              <Text
+                style={[
+                  styles.footerText,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                Don&apos;t have an account?
               </Text>
+
               <TouchableOpacity onPress={() => router.push("/register")}>
-                <Text style={[styles.signUpText, { color: theme.colors.primaryLight }]}>
-                  {" "}Sign Up
+                <Text
+                  style={[
+                    styles.signUpText,
+                    { color: theme.colors.primaryLight },
+                  ]}
+                >
+                  {" "}
+                  Sign Up
                 </Text>
               </TouchableOpacity>
             </View>
@@ -155,7 +219,9 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
+  screen: {
+    flex: 1,
+  },
   container: {
     flexGrow: 1,
     justifyContent: "center",
@@ -168,13 +234,29 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 24,
-    shadowOffset: { width: 0, height: 16 },
+    shadowOffset: {
+      width: 0,
+      height: 16,
+    },
     elevation: 8,
   },
-  title: { fontSize: 32, fontWeight: "800", marginBottom: 12 },
-  subtitle: { fontSize: 16, marginBottom: 28 },
-  inputGroup: { marginBottom: 18 },
-  label: { fontSize: 13, fontWeight: "600", marginBottom: 8 },
+  title: {
+    fontSize: 32,
+    fontWeight: "800",
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 28,
+  },
+  inputGroup: {
+    marginBottom: 18,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
   input: {
     width: "100%",
     borderRadius: 18,
@@ -187,7 +269,10 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     marginBottom: 24,
   },
-  forgotText: { fontSize: 14, fontWeight: "600" },
+  forgotText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
   loginButton: {
     borderRadius: 18,
     paddingVertical: 18,
@@ -195,8 +280,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 22,
   },
-  loginButtonText: { fontSize: 16, fontWeight: "700", letterSpacing: 0.6 },
-  footer: { flexDirection: "row", justifyContent: "center" },
-  footerText: { fontSize: 14 },
-  signUpText: { fontSize: 14, fontWeight: "700" },
+  loginButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  footerText: {
+    fontSize: 14,
+  },
+  signUpText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
 });

@@ -405,6 +405,35 @@ export default function Merchants() {
         merchant={selectedMerchant} onSubmit={handleAddProduct} />
       <ProductListModal isOpen={productListOpen} onClose={() => setProductListOpen(null)}
         merchant={selectedMerchant} products={products} />
+
+      <Modal isOpen={editFormOpen} onClose={() => setEditFormOpen(false)} title="Edit Merchant"
+        actions={[
+          { label: 'Cancel', variant: 'secondary', onClick: () => setEditFormOpen(false) },
+          { label: 'Save', variant: 'primary', onClick: handleEditMerchant },
+        ]}>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">Merchant Name</label>
+          <input className="form-input" value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+        </div>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">Contact Person</label>
+          <input className="form-input" value={editForm.contact_person} onChange={(e) => setEditForm({...editForm, contact_person: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+        </div>
+        <div className="form-row" style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="form-label">Email</label>
+            <input className="form-input" value={editForm.contact_email} onChange={(e) => setEditForm({...editForm, contact_email: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+          </div>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="form-label">Phone</label>
+            <input className="form-input" value={editForm.contact_phone} onChange={(e) => setEditForm({...editForm, contact_phone: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Address</label>
+          <textarea className="form-textarea" value={editForm.address} onChange={(e) => setEditForm({...editForm, address: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box', minHeight: 60 }} />
+        </div>
+      </Modal>
     </div>
   );
 }

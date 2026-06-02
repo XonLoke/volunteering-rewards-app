@@ -13,9 +13,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { api } from "../../src/services/api";
 import { useTheme } from "@/contexts/ThemeContext";
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000/api";
+
 
 export default function Register() {
   const router = useRouter();
@@ -42,17 +43,8 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
-          password,
-        }),
-      });
-
-      const data = await response.json();
+      const data = await api.post("/auth/register", { name: name.trim(), email: email.trim(), password });
+      setAuthToken(data.token);
 
       if (!response.ok) {
         throw new Error(data.error?.message || "Registration failed");

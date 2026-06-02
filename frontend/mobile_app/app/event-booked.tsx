@@ -1,145 +1,414 @@
-import { Text, View, TouchableOpacity, SafeAreaView, StyleSheet, Alert, ScrollView } from "react-native";
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  SafeAreaView,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import * as Calendar from "expo-calendar";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function EventBooked() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { eventTitle, eventDate, eventTime, eventLocation, eventPoints } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+
   const [calendarAdded, setCalendarAdded] = useState(false);
+  const [addingCalendar, setAddingCalendar] = useState(false);
 
-  const parseDateTime = () => {
-    const dateStr = eventDate as string;
-    const timeStr = eventTime as string;
-    const startTime = timeStr.split(" - ")[0];
+  const eventTitle =
+    typeof params.eventTitle === "string" ? params.eventTitle : "Volunteer Event";
 
-    const [month, day, year] = dateStr.split(" ");
-    const monthMap: Record<string, number> = {
-      January: 0, February: 1, March: 2, April: 3, May: 4, June: 5,
-      July: 6, August: 7, September: 8, October: 9, November: 10, December: 11,
-    };
+  const eventDate =
+    typeof params.eventDate === "string" ? params.eventDate : "Date TBA";
 
-    const monthNum = monthMap[month];
-    const dayNum = parseInt(day.replace(",", ""));
-    const yearNum = parseInt(year);
+  const eventTime =
+    typeof params.eventTime === "string" ? params.eventTime : "Time TBA";
 
-    const [timeOnly, meridiem] = startTime.trim().split(" ");
-    let [hours, minutes] = timeOnly.split(":").map(Number);
-    if (meridiem === "PM" && hours !== 12) hours += 12;
-    if (meridiem === "AM" && hours === 12) hours = 0;
+  const eventLocation =
+    typeof params.eventLocation === "string" ? params.eventLocation : "Location TBA";
 
-    return new Date(yearNum, monthNum, dayNum, hours, minutes);
-  };
+  const eventPoints =
+    typeof params.eventPoints === "string" ? params.eventPoints : "0";
 
   const addToCalendar = async () => {
     try {
+      setAddingCalendar(true);
+
+      const Calendar = await import("expo-calendar");
       const { status } = await Calendar.requestCalendarPermissionsAsync();
+
       if (status !== "granted") {
-        Alert.alert("Permission Denied", "Calendar access is needed to add this event to your phone calendar.");
+        Alert.alert(
+          "Permission Denied",
+          "Calendar access is needed to add this event."
+        );
         return;
       }
 
-      const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-      const defaultCalendar = calendars.find((cal) => cal.isPrimary) || calendars[0];
+      const calendars = await Calendar.getCalendarsAsync(
+        Calendar.EntityTypes.EVENT
+      );
+
+      const defaultCalendar =
+        calendars.find((cal) => cal.isPrimary) || calendars[0];
 
       if (!defaultCalendar) {
-        Alert.alert("Error", "No calendar found on your device.");
+        Alert.alert("Error", "No calendar was found on this device.");
         return;
       }
 
-      const startDate = parseDateTime();
-      const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
+      const parsedStartDate = new Date(`${eventDate} ${eventTime}`);
 
-      const event = {
-        title: eventTitle as string,
-        startDate,
+      const validStartDate = Number.isNaN(parsedStartDate.getTime())
+        ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        : parsedStartDate;
+
+      const endDate = new Date(validStartDate.getTime() + 3 * 60 * 60 * 1000);
+
+      await Calendar.createEventAsync(defaultCalendar.id, {
+        title: eventTitle,
+        startDate: validStartDate,
         endDate,
-        location: eventLocation as string,
-        notes: `Volunteer event - Earn ${eventPoints} points!`,
-        timeZone: "UTC",
-      };
+        location: eventLocation,
+        notes: `Volunteer event. You can earn ${eventPoints} points after attendance is confirmed.`,
+        timeZone: "Asia/Singapore",
+      });
 
-      await Calendar.createEventAsync(defaultCalendar.id, event);
       setCalendarAdded(true);
-      Alert.alert("Success!", "Event has been added to your phone calendar.", [{ text: "OK" }]);
+
+      Alert.alert("Added to Calendar", "This event has been added to your phone calendar.");
     } catch (err) {
       console.error("Calendar error:", err);
-      Alert.alert("Error", "Failed to add event to calendar. Please try again.");
+      Alert.alert("Error", "Failed to add event to calendar.");
+    } finally {
+      setAddingCalendar(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView
+      style={[styles.screen, { backgroundColor: theme.colors.background }]}
+    >
       <ScrollView
-        style={{ flex: 1 }}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Checkmark Circle */}
-        <View style={styles.checkmarkContainer}>
-          <View style={[styles.checkmarkCircle, { backgroundColor: theme.colors.primary }]}>
-            <Text style={[styles.checkmark, { color: theme.colors.text }]}>✓</Text>
-          </View>
-        </View>
+        <View style={styles.heroSection}>
+          <View style={styles.decorCircleOne} />
+          <View style={styles.decorCircleTwo} />
 
-        {/* Success Message */}
-        <Text style={[styles.successTitle, { color: theme.colors.text }]}>Event Booked!</Text>
-        <Text style={[styles.successSubtitle, { color: theme.colors.textSecondary }]}>Your spot is reserved</Text>
-
-        {/* Event Card */}
-        <View style={[styles.eventCard, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.eventTitle, { color: theme.colors.text }]}>{eventTitle}</Text>
-
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>📅 {eventDate}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>🕐 {eventTime}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>📍 {eventLocation}</Text>
-          </View>
-
-          <View style={[styles.rewardBox, { backgroundColor: theme.colors.surfaceSecondary }]}>
-            <Text style={[styles.rewardLabel, { color: theme.colors.textSecondary }]}>You'll earn</Text>
-            <Text style={[styles.rewardPoints, { color: theme.colors.primaryLight }]}>+{eventPoints}</Text>
-            <Text style={[styles.rewardText, { color: theme.colors.textSecondary }]}>points</Text>
-          </View>
-        </View>
-
-        {/* Notifications Section */}
-        <View style={[styles.notificationsSection, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Notifications</Text>
-          <View style={styles.notificationItem}>
-            <Text style={[styles.notificationIcon, { color: theme.colors.primaryLight }]}>🔔</Text>
-            <View style={styles.notificationContent}>
-              <Text style={[styles.notificationTitle, { color: theme.colors.text }]}>Event Confirmation</Text>
-              <Text style={[styles.notificationText, { color: theme.colors.textSecondary }]}>Check-in confirmation will be sent 24h before</Text>
+          <View style={styles.successRing}>
+            <View style={styles.successCircle}>
+              <Ionicons name="checkmark" size={58} color="#fff" />
             </View>
           </View>
-          <View style={styles.notificationItem}>
-            <Text style={[styles.notificationIcon, { color: theme.colors.primaryLight }]}>⏰</Text>
-            <View style={styles.notificationContent}>
-              <Text style={[styles.notificationTitle, { color: theme.colors.text }]}>Reminders</Text>
-              <Text style={[styles.notificationText, { color: theme.colors.textSecondary }]}>You'll get a reminder 1 hour before the event</Text>
+
+          <Text style={[styles.successTitle, { color: theme.colors.text }]}>
+            You&apos;re Booked!
+          </Text>
+
+          <Text
+            style={[styles.successSubtitle, { color: theme.colors.textSecondary }]}
+          >
+            Your spot has been reserved for this volunteer event.
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.eventCard,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
+          <View style={styles.cardTopRow}>
+            <View
+              style={[
+                styles.eventIconBox,
+                { backgroundColor: theme.colors.primary + "22" },
+              ]}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={26}
+                color={theme.colors.primary}
+              />
+            </View>
+
+            <View style={styles.cardTitleArea}>
+              <Text
+                style={[styles.eventTitle, { color: theme.colors.text }]}
+                numberOfLines={2}
+              >
+                {eventTitle}
+              </Text>
+
+              <Text
+                style={[styles.eventSub, { color: theme.colors.textSecondary }]}
+              >
+                Booking confirmed
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.confirmedPill,
+              { backgroundColor: "rgba(16,185,129,0.14)" },
+            ]}
+          >
+            <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+            <Text style={styles.confirmedText}>Confirmed</Text>
+          </View>
+
+          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+
+          <View style={styles.detailList}>
+            <View style={styles.detailRow}>
+              <View
+                style={[
+                  styles.detailIconBox,
+                  { backgroundColor: theme.colors.primary + "22" },
+                ]}
+              >
+                <Ionicons
+                  name="calendar-clear-outline"
+                  size={17}
+                  color={theme.colors.primary}
+                />
+              </View>
+
+              <View style={styles.detailTextBox}>
+                <Text
+                  style={[styles.detailLabel, { color: theme.colors.textSecondary }]}
+                >
+                  Date
+                </Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>
+                  {eventDate}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.detailRow}>
+              <View
+                style={[
+                  styles.detailIconBox,
+                  { backgroundColor: theme.colors.primary + "22" },
+                ]}
+              >
+                <Ionicons
+                  name="time-outline"
+                  size={17}
+                  color={theme.colors.primary}
+                />
+              </View>
+
+              <View style={styles.detailTextBox}>
+                <Text
+                  style={[styles.detailLabel, { color: theme.colors.textSecondary }]}
+                >
+                  Time
+                </Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>
+                  {eventTime}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.detailRow}>
+              <View
+                style={[
+                  styles.detailIconBox,
+                  { backgroundColor: theme.colors.primary + "22" },
+                ]}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={17}
+                  color={theme.colors.primary}
+                />
+              </View>
+
+              <View style={styles.detailTextBox}>
+                <Text
+                  style={[styles.detailLabel, { color: theme.colors.textSecondary }]}
+                >
+                  Location
+                </Text>
+                <Text
+                  style={[styles.detailValue, { color: theme.colors.text }]}
+                  numberOfLines={2}
+                >
+                  {eventLocation}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.rewardBox,
+              {
+                backgroundColor: theme.colors.background,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <View>
+              <Text
+                style={[styles.rewardLabel, { color: theme.colors.textSecondary }]}
+              >
+                Points after check-in
+              </Text>
+
+              <Text style={[styles.rewardCaption, { color: theme.colors.textSecondary }]}>
+                Points are awarded after your attendance is scanned.
+              </Text>
+            </View>
+
+            <View style={styles.rewardPointsBox}>
+              <Ionicons name="star" size={16} color={theme.colors.primaryLight} />
+              <Text
+                style={[styles.rewardPoints, { color: theme.colors.primaryLight }]}
+              >
+                +{eventPoints}
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* Action Buttons */}
+        <View
+          style={[
+            styles.infoCard,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
+          <Text style={[styles.infoTitle, { color: theme.colors.text }]}>
+            What happens next?
+          </Text>
+
+          <View style={styles.stepRow}>
+            <View style={[styles.stepNumber, { backgroundColor: theme.colors.primary }]}>
+              <Text style={styles.stepNumberText}>1</Text>
+            </View>
+            <View style={styles.stepTextBox}>
+              <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+                Attend the event
+              </Text>
+              <Text style={[styles.stepText, { color: theme.colors.textSecondary }]}>
+                Arrive at the venue and check in with the organiser.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.stepRow}>
+            <View style={[styles.stepNumber, { backgroundColor: theme.colors.primary }]}>
+              <Text style={styles.stepNumberText}>2</Text>
+            </View>
+            <View style={styles.stepTextBox}>
+              <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+                Scan for points
+              </Text>
+              <Text style={[styles.stepText, { color: theme.colors.textSecondary }]}>
+                Scan the event QR after volunteering to receive your points.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.stepRow}>
+            <View style={[styles.stepNumber, { backgroundColor: theme.colors.primary }]}>
+              <Text style={styles.stepNumberText}>3</Text>
+            </View>
+            <View style={styles.stepTextBox}>
+              <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+                Redeem rewards
+              </Text>
+              <Text style={[styles.stepText, { color: theme.colors.textSecondary }]}>
+                Use your points to redeem coupons from the rewards page.
+              </Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.actionContainer}>
           <TouchableOpacity
-            style={[styles.calendarButton, calendarAdded && styles.calendarButtonAdded, { backgroundColor: calendarAdded ? theme.colors.primary : theme.colors.surfaceSecondary }]}
+            style={[
+              styles.calendarButton,
+              {
+                backgroundColor: calendarAdded
+                  ? "rgba(16,185,129,0.16)"
+                  : theme.colors.surface,
+                borderColor: calendarAdded ? "#10b981" : theme.colors.border,
+              },
+            ]}
             onPress={addToCalendar}
+            disabled={addingCalendar || calendarAdded}
+            activeOpacity={0.85}
           >
-            <Text style={[styles.calendarButtonText, { color: calendarAdded ? theme.colors.text : theme.colors.primaryLight }]}>
-              {calendarAdded ? "✓ Added to Calendar" : "Add to Phone Calendar"}
-            </Text>
+            {addingCalendar ? (
+              <ActivityIndicator color={theme.colors.primary} />
+            ) : (
+              <>
+                <Ionicons
+                  name={calendarAdded ? "checkmark-circle" : "calendar-outline"}
+                  size={19}
+                  color={calendarAdded ? "#10b981" : theme.colors.primaryLight}
+                />
+                <Text
+                  style={[
+                    styles.calendarButtonText,
+                    {
+                      color: calendarAdded
+                        ? "#10b981"
+                        : theme.colors.primaryLight,
+                    },
+                  ]}
+                >
+                  {calendarAdded ? "Added to Calendar" : "Add to Phone Calendar"}
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.continueButton, { backgroundColor: theme.colors.primary }]} onPress={() => router.push('/home')}>
-            <Text style={[styles.continueText, { color: theme.colors.text }]}>Back to Home</Text>
+
+          <TouchableOpacity
+            style={[styles.primaryButton, { backgroundColor: theme.colors.primary }]}
+            onPress={() => router.replace("/home")}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryButtonText}>Back to Home</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.secondaryButton,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.surface,
+              },
+            ]}
+            onPress={() => router.replace("/events")}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.secondaryButtonText,
+                { color: theme.colors.textSecondary },
+              ]}
+            >
+              Browse More Events
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -153,101 +422,211 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingTop: 28,
+    paddingBottom: 42,
   },
-  checkmarkContainer: {
-    marginBottom: 24,
+  heroSection: {
     alignItems: "center",
+    marginBottom: 26,
+    position: "relative",
+    overflow: "visible",
   },
-  checkmarkCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  decorCircleOne: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(16,185,129,0.08)",
+    top: -60,
+    right: -50,
+  },
+  decorCircleTwo: {
+    position: "absolute",
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(99,102,241,0.08)",
+    bottom: -20,
+    left: -45,
+  },
+  successRing: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
     borderWidth: 2,
+    borderColor: "rgba(16,185,129,0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  successCircle: {
+    width: 102,
+    height: 102,
+    borderRadius: 51,
+    backgroundColor: "#10b981",
     alignItems: "center",
     justifyContent: "center",
   },
-  checkmark: {
-    fontSize: 56,
-    fontWeight: "800",
-  },
   successTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    marginBottom: 8,
+    fontSize: 30,
+    fontWeight: "900",
     textAlign: "center",
+    marginBottom: 8,
   },
   successSubtitle: {
     fontSize: 15,
-    marginBottom: 28,
+    lineHeight: 21,
     textAlign: "center",
+    maxWidth: 280,
   },
   eventCard: {
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 24,
+    borderRadius: 26,
     borderWidth: 1,
+    padding: 20,
+    marginBottom: 18,
+  },
+  cardTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginBottom: 14,
+  },
+  eventIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardTitleArea: {
+    flex: 1,
   },
   eventTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
+    lineHeight: 23,
+    marginBottom: 4,
+  },
+  eventSub: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  confirmedPill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    marginBottom: 14,
+  },
+  confirmedText: {
+    color: "#10b981",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  divider: {
+    height: 1,
     marginBottom: 16,
   },
+  detailList: {
+    gap: 14,
+    marginBottom: 18,
+  },
   detailRow: {
-    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  detailIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailTextBox: {
+    flex: 1,
   },
   detailLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  detailValue: {
     fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 19,
   },
   rewardBox: {
-    borderRadius: 16,
-    padding: 14,
-    marginTop: 14,
-    alignItems: "center",
+    borderRadius: 18,
     borderWidth: 1,
+    padding: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 14,
   },
   rewardLabel: {
     fontSize: 12,
-    marginBottom: 6,
+    fontWeight: "800",
+    marginBottom: 3,
+  },
+  rewardCaption: {
+    fontSize: 11,
+    lineHeight: 16,
+    maxWidth: 190,
+  },
+  rewardPointsBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
   },
   rewardPoints: {
-    fontSize: 32,
-    fontWeight: "800",
-    marginBottom: 2,
-  },
-  rewardText: {
-    fontSize: 12,
-  },
-  notificationsSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  notificationItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-  },
-  notificationIcon: {
     fontSize: 24,
-    marginRight: 12,
+    fontWeight: "900",
   },
-  notificationContent: {
+  infoCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 20,
+  },
+  infoTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    marginBottom: 16,
+  },
+  stepRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 14,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  stepNumberText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  stepTextBox: {
     flex: 1,
   },
-  notificationTitle: {
+  stepTitle: {
     fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 4,
+    fontWeight: "800",
+    marginBottom: 3,
   },
-  notificationText: {
-    fontSize: 13,
+  stepText: {
+    fontSize: 12,
+    lineHeight: 17,
   },
   actionContainer: {
     gap: 12,
@@ -256,22 +635,32 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingVertical: 16,
     alignItems: "center",
-    borderWidth: 2,
-  },
-  calendarButtonAdded: {
-    opacity: 0.8,
+    justifyContent: "center",
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
   },
   calendarButtonText: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "800",
   },
-  continueButton: {
+  primaryButton: {
     borderRadius: 18,
-    paddingVertical: 16,
+    paddingVertical: 17,
+    alignItems: "center",
+  },
+  primaryButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  secondaryButton: {
+    borderRadius: 18,
+    paddingVertical: 17,
     alignItems: "center",
     borderWidth: 1,
   },
-  continueText: {
+  secondaryButtonText: {
     fontSize: 15,
     fontWeight: "700",
   },
