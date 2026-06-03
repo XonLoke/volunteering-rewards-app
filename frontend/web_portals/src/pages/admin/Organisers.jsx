@@ -4,7 +4,7 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { apiGet, apiPut } from '../../services/api';
+import { apiGet, apiPut, apiPost } from '../../services/api';
 
 const TABS = [
   { key: 'pending', label: 'Pending' },
@@ -96,6 +96,8 @@ export default function Organisers() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(15);
   const [reviewOrg, setReviewOrg] = useState(null);
+  const [createOrgOpen, setCreateOrgOpen] = useState(false);
+  const [createOrgForm, setCreateOrgForm] = useState({ name: '', email: '', org_name: '', org_type: 'charity' });
 
   const fetchOrganisers = useCallback(async () => {
     setLoading(true);
@@ -140,6 +142,18 @@ export default function Organisers() {
     }
   };
 
+  const handleCreateOrganiser = async () => {
+    try {
+      const res = await apiPost('/admin/organisers/create-account', createOrgForm);
+      toast(res.message || 'Organiser created', 'success');
+      setCreateOrgOpen(false);
+      setCreateOrgForm({ name: '', email: '', org_name: '', org_type: 'charity' });
+      fetchOrganisers();
+    } catch (err) {
+      toast(err.message || 'Failed to create organiser', 'error');
+    }
+  };
+
   const totalPages = Math.ceil(total / pageSize);
 
   const columns = [
@@ -178,6 +192,9 @@ export default function Organisers() {
       <div className="main-content">
         <div className="page-header">
           <h2 className="page-title">Organisation Approval</h2>
+          <div className="page-actions">
+            <button className="btn btn-primary" onClick={() => setCreateOrgOpen(true)}>+ Create Organiser</button>
+          </div>
         </div>
 
         <div className="tab-bar">
@@ -348,6 +365,39 @@ export default function Organisers() {
         organiser={reviewOrg}
         onConfirm={handleConfirmReview}
       />
+
+      <Modal isOpen={!!createOrgOpen} onClose={() => setCreateOrgOpen(false)} title="Create Organiser"
+        actions={[
+          { label: 'Cancel', variant: 'secondary', onClick: () => setCreateOrgOpen(false) },
+          { label: 'Create', variant: 'primary', onClick: handleCreateOrganiser },
+        ]}>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">Name</label>
+          <input className="form-input" value={createOrgForm.name} onChange={(e) => setCreateOrgForm({...createOrgForm, name: e.target.value})}
+            style={{ width:'100%', padding:'10px 12px', border:'1px solid #ddd', borderRadius:6, fontSize:14, boxSizing:'border-box' }} />
+        </div>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">Email</label>
+          <input className="form-input" type="email" value={createOrgForm.email} onChange={(e) => setCreateOrgForm({...createOrgForm, email: e.target.value})}
+            style={{ width:'100%', padding:'10px 12px', border:'1px solid #ddd', borderRadius:6, fontSize:14, boxSizing:'border-box' }} />
+        </div>
+        <div className="form-row" style={{ display:'flex', gap:12, marginBottom:12 }}>
+          <div className="form-group" style={{ flex:1 }}>
+            <label className="form-label">Organisation</label>
+            <input className="form-input" value={createOrgForm.org_name} onChange={(e) => setCreateOrgForm({...createOrgForm, org_name: e.target.value})}
+              style={{ width:'100%', padding:'10px 12px', border:'1px solid #ddd', borderRadius:6, fontSize:14, boxSizing:'border-box' }} />
+          </div>
+          <div className="form-group" style={{ flex:1 }}>
+            <label className="form-label">Type</label>
+            <select className="form-select" value={createOrgForm.org_type} onChange={(e) => setCreateOrgForm({...createOrgForm, org_type: e.target.value})}
+              style={{ width:'100%', padding:'10px 12px', border:'1px solid #ddd', borderRadius:6, fontSize:14, boxSizing:'border-box' }}>
+              <option value="charity">Charity</option>
+              <option value="community_group">Community Group</option>
+              <option value="statutory_board">Statutory Board</option>
+            </select>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

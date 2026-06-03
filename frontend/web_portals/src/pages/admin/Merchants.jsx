@@ -236,17 +236,7 @@ export default function Merchants() {
     catch (err) { toast(err.message || 'Failed', 'error'); }
   };
 
-  const handleCreateAccount = async () => {
-    try {
-      const data = { ...accountForm, merchant_id: parseInt(accountForm.merchant_id) || undefined };
-      const r = await apiPost('/admin/merchants/create-account', data);
-      toast(r.message || 'Account created', 'success');
-      setAccountFormOpen(false);
-      setAccountForm({ name: '', email: '', password: 'password123', phone: '', merchant_id: '' });
-    } catch (err) { toast(err.message || 'Failed', 'error'); }
-  };
-
-  const handleViewProducts = async (merchant) => {
+const handleViewProducts = async (merchant) => {
     setSelectedMerchant(merchant);
     try {
       const res = await apiGet(`/admin/merchants/${merchant.id}/products`);
@@ -294,8 +284,7 @@ export default function Merchants() {
             </div>
             {activeTab === 'merchants' ? (
               <>
-                <button className="btn btn-outline btn-sm" onClick={() => setAccountFormOpen(true)}>Create Account</button>
-                <button className="btn btn-primary" onClick={() => setFormOpen(true)}>+ Register</button>
+                <button className="btn btn-primary" onClick={() => setFormOpen(true)}>+ Register Merchant</button>
               </>
             ) : (
               <button className="btn btn-primary btn-sm" onClick={() => setProspectFormOpen(true)}>+ Add Prospect</button>
@@ -376,32 +365,7 @@ export default function Merchants() {
         </div>
       </Modal>
 
-      <Modal isOpen={accountFormOpen} onClose={() => setAccountFormOpen(false)} title="Create Merchant Login"
-        actions={[
-          { label: 'Cancel', variant: 'secondary', onClick: () => setAccountFormOpen(false) },
-          { label: 'Create', variant: 'primary', onClick: handleCreateAccount },
-        ]}>
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label className="form-label">Full Name</label>
-          <input className="form-input" value={accountForm.name} onChange={(e) => setAccountForm({...accountForm, name: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
-        </div>
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label className="form-label">Email (login ID)</label>
-          <input className="form-input" type="email" value={accountForm.email} onChange={(e) => setAccountForm({...accountForm, email: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
-        </div>
-        <div className="form-row" style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-          <div className="form-group" style={{ flex: 1 }}>
-            <label className="form-label">Password</label>
-            <input className="form-input" type="password" value={accountForm.password} onChange={(e) => setAccountForm({...accountForm, password: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
-          </div>
-          <div className="form-group" style={{ flex: 1 }}>
-            <label className="form-label">Phone</label>
-            <input className="form-input" value={accountForm.phone} onChange={(e) => setAccountForm({...accountForm, phone: e.target.value})} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
-          </div>
-        </div>
-        <p style={{ fontSize: 12, color: 'var(--muted)' }}>Default password is "password123"</p>
-      </Modal>
-      <ProductFormModal isOpen={productFormOpen} onClose={() => setProductFormOpen(false)}
+<ProductFormModal isOpen={productFormOpen} onClose={() => setProductFormOpen(false)}
         merchant={selectedMerchant} onSubmit={handleAddProduct} />
       <ProductListModal isOpen={productListOpen} onClose={() => setProductListOpen(null)}
         merchant={selectedMerchant} products={products} />

@@ -15,6 +15,16 @@ function hashPin(pin) {
   return crypto.createHmac("sha256", secret).update(String(pin)).digest("hex");
 }
 
+
+// ─── Get Rewards Config helper for coupon calculations ──
+async function getPointsPerDollar() {
+  try {
+    const { rows } = await pool.query("SELECT points_per_dollar FROM rewards_configuration ORDER BY id DESC LIMIT 1");
+    if (rows.length > 0 && rows[0].points_per_dollar > 0) return rows[0].points_per_dollar;
+  } catch {}
+  return 100; // default fallback
+}
+
 // ─── Dashboard Stats ─────────────────────────────────────
 async function getDashboardStats() {
   const queries = {
@@ -332,6 +342,7 @@ async function getEventParticipation(eventId) {
 // ─── List Coupons ─────────────────────────────────────────
 async function listCoupons({ page = 1, limit = 15 } = {}) {
   const offset = (page - 1) * limit;
+  const ppd = await getPointsPerDollar();
   const countResult = await pool.query("SELECT COUNT(*) FROM coupons");
   const total = parseInt(countResult.rows[0].count);
 
@@ -347,7 +358,14 @@ async function listCoupons({ page = 1, limit = 15 } = {}) {
     [limit, offset]
   );
 
-  return { data: rows, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
+  // Calculate real-time points cost from value_cents
+  const data = rows.map(r => ({
+    ...r,
+    points_cost: r.value_cents ? Math.max(Math.round(r.value_cents / ppd) * 10, r.points_cost) : r.points_cost,
+    calculated_points: r.value_cents ? Math.round(r.value_cents / ppd) : r.points_cost,
+  }));
+
+  return { data, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
 }
 
 // ─── Create Coupon (with batch PIN generation) ────────────
@@ -356,12 +374,20 @@ async function createCoupon(data, userId) {
   try {
     await client.query("BEGIN");
 
+    // Auto-calculate points_required from value_cents using rewards config
+    let pointsRequired = data.points_required;
+    if (!pointsRequired && data.value_cents) {
+      const ppd = await getPointsPerDollar();
+      pointsRequired = Math.round(data.value_cents / ppd) * 10;
+    }
+    if (!pointsRequired) pointsRequired = 100;
+
     // Create the coupon batch
     const { rows } = await client.query(
       `INSERT INTO coupons (title, description, points_required, quantity, value_cents, merchant_name, expiry_date, status, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8)
        RETURNING id, title, points_required, quantity, value_cents, merchant_name, expiry_date`,
-      [data.title, data.description, data.points_required, data.quantity, data.value_cents || 0, data.merchant_name || null, data.expiry_date, userId]
+      [data.title, data.description, pointsRequired, data.quantity, data.value_cents || 0, data.merchant_name || null, data.expiry_date, userId]
     );
     const coupon = rows[0];
     const quantity = parseInt(data.quantity) || 0;
@@ -445,17 +471,14 @@ async function listRedemptions({ page = 1, limit = 15 } = {}) {
 
 // ─── Rewards Configuration ────────────────────────────────
 async function getRewardsConfig() {
-  return {
-    points_per_dollar: 100,
-    min_redeem_points: 50,
-    max_redeem_per_day: 5,
-    default_event_points: 50,
-  };
+  const { rows } = await pool.query("SELECT points_per_dollar, min_redeem_points, max_redeem_per_day, default_event_points, updated_at FROM rewards_configuration ORDER BY id DESC LIMIT 1");
+  if (rows.length === 0) return { points_per_dollar: 100, min_redeem_points: 50, max_redeem_per_day: 5, default_event_points: 50 };
+  return rows[0];
 }
 
-async function updateRewardsConfig(data) {
-  // In a real implementation, this would update a rewards_configuration table
-  return { message: "Configuration updated", updated_at: new Date().toISOString() };
+async function updateRewardsConfig(data, userId) {
+  const { rows } = await pool.query("INSERT INTO rewards_configuration (points_per_dollar, min_redeem_points, max_redeem_per_day, default_event_points, updated_by, updated_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *", [data.points_per_dollar, data.min_redeem_points, data.max_redeem_per_day, data.default_event_points, userId]);
+  return { message: "Configuration updated", updated_at: rows[0].updated_at };
 }
 
 

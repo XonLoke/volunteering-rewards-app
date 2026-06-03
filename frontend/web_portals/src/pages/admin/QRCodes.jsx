@@ -38,18 +38,13 @@ export default function QRCodes() {
           </div>
           <div style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--fg)' }}>
             <p style={{ marginBottom: 8 }}>
-              QR codes are automatically generated for each event when it is created by an organiser.
-              The QR code is used for check-in at the event venue, allowing volunteers to scan in
-              and earn points for their participation.
+              Each volunteer has a unique QR code embedded in their profile. When a volunteer attends
+              an event, they present their QR code to the organiser, who scans it using the on-site
+              controller mobile app to confirm attendance and award points.
             </p>
             <p style={{ marginBottom: 8 }}>
-              Each QR code encodes the unique event ID and a verification token. When scanned by the
-              event organiser's mobile app, the volunteer is checked in and points are awarded
-              automatically based on the default event points configuration.
-            </p>
-            <p>
-              QR codes can be downloaded by the event organiser from their dashboard and printed
-              for display at the event check-in desk.
+              The volunteer's QR code can be found in their profile page under "My QR Code" and is
+              also used for coupon redemption at merchant outlets.
             </p>
           </div>
         </div>
@@ -87,7 +82,7 @@ export default function QRCodes() {
                   <th>Date</th>
                   <th>Participants</th>
                   <th>Status</th>
-                  <th>QR Code Status</th>
+                  <th>Organiser</th>
                 </tr>
               </thead>
               <tbody>
@@ -104,6 +99,15 @@ export default function QRCodes() {
                       <span className="status-badge approved">{event.status || 'upcoming'}</span>
                     </td>
                     <td>
-                      <span className="status-badge active">
-                        {event.status === 'upcoming' ? 'Generated' : 'Archived'}
-           
+                      {event.organiser_name || '--'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

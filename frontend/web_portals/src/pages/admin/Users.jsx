@@ -17,15 +17,9 @@ function ResetPasswordModal({ isOpen, onClose, user, onReset }) {
     if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
     if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
     setResetting(true);
-    try {
-      await onReset(user, newPassword);
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err) {
-      setError(err.message || 'Failed to reset password.');
-    } finally {
-      setResetting(false);
-    }
+    try { await onReset(user, newPassword); setNewPassword(''); setConfirmPassword(''); }
+    catch (err) { setError(err.message || 'Failed to reset password.'); }
+    finally { setResetting(false); }
   };
   return (
     <Modal isOpen={isOpen} onClose={() => { onClose(); setNewPassword(''); setConfirmPassword(''); setError(null); }}
@@ -72,7 +66,7 @@ const NAV_ITEMS = [
   ]},
 ];
 
-function UserDetailModal({ userId, isOpen, onClose, onUpdate }) {
+function UserDetailModal({ userId, isOpen, onClose, onUpdate, onRoleChange }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
@@ -132,6 +126,15 @@ function UserDetailModal({ userId, isOpen, onClose, onUpdate }) {
           <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 16 }}>
             Created: {user.created_at ? new Date(user.created_at).toLocaleDateString() : "--"}
           </div>
+          {(user.role === 'admin' || user.role === 'volunteer') && (
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12, marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 13, color: "var(--muted)" }}>Role: <strong>{user.role}</strong></span>
+              <button className={"btn btn-sm " + (user.role === 'admin' ? 'btn-secondary' : 'btn-primary')}
+                onClick={() => onRoleChange(user, user.role === 'admin' ? 'volunteer' : 'admin')}>
+                Switch to {user.role === 'admin' ? 'Volunteer' : 'Admin'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </Modal>
@@ -197,7 +200,7 @@ export default function Users() {
     catch (err) { toast(err.message || "Failed", "error"); throw err; }
   };
   const handleChangeRole = async (user, newRole) => {
-    try { await apiPut("/admin/users/" + user.id + "/role", { role_name: newRole }); toast("Role changed", "success"); fetchUsers(); }
+    try { await apiPut("/admin/users/" + user.id + "/role", { role_name: newRole }); toast("Role changed to " + newRole, "success"); setDetailOpen(false); fetchUsers(); }
     catch (err) { toast(err.message || "Failed", "error"); }
   };
   const confirmSuspend = async (user) => {
@@ -223,13 +226,6 @@ export default function Users() {
         <button className={"btn btn-sm " + (row.status === "active" ? "btn-danger" : "btn-primary")}
           onClick={(e) => { e.stopPropagation(); handleSuspendUser(row); }}>{row.status === "active" ? "Suspend" : "Reactivate"}</button>
         <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); setResetPwUser(row); }}>Reset PW</button>
-        <select className="btn btn-sm" style={{ fontSize: 12, padding: '2px 6px', border: '1px solid #ddd', borderRadius: 4, cursor: 'pointer' }}
-          value={row.role} onChange={(e) => { e.stopPropagation(); handleChangeRole(row, e.target.value); }}>
-          <option value="admin">Admin</option>
-          <option value="organizer">Organiser</option>
-          <option value="merchant">Merchant</option>
-          <option value="volunteer">Volunteer</option>
-        </select>
       </div>
     )},
   ];
@@ -284,7 +280,7 @@ export default function Users() {
       </div>
 
       <UserDetailModal userId={selectedUserId} isOpen={detailOpen}
-        onClose={() => { setDetailOpen(false); setSelectedUserId(null); }} />
+        onClose={() => { setDetailOpen(false); setSelectedUserId(null); }} onRoleChange={handleChangeRole} />
       <SuspendModal isOpen={!!suspendUser} onClose={() => setSuspendUser(null)} user={suspendUser} onConfirm={confirmSuspend} />
       <ResetPasswordModal isOpen={!!resetPwUser} onClose={() => setResetPwUser(null)} user={resetPwUser} onReset={handleResetPassword} />
     </div>

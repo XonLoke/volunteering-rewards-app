@@ -176,7 +176,10 @@ async function login(body) {
   const user = rows[0];
 
   if (user.status !== "active") {
-    throw createError(403, "account_disabled", "Account is deactivated. Contact an administrator.");
+    const msg = user.status === "pending"
+      ? "Your account is pending approval. Please wait for an administrator to activate your account."
+      : "Account is deactivated. Contact an administrator.";
+    throw createError(403, user.status === "pending" ? "account_pending" : "account_disabled", msg);
   }
 
   const passwordValid = await bcrypt.compare(password, user.password_hash);

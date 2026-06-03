@@ -49,4 +49,5 @@ module.exports = {
   getCouponPins, updateUserRole, listRedemptions,
   listProspects, createProspect, updateProspectStatus,
   createMerchantAccount,
-  createOrganiserAccount, reset
+  createOrganiserAccount, resetPassword,
+};

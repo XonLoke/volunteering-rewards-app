@@ -90,7 +90,7 @@ function ParticipationPanel({ eventId, onClose }) {
         <div className="stat-card" style={{ padding: 16, textAlign: 'center' }}>
           <div className="stat-value" style={{ fontSize: 24 }}>
             {data.participation?.average_rating != null
-              ? data.participation.average_rating.toFixed(1)
+              ? Number(data.participation.average_rating).toFixed(1)
               : '--'}
           </div>
           <div className="stat-label">Avg Rating</div>
@@ -321,4 +321,22 @@ export default function Events() {
                 <button
                   className="page-btn"
                   disabled={page === totalPages}
-                  onClick={() =
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  &rsaquo;
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <DeleteEventModal
+        isOpen={!!deleteEvent}
+        onClose={() => setDeleteEvent(null)}
+        event={deleteEvent}
+        onConfirm={handleDeleteEvent}
+      />
+    </div>
+  );
+}
