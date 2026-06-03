@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../../components/Topbar';
-import { apiGet } from '../../services/api';
+import { apiGet, apiPost } from '../../services/api';
 
 export default function Redemptions() {
   const navigate = useNavigate();
@@ -10,11 +10,12 @@ export default function Redemptions() {
   const [redemptions, setRedemptions] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
+  const [pageSize] = useState(7);
   const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateTo, setDateTo] = useState(new Date().toISOString().slice(0, 10));
   const [sortKey, setSortKey] = useState('redeemed_at');
   const [sortDir, setSortDir] = useState('desc');
+  const [cleaningUp, setCleaningUp] = useState(false);
 
   const fetchRedemptions = useCallback(async () => {
     setLoading(true);
@@ -45,7 +46,19 @@ export default function Redemptions() {
     setPage(1);
   };
 
-  const handleFilter = () => { setPage(1); fetchRedemptions(); };
+  const handleFilter = () => { setPage(1); };
+
+  const handleCleanup = async () => {
+    setCleaningUp(true);
+    try {
+      const res = await apiPost('/admin/redemptions/cleanup');
+      fetchRedemptions();
+    } catch (err) {
+      setError(err.message || 'Failed to clean up old redemptions');
+    } finally {
+      setCleaningUp(false);
+    }
+  };
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -54,10 +67,9 @@ export default function Redemptions() {
     return <span style={{ marginLeft: 4 }}>{sortDir === 'asc' ? '↑' : '↓'}</span>;
   };
 
-  const CENTS_PER_POINT = 100;
   const formatValue = (cents) => {
     if (cents == null) return '$0.00';
-    return `$${(cents / CENTS_PER_POINT).toFixed(2)}`;
+    return `$${(cents / 100).toFixed(2)}`;
   };
 
   return (
@@ -66,6 +78,11 @@ export default function Redemptions() {
       <div className="main-content">
         <div className="page-header">
           <h2 className="page-title">Redemption History</h2>
+          <div className="page-actions">
+            <button className="btn btn-outline btn-sm" onClick={handleCleanup} disabled={cleaningUp}>
+              {cleaningUp ? 'Cleaning...' : 'Cleanup Old (>1yr)'}
+            </button>
+          </div>
         </div>
 
         <div className="card" style={{ marginBottom: 20, padding: 16 }}>
@@ -81,7 +98,7 @@ export default function Redemptions() {
                 onChange={(e) => setDateTo(e.target.value)} style={{ width: 180 }} />
             </div>
             <button className="btn btn-primary" onClick={handleFilter}>Filter</button>
-            <button className="btn btn-secondary" onClick={() => { setDateFrom(''); setDateTo(''); setPage(1); }}>Clear</button>
+            <button className="btn btn-secondary" onClick={() => { setDateFrom(''); setDateTo(new Date().toISOString().slice(0, 10)); setPage(1); }}>Clear</button>
           </div>
         </div>
 
@@ -114,15 +131,17 @@ export default function Redemptions() {
                     <th onClick={() => handleSort('value_cents')} style={{ cursor: 'pointer' }}>
                       $ Value <SortIcon col="value_cents" />
                     </th>
-                    <th>Quantity</th>
+                    <th>Qty</th>
                   </tr>
                 </thead>
                 <tbody>
                   {redemptions.map((row) => (
                     <tr key={row.id}>
                       <td>
-                        <button onClick={() => navigate('/admin/users')}
-                          style={{ background:'none', border:'none', padding:0, fontSize:13, fontWeight:500, color:'var(--accent)', cursor:'pointer', textDecoration:'underline' }}>
+                        <button
+                          onClick={() => navigate('/admin/users', { state: { userId: row.user_id } })}
+                          style={{ background:'none', border:'none', padding:0, fontSize:13, fontWeight:500, color:'var(--accent)', cursor:'pointer', textDecoration:'underline' }}
+                        >
                           {row.user_name}
                         </button>
                       </td>

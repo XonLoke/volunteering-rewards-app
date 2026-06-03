@@ -24,6 +24,7 @@ async function deleteCoupon(req, res, next) { try { res.json(await adminService.
 async function getRewardsConfig(req, res, next) { try { res.json(await adminService.getRewardsConfig()); } catch (err) { next(err); } }
 async function updateRewardsConfig(req, res, next) { try { res.json(await adminService.updateRewardsConfig(req.body, req.user.id)); } catch (err) { next(err); } }
 async function listRedemptions(req, res, next) { try { res.json(await adminService.listRedemptions(req.query)); } catch (err) { next(err); } }
+async function cleanupRedemptions(req, res, next) { try { res.json(await adminService.cleanupOldRedemptions()); } catch (err) { next(err); } }
 async function resetPassword(req, res, next) { try { res.json(await adminService.resetUserPassword(req.params.id, req.body)); } catch (err) { next(err); } }
 async function updateMerchant(req, res, next) { try { res.json(await adminService.updateMerchant(req.params.id, req.body)); } catch (err) { next(err); } }
 async function listMerchants(req, res, next) { try { res.json(await adminService.listMerchants(req.query)); } catch (err) { next(err); } }
@@ -46,7 +47,7 @@ module.exports = {
   getRewardsConfig, updateRewardsConfig,
   listMerchants, updateMerchant, createMerchant,
   listMerchantProducts, createMerchantProduct,
-  getCouponPins, updateUserRole, listRedemptions,
+  getCouponPins, updateUserRole, listRedemptions, cleanupRedemptions,
   listProspects, createProspect, updateProspectStatus,
   createMerchantAccount,
   createOrganiserAccount, resetPassword,

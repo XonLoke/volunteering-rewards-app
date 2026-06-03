@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import Topbar from '../../components/Topbar';
 import Sidebar from '../../components/Sidebar';
 import DataTable from '../../components/DataTable';
@@ -161,17 +162,18 @@ function SuspendModal({ isOpen, onClose, user, onConfirm }) {
 
 export default function Users() {
   const { toast } = useToast();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(location.state?.search || "");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(15);
-  const [selectedUserId, setSelectedUserId] = useState(null);
-  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(location.state?.userId || null);
+  const [detailOpen, setDetailOpen] = useState(!!location.state?.userId);
   const [suspendUser, setSuspendUser] = useState(null);
   const [resetPwUser, setResetPwUser] = useState(null);
 

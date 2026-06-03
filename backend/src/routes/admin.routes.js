@@ -77,5 +77,6 @@ router.post("/merchants/:id/products", controller.createMerchantProduct);
 
 // Redemptions
 router.get("/redemptions", controller.listRedemptions);
+router.post("/redemptions/cleanup", controller.cleanupRedemptions);
 
 module.exports = router;

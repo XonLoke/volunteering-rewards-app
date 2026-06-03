@@ -472,27 +472,51 @@ async function deleteCoupon(couponId) {
   return { message: "Coupon deleted" };
 }
 
-// ─── List Redemptions ─────────────────────────────────────
-async function listRedemptions({ page = 1, limit = 15 } = {}) {
+// ─── List Redemptions (with sorting, date filtering, value_cents) ──
+async function listRedemptions({ page = 1, limit = 15, sort, order, from, to } = {}) {
   const offset = (page - 1) * limit;
-  const countResult = await pool.query("SELECT COUNT(*) FROM redemption_logs");
+
+  // Build WHERE clause from date filters
+  const params = [];
+  const conditions = [];
+  if (from) { params.push(from); conditions.push(`rl.created_at >= $${params.length}::date`); }
+  if (to) { params.push(to); conditions.push(`rl.created_at <= $${params.length}::date + interval '1 day'`); }
+  const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+  // Whitelist sort columns to prevent SQL injection
+  const SORT_WHITELIST = { user_name: 'u.name', redeemed_at: 'rl.created_at', coupon_title: 'c.title', points_spent: 'rl.points_spent', value_cents: 'c.value_cents' };
+  const sortCol = SORT_WHITELIST[sort] || 'rl.created_at';
+  const sortDir = order === 'asc' ? 'ASC' : 'DESC';
+
+  const countResult = await pool.query(`SELECT COUNT(*) FROM redemption_logs rl ${where}`, params);
   const total = parseInt(countResult.rows[0].count);
 
+  const allParams = [...params, limit, offset];
+  const limIdx = params.length + 1;
+  const offIdx = params.length + 2;
   const { rows } = await pool.query(
     `SELECT rl.id, rl.points_spent, rl.action, rl.created_at AS redeemed_at,
-            u.name AS user_name, u.email AS user_email,
-            c.title AS coupon_title, c.description AS coupon_description,
-            uc.pin_code
+            u.id AS user_id, u.name AS user_name, u.email AS user_email,
+            c.id AS coupon_id, c.title AS coupon_title, c.description AS coupon_description,
+            c.value_cents
      FROM redemption_logs rl
      JOIN users u ON rl.user_id = u.id
      JOIN coupons c ON rl.coupon_id = c.id
-     LEFT JOIN user_coupons uc ON rl.user_coupon_id = uc.id
-     ORDER BY rl.created_at DESC
-     LIMIT $1 OFFSET $2`,
-    [limit, offset]
+     ${where}
+     ORDER BY ${sortCol} ${sortDir}
+     LIMIT $${limIdx} OFFSET $${offIdx}`,
+    allParams
   );
 
   return { data: rows, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
+}
+
+// ─── Cleanup Old Redemptions (older than 1 year) ──────────
+async function cleanupOldRedemptions() {
+  const { rows } = await pool.query(
+    `DELETE FROM redemption_logs WHERE created_at < NOW() - INTERVAL '1 year' RETURNING id`
+  );
+  return { deleted_count: rows.length };
 }
 
 // ─── Rewards Configuration ────────────────────────────────
@@ -712,7 +736,7 @@ module.exports = {
   listEvents, deleteEvent, getEventParticipation,
   listCoupons, createCoupon, updateCoupon, deleteCoupon,
   getRewardsConfig, updateRewardsConfig,
-  listRedemptions,
+  listRedemptions, cleanupOldRedemptions,
   listMerchants,
   createMerchant,
   listMerchantProducts,
