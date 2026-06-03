@@ -15,7 +15,9 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
-const SCAN_HISTORY_KEY = "scanHistory";
+
+const getScanHistoryKey = (userId: number | string) =>
+  `scanHistory:${userId}`;
 
 interface Scan {
   id: number | string;
@@ -72,8 +74,8 @@ export default function ScanHistory() {
     }, [])
   );
 
-  const loadLocalScans = async () => {
-    const storedLocal = await AsyncStorage.getItem(SCAN_HISTORY_KEY);
+  const loadLocalScans = async (userId: number | string) => {
+    const storedLocal = await AsyncStorage.getItem(getScanHistoryKey(userId));
     const localScans: Scan[] = storedLocal ? JSON.parse(storedLocal) : [];
 
     return localScans.map((scan) => ({
@@ -89,12 +91,14 @@ export default function ScanHistory() {
       const stored = await AsyncStorage.getItem("user");
 
       if (!stored) {
-        const localScans = await loadLocalScans();
-        setScans(localScans);
+        setScans([]);
         return;
       }
 
       const user = JSON.parse(stored);
+
+      // Remove old shared key so old account scans do not leak to new users
+      await AsyncStorage.removeItem("scanHistory");
 
       try {
         const response = await fetch(`${BASE_URL}/scans?user_id=${user.id}`);
@@ -113,7 +117,7 @@ export default function ScanHistory() {
         console.log("Backend scan history skipped:", backendErr);
       }
 
-      const localScans = await loadLocalScans();
+      const localScans = await loadLocalScans(user.id);
       setScans(localScans);
     } catch (err) {
       console.error("Failed to load scan history:", err);
@@ -262,7 +266,9 @@ export default function ScanHistory() {
             </View>
 
             <Text style={[styles.statValue, { color: theme.colors.text }]}>
-              {latestScan ? `+${latestScan.points_awarded || latestScan.points_value}` : "+0"}
+              {latestScan
+                ? `+${latestScan.points_awarded || latestScan.points_value}`
+                : "+0"}
             </Text>
 
             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>

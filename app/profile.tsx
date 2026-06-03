@@ -380,6 +380,15 @@ export default function Profile() {
               {user?.email || "Login to view your profile"}
             </Text>
 
+            <View style={styles.phoneRow}>
+              <Ionicons name="call-outline" size={13} color="rgba(255,255,255,0.78)" />
+              <Text style={styles.phoneText} numberOfLines={1}>
+                {user?.phone && String(user.phone).trim() !== ""
+                  ? user.phone
+                  : "No phone number added"}
+              </Text>
+            </View>
+
             <TouchableOpacity
               style={styles.editProfilePill}
               onPress={() => router.push("/edit-profile" as any)}
@@ -891,8 +900,22 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.78)",
     fontSize: 13,
     fontWeight: "700",
+    marginBottom: 5,
+    maxWidth: 300,
+  },
+
+  phoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
     marginBottom: 14,
     maxWidth: 300,
+  },
+
+  phoneText: {
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 13,
+    fontWeight: "700",
   },
 
   editProfilePill: {

@@ -15,7 +15,9 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
-const LOCAL_POINTS_HISTORY_KEY = "localPointsHistory";
+
+const getLocalPointsHistoryKey = (userId: number | string) =>
+  `localPointsHistory:${userId}`;
 
 type HistoryType = "earn" | "redeem";
 
@@ -100,6 +102,12 @@ export default function PointsHistory() {
 
       const user: User = JSON.parse(stored);
 
+      /*
+        Remove old shared history key once.
+        This prevents old account redemptions from showing for new users.
+      */
+      await AsyncStorage.removeItem("localPointsHistory");
+
       const storedPoints = await AsyncStorage.getItem("userPoints");
       const currentPoints = Number(storedPoints ?? user.points ?? 0);
 
@@ -115,7 +123,7 @@ export default function PointsHistory() {
 
         if (pointsRes.ok && Array.isArray(pointsData.history)) {
           backendHistory = pointsData.history.map((item: any) => ({
-            id: item.id,
+            id: `backend-${item.id}`,
             title:
               item.title ||
               item.event_title ||
@@ -142,7 +150,7 @@ export default function PointsHistory() {
 
           if (scansRes.ok && Array.isArray(scansData.scans)) {
             backendHistory = scansData.scans.map((scan: any) => ({
-              id: scan.id,
+              id: `scan-${scan.id}`,
               title: scan.event_title || "Volunteer Event",
               description: scan.location || "Attendance scan reward",
               points: Number(scan.points_awarded ?? scan.points_value ?? 0),
@@ -156,7 +164,7 @@ export default function PointsHistory() {
       }
 
       const storedLocalHistory = await AsyncStorage.getItem(
-        LOCAL_POINTS_HISTORY_KEY
+        getLocalPointsHistoryKey(user.id)
       );
 
       const localHistory: HistoryItem[] = storedLocalHistory
@@ -173,7 +181,7 @@ export default function PointsHistory() {
               String(other.id) === String(item.id) ||
               (other.title === item.title &&
                 other.type === item.type &&
-                other.points === item.points &&
+                Number(other.points) === Number(item.points) &&
                 other.created_at === item.created_at)
           )
         );
@@ -198,6 +206,8 @@ export default function PointsHistory() {
     } catch (err) {
       console.error("Failed to load points history:", err);
       setHistory([]);
+      setEarnedPoints(0);
+      setRedeemedPoints(0);
     } finally {
       setLoading(false);
     }

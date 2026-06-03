@@ -370,42 +370,6 @@ export default function Scan() {
             </TouchableOpacity>
           </View>
 
-          <View
-            style={[
-              styles.infoCard,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.infoIconBox,
-                { backgroundColor: "#10b98122" },
-              ]}
-            >
-              <Ionicons
-                name="information-circle-outline"
-                size={25}
-                color="#10b981"
-              />
-            </View>
-
-            <View style={styles.infoContent}>
-              <Text style={[styles.infoTitle, { color: theme.colors.text }]}>
-                Correct attendance flow
-              </Text>
-
-              <Text
-                style={[styles.infoText, { color: theme.colors.textSecondary }]}
-              >
-                Volunteer shows QR → Organiser scans QR → Backend confirms
-                attendance → Points are awarded.
-              </Text>
-            </View>
-          </View>
-
           <TouchableOpacity
             onPress={goToSuccessDemo}
             style={[
@@ -427,6 +391,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -435,6 +400,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 12,
   },
+
   iconButton: {
     width: 46,
     height: 46,
@@ -443,10 +409,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
   },
+
   headerCenter: {
     flex: 1,
     paddingHorizontal: 14,
   },
+
   headerMini: {
     fontSize: 11,
     fontWeight: "800",
@@ -454,15 +422,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.9,
     marginBottom: 2,
   },
+
   headerTitle: {
     fontSize: 23,
     fontWeight: "900",
     letterSpacing: -0.6,
   },
+
   page: {
     paddingHorizontal: 20,
     paddingBottom: 34,
   },
+
   passCard: {
     borderRadius: 34,
     padding: 23,
@@ -471,6 +442,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
+
   passDecorOne: {
     position: "absolute",
     width: 190,
@@ -480,6 +452,7 @@ const styles = StyleSheet.create({
     top: -80,
     right: -60,
   },
+
   passDecorTwo: {
     position: "absolute",
     width: 120,
@@ -489,12 +462,14 @@ const styles = StyleSheet.create({
     bottom: -45,
     left: 20,
   },
+
   passTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
     zIndex: 1,
   },
+
   passLabel: {
     color: "rgba(255,255,255,0.72)",
     fontSize: 11,
@@ -502,6 +477,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.3,
     marginBottom: 8,
   },
+
   passName: {
     color: "#fff",
     fontSize: 27,
@@ -509,6 +485,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.7,
     maxWidth: 220,
   },
+
   passEmail: {
     color: "rgba(255,255,255,0.82)",
     fontSize: 13,
@@ -516,6 +493,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     maxWidth: 230,
   },
+
   avatarCircle: {
     width: 62,
     height: 62,
@@ -524,11 +502,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   avatarText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "900",
   },
+
   passStatsRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -538,26 +518,31 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     zIndex: 1,
   },
+
   passStatBox: {
     flex: 1,
     alignItems: "center",
   },
+
   passStatValue: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "900",
   },
+
   passStatLabel: {
     color: "rgba(255,255,255,0.72)",
     fontSize: 11,
     fontWeight: "800",
     marginTop: 3,
   },
+
   passStatDivider: {
     width: 1,
     height: 34,
     backgroundColor: "rgba(255,255,255,0.22)",
   },
+
   qrCard: {
     borderRadius: 34,
     borderWidth: 1,
@@ -570,6 +555,7 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 4,
   },
+
   qrTopRow: {
     width: "100%",
     flexDirection: "row",
@@ -577,6 +563,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 18,
   },
+
   readyPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -584,6 +571,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
   },
+
   liveDot: {
     width: 8,
     height: 8,
@@ -591,10 +579,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#10b981",
     marginRight: 8,
   },
+
   readyText: {
     fontSize: 12,
     fontWeight: "900",
   },
+
   smallRefreshButton: {
     width: 38,
     height: 38,
@@ -602,12 +592,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   qrOuterFrame: {
     backgroundColor: "#f8fafc",
     borderRadius: 34,
     padding: 12,
     marginBottom: 18,
   },
+
   qrInnerFrame: {
     backgroundColor: "#ffffff",
     borderRadius: 26,
@@ -617,18 +609,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   noQrBox: {
     width: 230,
     height: 230,
     alignItems: "center",
     justifyContent: "center",
   },
+
   noQrText: {
     color: "#6b7280",
     fontSize: 14,
     fontWeight: "800",
     marginTop: 10,
   },
+
   qrTitle: {
     fontSize: 21,
     fontWeight: "900",
@@ -636,6 +631,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     letterSpacing: -0.3,
   },
+
   qrSubtitle: {
     fontSize: 13,
     fontWeight: "600",
@@ -643,6 +639,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 5,
   },
+
   qrIdBox: {
     width: "100%",
     borderWidth: 1,
@@ -653,6 +650,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+
   qrIdLabel: {
     fontSize: 11,
     fontWeight: "900",
@@ -660,22 +658,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
     marginBottom: 4,
   },
+
   qrIdValue: {
     fontSize: 13,
     fontWeight: "800",
     maxWidth: 230,
   },
+
   actionGrid: {
     flexDirection: "row",
     gap: 12,
     marginBottom: 14,
   },
+
   actionCard: {
     flex: 1,
     borderWidth: 1,
     borderRadius: 24,
     padding: 16,
   },
+
   actionIconBox: {
     width: 47,
     height: 47,
@@ -684,43 +686,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 12,
   },
+
   actionTitle: {
     fontSize: 15,
     fontWeight: "900",
     marginBottom: 3,
   },
+
   actionSub: {
     fontSize: 12,
     fontWeight: "700",
   },
-  infoCard: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 14,
-  },
-  infoIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 13,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 18,
-  },
+
   mainButton: {
     height: 56,
     borderRadius: 20,
@@ -728,18 +705,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row",
   },
+
   mainButtonText: {
     color: "#fff",
     fontSize: 15,
     fontWeight: "900",
     marginLeft: 8,
   },
+
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 34,
   },
+
   loadingIconBox: {
     width: 88,
     height: 88,
@@ -748,11 +728,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 18,
   },
+
   loadingTitle: {
     fontSize: 20,
     fontWeight: "900",
     marginBottom: 6,
   },
+
   loadingText: {
     fontSize: 14,
     fontWeight: "600",

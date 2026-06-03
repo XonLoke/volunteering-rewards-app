@@ -12,7 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const LOCAL_POINTS_HISTORY_KEY = "localPointsHistory";
+const getLocalPointsHistoryKey = (userId: number | string) =>
+  `localPointsHistory:${userId}`;
 
 interface LocalPointsHistoryItem {
   id: string;
@@ -75,20 +76,25 @@ export default function RedeemSuccess() {
 
       const storedUser = await AsyncStorage.getItem("user");
 
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-
-        const updatedUser = {
-          ...user,
-          points: safeRemainingPoints,
-        };
-
-        await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+      if (!storedUser) {
+        return;
       }
 
-      const storedLocalHistory = await AsyncStorage.getItem(
-        LOCAL_POINTS_HISTORY_KEY
-      );
+      const user = JSON.parse(storedUser);
+
+      const updatedUser = {
+        ...user,
+        points: safeRemainingPoints,
+      };
+
+      await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+
+      // Remove old shared history so old user's redeemed records do not show for new users
+      await AsyncStorage.removeItem("localPointsHistory");
+
+      const userHistoryKey = getLocalPointsHistoryKey(user.id);
+
+      const storedLocalHistory = await AsyncStorage.getItem(userHistoryKey);
 
       const localHistory: LocalPointsHistoryItem[] = storedLocalHistory
         ? JSON.parse(storedLocalHistory)
@@ -104,7 +110,7 @@ export default function RedeemSuccess() {
       if (alreadySaved) return;
 
       const redeemRecord: LocalPointsHistoryItem = {
-        id: `redeem-${Date.now()}`,
+        id: `redeem-${user.id}-${Date.now()}`,
         title,
         description: "Coupon redemption",
         points: safePointsCost,
@@ -113,7 +119,7 @@ export default function RedeemSuccess() {
       };
 
       await AsyncStorage.setItem(
-        LOCAL_POINTS_HISTORY_KEY,
+        userHistoryKey,
         JSON.stringify([redeemRecord, ...localHistory].slice(0, 50))
       );
     } catch (error) {
