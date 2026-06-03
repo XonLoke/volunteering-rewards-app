@@ -368,9 +368,11 @@ async function listCoupons({ page = 1, limit = 15, status } = {}) {
 
   // Calculate real-time points cost from value_cents and rewards config
   // Formula: value (in dollars) × points_per_dollar = (value_cents × points_per_dollar) / 100
+  // NOTE: Always override with calculated value — the whole point of "real-time" is that
+  //       changing rewards_config instantly reflects in all coupon point costs.
   const data = rows.map(r => ({
     ...r,
-    points_cost: r.value_cents ? Math.max(Math.round(r.value_cents * ppd / 100), r.points_cost) : r.points_cost,
+    points_cost: r.value_cents ? Math.round(r.value_cents * ppd / 100) : r.points_cost,
     calculated_points: r.value_cents ? Math.round(r.value_cents * ppd / 100) : r.points_cost,
   }));
 
