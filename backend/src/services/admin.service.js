@@ -340,12 +340,19 @@ async function getEventParticipation(eventId) {
 }
 
 // ─── List Coupons ─────────────────────────────────────────
-async function listCoupons({ page = 1, limit = 15 } = {}) {
+async function listCoupons({ page = 1, limit = 15, status } = {}) {
   const offset = (page - 1) * limit;
   const ppd = await getPointsPerDollar();
-  const countResult = await pool.query("SELECT COUNT(*) FROM coupons");
+  const params = [];
+  let whereClause = '';
+  const statusFilter = status; // capture for closure
+  if (statusFilter) { params.push(statusFilter); whereClause = "WHERE c.status = $1"; }
+  const countResult = await pool.query("SELECT COUNT(*) FROM coupons c " + whereClause, params);
   const total = parseInt(countResult.rows[0].count);
 
+  const allParams = [...params, limit, offset];
+  const limIdx = params.length + 1;
+  const offIdx = params.length + 2;
   const { rows } = await pool.query(
     `SELECT c.id, c.title, c.description, c.points_required AS points_cost, c.quantity,
             c.value_cents, c.merchant_name, c.expiry_date, c.status, c.created_at,
@@ -353,9 +360,10 @@ async function listCoupons({ page = 1, limit = 15 } = {}) {
             (SELECT COUNT(*) FROM user_coupons uc WHERE uc.coupon_id = c.id) AS redeemed_count
      FROM coupons c
      LEFT JOIN users u ON c.created_by = u.id
+     ${whereClause}
      ORDER BY c.created_at DESC
-     LIMIT $1 OFFSET $2`,
-    [limit, offset]
+     LIMIT $${limIdx} OFFSET $${offIdx}`,
+    allParams
   );
 
   // Calculate real-time points cost from value_cents
