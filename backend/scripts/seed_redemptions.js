@@ -66,15 +66,16 @@ async function seed() {
       userCouponId = uc[0].id;
     }
 
-    // Insert the redemption log
+    // Insert the redemption log with value_cents snapshot
     await client.query(
-      `INSERT INTO redemption_logs (user_id, coupon_id, user_coupon_id, points_spent, action, created_at, notes)
-       VALUES ($1, $2, $3, $4, 'redeem', $5, $6)`,
+      `INSERT INTO redemption_logs (user_id, coupon_id, user_coupon_id, points_spent, value_cents, action, created_at, notes)
+       VALUES ($1, $2, $3, $4, $5, 'redeem', $6, $7)`,
       [
         rec.user.id,
         rec.coupon.id,
         userCouponId,
         rec.coupon.points_required,
+        rec.coupon.value_cents || 0,
         date,
         `Sample redemption #${inserted + 1} — ${rec.coupon.title}`,
       ]

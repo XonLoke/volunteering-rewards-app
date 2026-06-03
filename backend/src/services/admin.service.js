@@ -498,10 +498,10 @@ async function listRedemptions({ page = 1, limit = 15, sort, order, from, to } =
     `SELECT rl.id, rl.points_spent, rl.action, rl.created_at AS redeemed_at,
             u.id AS user_id, u.name AS user_name, u.email AS user_email,
             c.id AS coupon_id, c.title AS coupon_title, c.description AS coupon_description,
-            c.value_cents
+            COALESCE(rl.value_cents, c.value_cents, 0) AS value_cents
      FROM redemption_logs rl
-     JOIN users u ON rl.user_id = u.id
-     JOIN coupons c ON rl.coupon_id = c.id
+     LEFT JOIN users u ON rl.user_id = u.id
+     LEFT JOIN coupons c ON rl.coupon_id = c.id
      ${where}
      ORDER BY ${sortCol} ${sortDir}
      LIMIT $${limIdx} OFFSET $${offIdx}`,

@@ -94,7 +94,7 @@ async function redeemReward(rewardId, userId, meta = {}) {
     await client.query("BEGIN");
 
     const couponResult = await client.query(
-      `SELECT id, title, points_required, quantity, expiry_date, status
+      `SELECT id, title, points_required, quantity, value_cents, expiry_date, status
          FROM coupons
         WHERE id = $1
         FOR UPDATE`,
@@ -139,9 +139,9 @@ async function redeemReward(rewardId, userId, meta = {}) {
     const userCoupon = userCouponResult.rows[0];
 
     await client.query(
-      `INSERT INTO redemption_logs (user_coupon_id, action, action_by, ip_address, created_at, notes)
-       VALUES ($1, 'redeemed', $2, $3, NOW(), $4)`,
-      [userCoupon.id, userId, meta.ipAddress || null, "Volunteer redeemed coupon with points"]
+      `INSERT INTO redemption_logs (user_id, coupon_id, user_coupon_id, points_spent, value_cents, action, action_by, ip_address, created_at, notes)
+       VALUES ($1, $2, $3, $4, $5, 'redeemed', $6, $7, NOW(), $8)`,
+      [userId, rewardId, userCoupon.id, coupon.points_required, coupon.value_cents || 0, userId, meta.ipAddress || null, "Volunteer redeemed coupon with points"]
     );
 
     await client.query(
