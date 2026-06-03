@@ -366,11 +366,12 @@ async function listCoupons({ page = 1, limit = 15, status } = {}) {
     allParams
   );
 
-  // Calculate real-time points cost from value_cents
+  // Calculate real-time points cost from value_cents and rewards config
+  // Formula: value (in dollars) × points_per_dollar = (value_cents × points_per_dollar) / 100
   const data = rows.map(r => ({
     ...r,
-    points_cost: r.value_cents ? Math.max(Math.round(r.value_cents / ppd) * 10, r.points_cost) : r.points_cost,
-    calculated_points: r.value_cents ? Math.round(r.value_cents / ppd) : r.points_cost,
+    points_cost: r.value_cents ? Math.max(Math.round(r.value_cents * ppd / 100), r.points_cost) : r.points_cost,
+    calculated_points: r.value_cents ? Math.round(r.value_cents * ppd / 100) : r.points_cost,
   }));
 
   return { data, total, page: parseInt(page), limit: parseInt(limit), total_pages: Math.ceil(total / limit) };
@@ -382,11 +383,22 @@ async function createCoupon(data, userId) {
   try {
     await client.query("BEGIN");
 
+    //-----------------------------------------------------------------------
+    // SECTION: Field Name Mapping
+    // Purpose: Map frontend field names (coupon_type → title, points_cost →
+    //          points_required, valid_until → expiry_date) before processing.
+    //-----------------------------------------------------------------------
+    if (data.coupon_type && !data.title) data.title = data.coupon_type;
+    if (data.points_cost != null && data.points_required == null) data.points_required = data.points_cost;
+    if (data.valid_until && !data.expiry_date) data.expiry_date = data.valid_until;
+    if (data.valid_from && !data.expiry_date) data.expiry_date = data.valid_from;
+    if (!data.description) data.description = '';
+
     // Auto-calculate points_required from value_cents using rewards config
     let pointsRequired = data.points_required;
     if (!pointsRequired && data.value_cents) {
       const ppd = await getPointsPerDollar();
-      pointsRequired = Math.round(data.value_cents / ppd) * 10;
+      pointsRequired = Math.round(data.value_cents * ppd / 100);
     }
     if (!pointsRequired) pointsRequired = 100;
 
@@ -433,6 +445,10 @@ async function createCoupon(data, userId) {
 
 // ─── Update Coupon ────────────────────────────────────────
 async function updateCoupon(couponId, data) {
+  // Map frontend field names to backend field names
+  if (data.points_cost != null && data.points_required == null) data.points_required = data.points_cost;
+  if (data.valid_until && !data.expiry_date) data.expiry_date = data.valid_until;
+
   const { rows } = await pool.query(
     `UPDATE coupons SET title = COALESCE($1, title), description = COALESCE($2, description),
             points_required = COALESCE($3, points_required), quantity = COALESCE($4, quantity),

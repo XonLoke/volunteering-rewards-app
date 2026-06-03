@@ -329,7 +329,20 @@ export default function Coupons() {
     {
       key: 'points_cost',
       label: 'Points',
-      render: (val) => <span style={{ fontWeight: 500 }}>{val ?? '--'}</span>,
+      render: (val, row) => {
+        if (val == null) return '--';
+        const dollarVal = row.value_cents ? `$${(row.value_cents / 100).toFixed(2)}` : null;
+        return (
+          <div>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{val}</span>
+            {dollarVal && (
+              <div style={{ fontSize: 11, color: 'var(--text-muted, #888)', marginTop: 2 }}>
+                {dollarVal} · from config
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'value_cents',
