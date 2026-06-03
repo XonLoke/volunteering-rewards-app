@@ -15,7 +15,7 @@ const client = new Client({
 
 const COUPONS = [
   { title: "$5 Coffee Voucher", points: 50, qty: 10, status: "active", value: 500, merchant: "FairPrice" },
-  { title: "Kopitiam Breakfast Set", points: 30, qty: 10, status: "active", value: 350, merchant: "Kopitiam" },
+  { title: "Kopitiam Breakfast Set", points: 30, qty: 10, status: "active", value: 400, merchant: "Kopitiam" },
   { title: "$10 GrabFood Promo", points: 200, qty: 8, status: "active", value: 1000, merchant: "Grab" },
   { title: "GV Movie Ticket", points: 150, qty: 5, status: "active", value: 1200, merchant: "Golden Village" },
   { title: "$8 NTUC Voucher", points: 160, qty: 0, status: "depleted", value: 800, merchant: "NTUC" },
