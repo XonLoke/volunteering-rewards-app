@@ -107,9 +107,10 @@ export default function RewardsConfig() {
           <h2 className="page-title">Reward System Configuration</h2>
           <div className="page-actions">
             <button
-              className={`btn ${hasChanges ? 'btn-primary' : 'btn-secondary'}`}
+              className="btn btn-primary"
               onClick={handleSave}
-              disabled={saving || !hasChanges}
+              disabled={saving}
+              style={{ fontWeight: 600, background: '#2563eb', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 6, cursor: saving ? 'not-allowed' : 'pointer' }}
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
