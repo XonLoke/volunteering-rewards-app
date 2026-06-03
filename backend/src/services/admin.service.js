@@ -200,7 +200,7 @@ async function listOrganisers({ page = 1, limit = 15, status } = {}) {
             COALESCE(o.org_type, '') AS organisation_type,
             COALESCE(o.approval_status, 'pending') AS organisation_status,
             o.contact_person AS contact_name,
-            o.contact_email AS org_contact_email
+            o.contact_email AS contact_email
      FROM users u
      JOIN roles r ON u.role_id = r.id
      LEFT JOIN organizations o ON o.contact_email = u.email

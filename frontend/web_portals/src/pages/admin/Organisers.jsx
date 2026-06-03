@@ -51,7 +51,7 @@ function ReviewModal({ isOpen, onClose, organiser, onConfirm }) {
           <strong>Type:</strong> {organiser.organisation_type || '--'}
         </p>
         <p style={{ fontSize: 14, marginBottom: 8 }}>
-          <strong>Contact:</strong> {organiser.contact_name} ({organiser.contact_email})
+          <strong>Contact:</strong> {organiser.contact_name || '--'} {organiser.contact_email ? `(${organiser.contact_email})` : ''}
         </p>
         {organiser.documents && organiser.documents.length > 0 && (
           <div style={{ marginTop: 8 }}>
