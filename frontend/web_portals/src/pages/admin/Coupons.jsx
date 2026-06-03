@@ -232,6 +232,52 @@ function DeleteConfirmModal({ isOpen, onClose, coupon, onConfirm }) {
   );
 }
 
+function PinsModal({ isOpen, onClose, coupon, pinsData }) {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`PINs — ${coupon?.title || coupon?.coupon_type || ''}`}
+      actions={[
+        { label: 'Close', variant: 'primary', onClick: onClose },
+      ]}
+    >
+      <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+        {!pinsData || pinsData.length === 0 ? (
+          <p style={{ fontSize: 14, color: 'var(--muted)' }}>No PINs available for this coupon.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, fontWeight: 600 }}>#</th>
+                <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, fontWeight: 600 }}>PIN Code</th>
+                <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, fontWeight: 600 }}>Status</th>
+                <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, fontWeight: 600 }}>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pinsData.map((pin, idx) => (
+                <tr key={pin.id} style={{ borderBottom: '1px solid var(--border-subtle, #eee)' }}>
+                  <td style={{ padding: '8px 12px', fontSize: 13, color: 'var(--muted)' }}>{idx + 1}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 14, fontWeight: 600 }}>{pin.pin_code}</td>
+                  <td style={{ padding: '8px 12px' }}>
+                    <span className={`badge badge-${pin.status === 'unused' ? 'success' : pin.status === 'used' ? 'secondary' : 'warning'}`}>
+                      {pin.status}
+                    </span>
+                  </td>
+                  <td style={{ padding: '8px 12px', fontSize: 13, color: 'var(--muted)' }}>
+                    {pin.created_at ? new Date(pin.created_at).toLocaleDateString() : '--'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 export default function Coupons() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -521,6 +567,13 @@ export default function Coupons() {
         onClose={() => setDeleteCoupon(null)}
         coupon={deleteCoupon}
         onConfirm={handleDelete}
+      />
+
+      <PinsModal
+        isOpen={pinsModalOpen}
+        onClose={() => setPinsModalOpen(false)}
+        coupon={viewingCoupon}
+        pinsData={pinsData}
       />
     </div>
   );
