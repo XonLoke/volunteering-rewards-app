@@ -2,6 +2,22 @@ const express = require("express");
 const router = express.Router();
 const { pool } = require("../config/database");
 
+async function createNotification(client, userId, title, description, icon, color) {
+  try {
+    await client.query(
+      `
+      INSERT INTO notifications
+        (user_id, title, description, icon, color, is_read, created_at)
+      VALUES
+        ($1, $2, $3, $4, $5, false, NOW())
+      `,
+      [userId, title, description, icon, color]
+    );
+  } catch (err) {
+    console.error("Create notification error:", err);
+  }
+}
+
 // GET /api/events?user_id=1
 // Get upcoming events + current registration count + whether this user booked
 router.get("/", async (req, res, next) => {
@@ -22,6 +38,7 @@ router.get("/", async (req, res, next) => {
             FROM event_registrations er
             WHERE er.event_id = e.id
               AND er.user_id = $1
+              AND er.status = 'registered'
           )
         END AS registered
       FROM events e
@@ -29,6 +46,7 @@ router.get("/", async (req, res, next) => {
       LEFT JOIN (
         SELECT event_id, COUNT(*) AS count
         FROM event_registrations
+        WHERE status = 'registered'
         GROUP BY event_id
       ) reg ON reg.event_id = e.id
       WHERE e.status = 'upcoming'
@@ -53,7 +71,12 @@ router.post("/:eventId/register", async (req, res, next) => {
 
   try {
     const { eventId } = req.params;
-    const userId = req.body.user_id || req.body.userId;
+    const userId =
+      req.body?.user_id ||
+      req.body?.userId ||
+      req.query?.user_id ||
+      req.query?.userId ||
+      req.headers["x-user-id"];
 
     console.log("BOOK EVENT HIT");
     console.log("eventId:", eventId);
@@ -99,10 +122,11 @@ router.post("/:eventId/register", async (req, res, next) => {
 
     const alreadyRegistered = await client.query(
       `
-      SELECT 1
+      SELECT id, status
       FROM event_registrations
       WHERE event_id = $1
         AND user_id = $2
+        AND status = 'registered'
       `,
       [eventId, userId]
     );
@@ -120,6 +144,7 @@ router.post("/:eventId/register", async (req, res, next) => {
       SELECT COUNT(*)::int AS count
       FROM event_registrations
       WHERE event_id = $1
+        AND status = 'registered'
       `,
       [eventId]
     );
@@ -137,11 +162,34 @@ router.post("/:eventId/register", async (req, res, next) => {
 
     const insertResult = await client.query(
       `
-      INSERT INTO event_registrations (event_id, user_id)
-      VALUES ($1, $2)
+      INSERT INTO event_registrations 
+        (event_id, user_id, status, created_at)
+      VALUES 
+        ($1, $2, 'registered', NOW())
       RETURNING *
       `,
       [eventId, userId]
+    );
+
+    const updatedCountResult = await client.query(
+      `
+      SELECT COUNT(*)::int AS count
+      FROM event_registrations
+      WHERE event_id = $1
+        AND status = 'registered'
+      `,
+      [eventId]
+    );
+
+    const updatedRegistrations = Number(updatedCountResult.rows[0].count || 0);
+
+    await createNotification(
+      client,
+      userId,
+      "Event booking confirmed",
+      `Your booking for ${event.title} has been confirmed.`,
+      "calendar-outline",
+      "#6366f1"
     );
 
     await client.query("COMMIT");
@@ -150,7 +198,8 @@ router.post("/:eventId/register", async (req, res, next) => {
       success: true,
       message: "Event booked successfully",
       registration: insertResult.rows[0],
-      registrations: currentRegistrations + 1,
+      registrations: updatedRegistrations,
+      registered: true,
     });
   } catch (err) {
     await client.query("ROLLBACK");
@@ -163,6 +212,8 @@ router.post("/:eventId/register", async (req, res, next) => {
 // DELETE /api/events/:eventId/register?user_id=1
 // Cancel booking
 router.delete("/:eventId/register", async (req, res, next) => {
+  const client = await pool.connect();
+
   try {
     const { eventId } = req.params;
 
@@ -187,23 +238,46 @@ router.delete("/:eventId/register", async (req, res, next) => {
       });
     }
 
-    const beforeCheck = await pool.query(
+    await client.query("BEGIN");
+
+    const eventResult = await client.query(
+      `
+      SELECT id, title
+      FROM events
+      WHERE id = $1
+      `,
+      [eventId]
+    );
+
+    if (!eventResult.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "event_not_found",
+      });
+    }
+
+    const event = eventResult.rows[0];
+
+    const beforeCheck = await client.query(
       `
       SELECT *
       FROM event_registrations
       WHERE event_id = $1
         AND user_id = $2
+        AND status = 'registered'
       `,
       [eventId, userId]
     );
 
     console.log("booking rows before delete:", beforeCheck.rows);
 
-    const deleteResult = await pool.query(
+    const deleteResult = await client.query(
       `
       DELETE FROM event_registrations
       WHERE event_id = $1
         AND user_id = $2
+        AND status = 'registered'
       RETURNING *
       `,
       [eventId, userId]
@@ -211,14 +285,30 @@ router.delete("/:eventId/register", async (req, res, next) => {
 
     console.log("deleted rows:", deleteResult.rows);
 
-    const countResult = await pool.query(
+    const countResult = await client.query(
       `
       SELECT COUNT(*)::int AS count
       FROM event_registrations
       WHERE event_id = $1
+        AND status = 'registered'
       `,
       [eventId]
     );
+
+    const updatedRegistrations = Number(countResult.rows[0].count || 0);
+
+    if (deleteResult.rows.length > 0) {
+      await createNotification(
+        client,
+        userId,
+        "Booking cancelled",
+        `Your booking for ${event.title} has been cancelled.`,
+        "close-circle-outline",
+        "#ef4444"
+      );
+    }
+
+    await client.query("COMMIT");
 
     res.json({
       success: true,
@@ -227,10 +317,14 @@ router.delete("/:eventId/register", async (req, res, next) => {
         : "No existing booking found, but treated as cancelled",
       deleted: deleteResult.rows.length,
       registration: deleteResult.rows[0] || null,
-      registrations: Number(countResult.rows[0].count || 0),
+      registrations: updatedRegistrations,
+      registered: false,
     });
   } catch (err) {
+    await client.query("ROLLBACK");
     next(err);
+  } finally {
+    client.release();
   }
 });
 
