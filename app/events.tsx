@@ -228,6 +228,7 @@ export default function Events() {
         ) {
           Alert.alert("Already booked", "You have already booked this event.");
           await removeCancelledBookingId(event.id);
+          await fetchEvents(false);
           return;
         }
 
@@ -241,10 +242,15 @@ export default function Events() {
 
       await removeCancelledBookingId(event.id);
 
+      const updatedRegistrations =
+        typeof data.registrations !== "undefined"
+          ? Number(data.registrations)
+          : registrations + 1;
+
       const updatedEvent = {
         ...event,
         registered: true,
-        registrations: registrations + 1,
+        registrations: updatedRegistrations,
       };
 
       setEvents((prev) =>
@@ -258,6 +264,8 @@ export default function Events() {
       );
 
       await saveSingleBookedEventToStorage(updatedEvent);
+
+      await fetchEvents(false);
 
       goToEventBookedPage(updatedEvent);
     } catch (error: any) {
@@ -274,6 +282,9 @@ export default function Events() {
     if (!user) {
       return;
     }
+
+    const currentRegistrations = Number(event.registrations ?? 0);
+    const fallbackRegistrations = Math.max(currentRegistrations - 1, 0);
 
     try {
       setBookingId(event.id);
@@ -304,6 +315,13 @@ export default function Events() {
         );
       }
 
+      const updatedRegistrations =
+        typeof data.registrations !== "undefined" &&
+        data.registrations !== null &&
+        !Number.isNaN(Number(data.registrations))
+          ? Number(data.registrations)
+          : fallbackRegistrations;
+
       await saveCancelledBookingId(event.id);
 
       setEvents((prev) =>
@@ -312,7 +330,7 @@ export default function Events() {
             ? {
                 ...item,
                 registered: false,
-                registrations: Number(data.registrations ?? 0),
+                registrations: updatedRegistrations,
               }
             : item
         )
@@ -328,6 +346,8 @@ export default function Events() {
         "Booking cancelled",
         "This event has been removed from your bookings."
       );
+
+      await fetchEvents(false);
     } catch (error: any) {
       console.error("Cancel event error:", error);
       Alert.alert("Error", error.message || "Failed to cancel booking.");

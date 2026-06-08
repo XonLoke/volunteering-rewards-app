@@ -1,6 +1,7 @@
 # Testing Guide — Step by Step for Each Team Member
 
-**Date:** 4 June 2026  
+**Version:** 1.1  
+**Date:** 5 June 2026 (Updated)  
 **Project:** Volunteering Rewards App (C3000C)  
 **Sprint 4 Period:** 15 Jun – 29 Jun 2026  
 
