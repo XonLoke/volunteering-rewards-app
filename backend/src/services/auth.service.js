@@ -32,6 +32,8 @@ const registerSchema = Joi.object({
     }),
   password_confirm: Joi.string().valid(Joi.ref("password")).required()
     .messages({ "any.only": "Passwords do not match.", "any.required": "Please confirm your password." }),
+  referral_code: Joi.string().max(20).optional().allow("")
+    .messages({ "string.max": "Invalid referral code." }),
 });
 
 const loginSchema = Joi.object({
@@ -64,7 +66,7 @@ async function register(body) {
     throw createError(400, "validation_error", "Validation failed. Please check your inputs.", details);
   }
 
-  const { name, email, phone, password } = value;
+  const { name, email, phone, password, referral_code } = value;
 
   // ── Check for existing user ───────────────────────────
   const { rows: existing } = await pool.query(
@@ -112,9 +114,9 @@ async function register(body) {
   const roleName = await getRoleName(user.role_id);
 
   // ── Link referral (F3) if referral code was provided ────
-  if (data.referral_code) {
+  if (referral_code) {
     const { linkReferral } = require("./referral.service");
-    await linkReferral(user.id, data.referral_code);
+    await linkReferral(user.id, referral_code);
   }
 
   // ── Generate token ────────────────────────────────────
@@ -415,12 +417,14 @@ const registerOrganiserSchema = Joi.object({
   organisation_type: Joi.string().valid("charity", "statutory_board", "community_group", "private", "other").required()
     .messages({ "any.only": "Invalid organisation type.", "any.required": "Organisation type is required." }),
   organisation_docs: Joi.array().items(Joi.string().uri()).optional(),
+  referral_code: Joi.string().max(20).optional().allow("")
+    .messages({ "string.max": "Invalid referral code." }),
 });
 
 /**
  * Register a new organiser account with organisation details.
  *
- * @param {object} body - { name, email, phone, password, password_confirm, organisation_name, organisation_type, organisation_docs? }
+ * @param {object} body - { name, email, phone, password, password_confirm, organisation_name, organisation_type, organisation_docs?, referral_code? }
  * @returns {object} { user, token }
  * @throws {Error} 400 validation_error, 409 email_taken, 409 phone_taken
  */
@@ -436,7 +440,7 @@ async function registerOrganiser(body) {
     throw createError(400, "validation_error", "Validation failed. Please check your inputs.", details);
   }
 
-  const { name, email, phone, password, organisation_name, organisation_type, organisation_docs } = value;
+  const { name, email, phone, password, organisation_name, organisation_type, organisation_docs, referral_code } = value;
 
   // ── Check for existing user ───────────────────────────
   const { rows: existing } = await pool.query(
@@ -493,9 +497,9 @@ async function registerOrganiser(body) {
   const roleName = await getRoleName(user.role_id);
 
   // ── Link referral (F3) if referral code was provided ────
-  if (data.referral_code) {
+  if (referral_code) {
     const { linkReferral } = require("./referral.service");
-    await linkReferral(user.id, data.referral_code);
+    await linkReferral(user.id, referral_code);
   }
 
   // ── Generate token ────────────────────────────────────
