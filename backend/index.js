@@ -43,6 +43,7 @@ app.use("/api/auth", require("./src/routes/auth.routes"));
 
 // Workflow B — Events & QR Attendance
 app.use("/api/events", require("./src/routes/events.routes"));
+app.use("/api/events", require("./src/routes/feedback.routes")); // F2: Feedback Summarizer
 app.use("/api/attendance", require("./src/routes/attendance.routes"));
 
 // Volunteer-specific data
@@ -50,6 +51,9 @@ app.use("/api/me", require("./src/routes/me.routes"));
 
 // Referral Program (F3)
 app.use("/api/me", require("./src/routes/referral.routes"));
+
+// F4: Hall of Fame Leaderboard
+app.use("/api/leaderboard", require("./src/routes/leaderboard.routes"));
 
 // Favorites toggle
 app.use("/api/favorites", require("./src/routes/favorites.routes"));
