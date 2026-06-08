@@ -216,7 +216,7 @@ const getRecommendations = async (userId, limit = 5) => {
       GROUP BY event_id
     ) reg ON reg.event_id = e.id
     WHERE e.event_date > NOW()
-      AND e.status = 'active'
+      AND e.status IN ('active', 'upcoming')
       AND e.id NOT IN (
         SELECT er2.event_id FROM event_registrations er2
         WHERE er2.user_id = $1 AND er2.status = 'registered'
@@ -248,7 +248,7 @@ const getPopularEvents = async (limit = 5) => {
       GROUP BY event_id
     ) reg ON reg.event_id = e.id
     WHERE e.event_date > NOW()
-      AND e.status = 'active'
+      AND e.status IN ('active', 'upcoming')
     ORDER BY reg.count DESC NULLS LAST, e.event_date ASC
     LIMIT $1
   `, [limit]);
