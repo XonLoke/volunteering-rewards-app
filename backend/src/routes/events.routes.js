@@ -26,7 +26,15 @@ const controller = require("../controllers/events.controller");
 const { authenticate } = require("../middleware/auth.middleware");
 const { authorize } = require("../middleware/role.middleware");
 
-// ─── Static Routes (must be declared before /:id) ────────
+// ─── Static Routes — AI Recommendations (before /:id) ────
+
+// GET /api/events/recommended — AI-powered event recommendations (volunteer)
+router.get("/recommended", authenticate, authorize("volunteer"), controller.recommended);
+
+// GET /api/events/popular — Popular events fallback (volunteer)
+router.get("/popular", authenticate, authorize("volunteer"), controller.popular);
+
+// ─── Other Static Routes (must be declared before /:id) ──
 
 // GET /api/events — Browse events (volunteer)
 router.get("/", authenticate, authorize("volunteer"), controller.browse);

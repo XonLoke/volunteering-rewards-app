@@ -155,9 +155,112 @@ const unregisterFromEvent = async (eventId, userId) => {
   return deleteResult.rows[0];
 };
 
+//-----------------------------------------------------------------------
+// SECTION: AI Event Recommendations
+// Purpose: Content-based filtering engine that recommends upcoming events
+//          based on volunteer's past attendance category preferences.
+//          Falls back to popular events for new volunteers with no history.
+// Formula: Score = SUM(weight of matching categories the volunteer attended)
+//-----------------------------------------------------------------------
+
+/**
+ * Get recommended events for a volunteer based on their category preferences.
+ * @param {number} userId - The volunteer's user ID
+ * @param {number} limit - Max recommendations (default 5)
+ * @returns {Array} Top recommended events with relevance_score
+ */
+const getRecommendations = async (userId, limit = 5) => {
+  // Step 1: Build volunteer's category preference profile from past events
+  const { rows: preferences } = await pool.query(`
+    SELECT e.category, COUNT(*) AS weight
+    FROM event_registrations er
+    JOIN events e ON er.event_id = e.id
+    WHERE er.user_id = $1
+      AND e.event_date < NOW()
+      AND e.category IS NOT NULL
+      AND e.category != ''
+    GROUP BY e.category
+    ORDER BY weight DESC
+  `, [userId]);
+
+  // Step 2: If no history, return popular events as fallback
+  if (preferences.length === 0) {
+    return getPopularEvents(limit);
+  }
+
+  // Step 3: Score upcoming events by category match
+  // Build a CASE statement for category matching score
+  const caseWhen = preferences.map((p, i) =>
+    `WHEN e.category = $${i + 2} THEN $${i + 2 + preferences.length}`
+  ).join(' ');
+
+  const params = [userId];
+  const weights = [];
+  preferences.forEach(p => {
+    params.push(p.category);
+    weights.push(parseInt(p.weight));
+  });
+  params.push(...weights, limit);
+
+  const { rows: recommendations } = await pool.query(`
+    SELECT
+      e.id, e.title, e.description, e.location, e.event_date,
+      e.capacity, e.points_value, e.category, e.status,
+      COALESCE(reg.count, 0)::int AS registrations,
+      COALESCE(${caseWhen} ELSE 0 END)::int AS relevance_score
+    FROM events e
+    LEFT JOIN (
+      SELECT event_id, COUNT(*)::int AS count
+      FROM event_registrations
+      WHERE status = 'registered'
+      GROUP BY event_id
+    ) reg ON reg.event_id = e.id
+    WHERE e.event_date > NOW()
+      AND e.status = 'active'
+      AND e.id NOT IN (
+        SELECT er2.event_id FROM event_registrations er2
+        WHERE er2.user_id = $1 AND er2.status = 'registered'
+      )
+    ORDER BY relevance_score DESC, e.event_date ASC
+    LIMIT $${params.length}
+  `, params);
+
+  return recommendations;
+};
+
+/**
+ * Get most popular upcoming events (fallback for new volunteers).
+ * @param {number} limit - Max events (default 5)
+ * @returns {Array} Most popular upcoming events
+ */
+const getPopularEvents = async (limit = 5) => {
+  const { rows } = await pool.query(`
+    SELECT
+      e.id, e.title, e.description, e.location, e.event_date,
+      e.capacity, e.points_value, e.category, e.status,
+      COALESCE(reg.count, 0)::int AS registrations,
+      0 AS relevance_score
+    FROM events e
+    LEFT JOIN (
+      SELECT event_id, COUNT(*)::int AS count
+      FROM event_registrations
+      WHERE status = 'registered'
+      GROUP BY event_id
+    ) reg ON reg.event_id = e.id
+    WHERE e.event_date > NOW()
+      AND e.status = 'active'
+    ORDER BY reg.count DESC NULLS LAST, e.event_date ASC
+    LIMIT $1
+  `, [limit]);
+
+  return rows;
+};
+
 module.exports = {
   browseEvents,
   getEventById,
   registerForEvent,
   unregisterFromEvent,
+  getRecommendations,
+  getPopularEvents,
 };

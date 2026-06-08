@@ -94,7 +94,24 @@ async function stats(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// ─── GET /api/events/recommended ─────────────────────────────
+async function recommended(req, res, next) {
+  try {
+    const events = await eventsService.getRecommendations(req.user.id, parseInt(req.query.limit) || 5);
+    res.json({ data: events });
+  } catch (err) { next(err); }
+}
+
+// ─── GET /api/events/popular ─────────────────────────────────
+async function popular(req, res, next) {
+  try {
+    const events = await eventsService.getPopularEvents(parseInt(req.query.limit) || 5);
+    res.json({ data: events });
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   browse, categories, today, detail, join, leave,
   submitFeedback, viewQna, askQuestion, roster, stats,
+  recommended, popular,
 };
