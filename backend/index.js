@@ -48,6 +48,9 @@ app.use("/api/attendance", require("./src/routes/attendance.routes"));
 // Volunteer-specific data
 app.use("/api/me", require("./src/routes/me.routes"));
 
+// Referral Program (F3)
+app.use("/api/me", require("./src/routes/referral.routes"));
+
 // Favorites toggle
 app.use("/api/favorites", require("./src/routes/favorites.routes"));
 

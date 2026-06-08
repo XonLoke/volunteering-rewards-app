@@ -62,6 +62,15 @@ const scanQR = async (eventId, volunteerId) => {
     await client.query("BEGIN");
     const result = await awardPointsForEvent(client, eventId, volunteerId);
     await client.query("COMMIT");
+
+    // Award referral points (F3) — fire-and-forget, outside transaction
+    try {
+      const { awardReferralPoints } = require("./referral.service");
+      await awardReferralPoints(volunteerId);
+    } catch (_) {
+      // Silently ignore — referral points are a bonus, not critical
+    }
+
     return result;
   } catch (error) {
     await client.query("ROLLBACK");

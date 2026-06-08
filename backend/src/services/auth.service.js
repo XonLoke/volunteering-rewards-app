@@ -111,6 +111,12 @@ async function register(body) {
   const user = rows[0];
   const roleName = await getRoleName(user.role_id);
 
+  // ── Link referral (F3) if referral code was provided ────
+  if (data.referral_code) {
+    const { linkReferral } = require("./referral.service");
+    await linkReferral(user.id, data.referral_code);
+  }
+
   // ── Generate token ────────────────────────────────────
   const tokenPayload = { id: user.id, role: roleName };
   const accessToken = jwtUtil.generateAccessToken(tokenPayload);
@@ -485,6 +491,12 @@ async function registerOrganiser(body) {
 
   const user = rows[0];
   const roleName = await getRoleName(user.role_id);
+
+  // ── Link referral (F3) if referral code was provided ────
+  if (data.referral_code) {
+    const { linkReferral } = require("./referral.service");
+    await linkReferral(user.id, data.referral_code);
+  }
 
   // ── Generate token ────────────────────────────────────
   const tokenPayload = { id: user.id, role: roleName };

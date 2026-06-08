@@ -37,6 +37,14 @@ const menuItems = [
     color: "#f59e0b",
   },
   {
+    id: "7",
+    icon: "gift-outline",
+    label: "Referral Program",
+    sub: "Refer friends, earn bonus points",
+    route: "/referral",
+    color: "#8b5cf6",
+  },
+  {
     id: "3",
     icon: "scan-outline",
     label: "Scan History",
