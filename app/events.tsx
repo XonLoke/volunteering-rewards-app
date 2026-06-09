@@ -725,7 +725,7 @@ export default function Events() {
                   },
                 ]}
               >
-                {isBooked ? "Booked · Manage" : isFull ? "Full" : "Book Now"}
+                {isBooked ? "Booked · Manage" : isFull ? "Fully Booked" : "Book Now"}
               </Text>
             </>
           )}
