@@ -34,7 +34,7 @@ export default function RootLayout() {
 
         <Stack.Screen name="ai-recommendations" />
         <Stack.Screen name="hall-of-fame" />
-        <Stack.Screen name="my-attendance-QR" />
+        <Stack.Screen name="scan" />
       </Stack>
 
       <StatusBar style="auto" />
