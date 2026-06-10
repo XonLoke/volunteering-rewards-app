@@ -374,9 +374,9 @@ Update this table as you complete tasks.
 
 | Task | Status | Notes |
 |------|--------|-------|
-| T1: Push pending changes | ⬜ Pending | |
-| T2: Verify everything works | ⬜ Pending | |
-| T3: Run full test suite | ⬜ Pending | |
+| T1: Push pending changes | ✅ Done | HANDOFF.md + Project Status Report committed & pushed |
+| T2: Verify everything works | ✅ Done | 11/11 unit tests pass, all 7 key APIs verified |
+| T3: Run full test suite | ✅ Done | 9/9 smoke tests pass, results in docs/Test Results — Final Suite.md |
 | T4: Backend deployment prep | ⬜ Pending (29 Jun) | |
 | T5: Security audit | ⬜ Pending (29 Jun) | |
 | T6: Final E2E test pass | ⬜ Pending (29 Jun) | |
