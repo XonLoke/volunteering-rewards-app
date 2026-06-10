@@ -79,7 +79,7 @@ echo -n "IT-05 Rewards Config . "
 CONFIG=$(curl -s "$BASE/admin/rewards/configuration" -H "Authorization: Bearer $TOKEN")
 if echo "$CONFIG" | grep -q "points_per_dollar"; then
   green "PASS"
-  ((FAIL++))
+  ((PASS++))
 else
   red "FAIL"
   ((FAIL++))
@@ -102,7 +102,7 @@ fi
 # IT-06: Browse Events
 echo -n "IT-06 Browse Events . "
 EVENTS=$(curl -s "$BASE/events?limit=5" -H "Authorization: Bearer $VTOKEN")
-if echo "$EVENTS" | grep -q '"data"'; then
+if echo "$EVENTS" | grep -q '"events"'; then
   green "PASS"
   ((PASS++))
 else
