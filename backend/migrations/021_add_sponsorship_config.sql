@@ -9,15 +9,14 @@ CREATE TABLE IF NOT EXISTS sponsorship_configuration (
     direct_sponsor_points   INTEGER      NOT NULL DEFAULT 10,
     helped_sponsor_points   INTEGER      NOT NULL DEFAULT 4,
     upline_helper_points    INTEGER      NOT NULL DEFAULT 6,
-    max_depth               INTEGER      NOT NULL DEFAULT 3,
     updated_by              INTEGER      REFERENCES users(id),
     updated_at              TIMESTAMP    DEFAULT NOW(),
     created_at              TIMESTAMP    DEFAULT NOW()
 );
 
 -- Insert default config
-INSERT INTO sponsorship_configuration (direct_sponsor_points, helped_sponsor_points, upline_helper_points, max_depth)
-SELECT 10, 4, 6, 3
+INSERT INTO sponsorship_configuration (direct_sponsor_points, helped_sponsor_points, upline_helper_points)
+SELECT 10, 4, 6
 WHERE NOT EXISTS (SELECT 1 FROM sponsorship_configuration);
 
 -- Add upline email fields to users table

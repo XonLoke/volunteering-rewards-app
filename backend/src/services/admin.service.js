@@ -29,7 +29,7 @@ async function getPointsPerDollar() {
 async function getDashboardStats() {
   const queries = {
     total_users: pool.query("SELECT COUNT(*) FROM users"),
-    total_organisers: pool.query("SELECT COUNT(*) FROM users WHERE role_id = (SELECT id FROM roles WHERE role_name = 'organizer')"),
+    total_organisers: pool.query("SELECT COUNT(*) FROM users WHERE role_id = (SELECT id FROM roles WHERE role_name = 'organiser')"),
     pending_approvals: pool.query("SELECT COUNT(*) FROM organizations WHERE approval_status = 'pending'"),
     total_events: pool.query("SELECT COUNT(*) FROM events"),
     total_merchants: pool.query("SELECT COUNT(*) FROM merchants"),
@@ -116,7 +116,15 @@ async function listUsers({ page = 1, limit = 15, search, role, status } = {}) {
      FROM users u
      JOIN roles r ON u.role_id = r.id
      ${where}
-     ORDER BY u.created_at DESC
+     ORDER BY
+       CASE r.role_name
+         WHEN 'admin' THEN 1
+         WHEN 'organiser' THEN 2
+         WHEN 'merchant' THEN 3
+         WHEN 'volunteer' THEN 4
+         ELSE 5
+       END,
+       u.created_at DESC
      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
     [...params, limit, offset]
   );
@@ -180,7 +188,7 @@ async function listOrganisers({ page = 1, limit = 15, status } = {}) {
   const offset = (page - 1) * limit;
   const params = [];
 
-  let where = "WHERE r.role_name = 'organizer'";
+  let where = "WHERE r.role_name = 'organiser'";
   if (status) {
     params.push(status);
     where += ` AND o.approval_status = $${params.length}`;

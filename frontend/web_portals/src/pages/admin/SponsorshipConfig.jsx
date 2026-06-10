@@ -7,7 +7,6 @@ const DEFAULT_CONFIG = {
   direct_sponsor_points: 10,
   helped_sponsor_points: 4,
   upline_helper_points: 6,
-  max_depth: 3,
 };
 
 export default function SponsorshipConfig() {
@@ -28,7 +27,6 @@ export default function SponsorshipConfig() {
         direct_sponsor_points: res.direct_sponsor_points ?? DEFAULT_CONFIG.direct_sponsor_points,
         helped_sponsor_points: res.helped_sponsor_points ?? DEFAULT_CONFIG.helped_sponsor_points,
         upline_helper_points: res.upline_helper_points ?? DEFAULT_CONFIG.upline_helper_points,
-        max_depth: res.max_depth ?? DEFAULT_CONFIG.max_depth,
       });
       setLastUpdated(res.updated_at || null);
       setHasChanges(false);
@@ -54,7 +52,6 @@ export default function SponsorshipConfig() {
         direct_sponsor_points: Number(config.direct_sponsor_points) || DEFAULT_CONFIG.direct_sponsor_points,
         helped_sponsor_points: Number(config.helped_sponsor_points) || DEFAULT_CONFIG.helped_sponsor_points,
         upline_helper_points: Number(config.upline_helper_points) || DEFAULT_CONFIG.upline_helper_points,
-        max_depth: Number(config.max_depth) || DEFAULT_CONFIG.max_depth,
       };
       const res = await apiPut('/admin/sponsorship/configuration', payload);
       setLastUpdated(res.updated_at || new Date().toISOString());
@@ -157,18 +154,6 @@ export default function SponsorshipConfig() {
               onChange={handleChange('upline_helper_points')} />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">
-              Max Depth
-              <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 400, marginLeft: 4 }}>
-                (maximum sponsorship levels for rewards, default: 3)
-              </span>
-            </label>
-            <input className="form-input" type="number" min="1" max="5"
-              value={config.max_depth}
-              onChange={handleChange('max_depth')} />
-          </div>
-
           {/* Visual explanation */}
           <div style={{ marginTop: 20, padding: 16, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
             <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>How Points Work</h4>
@@ -176,7 +161,7 @@ export default function SponsorshipConfig() {
               <p><strong>You recruit Person A (no help):</strong> You earn <strong>{config.direct_sponsor_points} pts</strong></p>
               <p><strong>You help Person A recruit Person B:</strong> Person A earns {config.helped_sponsor_points} pts, You earn {config.upline_helper_points} pts</p>
               <p><strong>Person B recruits Person C (with A's help):</strong> Person B earns {config.helped_sponsor_points} pts, Person A earns {config.upline_helper_points} pts</p>
-              <p><strong>Max depth:</strong> {config.max_depth} levels. Beyond this, no further rewards.</p>
+              <p><strong>Max depth 3 levels.</strong> Beyond this, no further rewards.</p>
             </div>
           </div>
         </div>

@@ -13,7 +13,7 @@ async function getConfig() {
   const { rows } = await pool.query(
     "SELECT direct_sponsor_points, helped_sponsor_points, upline_helper_points, max_depth FROM sponsorship_configuration ORDER BY id DESC LIMIT 1"
   );
-  if (rows.length === 0) return { direct_sponsor_points: 10, helped_sponsor_points: 4, upline_helper_points: 6, max_depth: 3 };
+  if (rows.length === 0) return { direct_sponsor_points: 10, helped_sponsor_points: 4, upline_helper_points: 6 };
   return rows[0];
 }
 
