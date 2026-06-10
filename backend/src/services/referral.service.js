@@ -1,170 +1,113 @@
 //-----------------------------------------------------------------------
-// SECTION: Referral Service (F3)
-// Purpose: Multi-level referral tracking — generate codes, track upline/
-//          downline relationships, award bonus points on referral activity.
+// SECTION: Sponsorship Referral Service (F3 Redesign)
+// Purpose: Email-based upline/downline sponsorship tracking with
+//          configurable points. Supports helped vs unhelped recruitment.
 //-----------------------------------------------------------------------
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
 
 //-----------------------------------------------------------------------
-// SECTION: Referral Code Generation
-// Purpose: Generate a unique 8-character alphanumeric referral code.
+// SECTION: Get Current Sponsorship Config
 //-----------------------------------------------------------------------
-async function generateReferralCode(userId, userName) {
-  // Create code from name initials + random digits
-  const initials = (userName || "VOL")
-    .split(" ")
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 4);
-  const randomSuffix = String(Math.floor(1000 + Math.random() * 9000));
-  const code = `${initials}${randomSuffix}`;
-
-  // Check uniqueness
+async function getConfig() {
   const { rows } = await pool.query(
-    "SELECT id FROM users WHERE referral_code = $1",
-    [code]
+    "SELECT direct_sponsor_points, helped_sponsor_points, upline_helper_points, max_depth FROM sponsorship_configuration ORDER BY id DESC LIMIT 1"
   );
-  if (rows.length > 0) {
-    // Collision — try again with different suffix
-    return generateReferralCode(userId, userName);
-  }
-
-  // Save to user record
-  await pool.query(
-    "UPDATE users SET referral_code = $1 WHERE id = $2",
-    [code, userId]
-  );
-
-  return code;
+  if (rows.length === 0) return { direct_sponsor_points: 10, helped_sponsor_points: 4, upline_helper_points: 6, max_depth: 3 };
+  return rows[0];
 }
 
 //-----------------------------------------------------------------------
-// SECTION: Get Referral Code for Current User
+// SECTION: Link Sponsorship on Registration
+// Purpose: When a new user registers with upline emails, link them.
+//          upline_2_email = direct sponsor (person who recruited them)
+//          upline_1_email = parent sponsor (person who sponsored the recruiter)
 //-----------------------------------------------------------------------
-async function getMyReferralCode(userId) {
-  const { rows } = await pool.query(
-    "SELECT referral_code FROM users WHERE id = $1",
+async function linkSponsorship(userId, upline2Email, upline1Email) {
+  // Find the direct sponsor (upline 2)
+  let upline2Id = null;
+  if (upline2Email) {
+    const { rows: u2 } = await pool.query(
+      "SELECT id, name, email FROM users WHERE email = $1 AND role_id = (SELECT id FROM roles WHERE role_name = 'volunteer') LIMIT 1",
+      [upline2Email.trim().toLowerCase()]
+    );
+    if (u2.length > 0) upline2Id = u2[0].id;
+  }
+
+  // Find the parent sponsor (upline 1)
+  let upline1Id = null;
+  if (upline1Email) {
+    const { rows: u1 } = await pool.query(
+      "SELECT id, name, email FROM users WHERE email = $1 AND role_id = (SELECT id FROM roles WHERE role_name = 'volunteer') LIMIT 1",
+      [upline1Email.trim().toLowerCase()]
+    );
+    if (u1.length > 0) upline1Id = u1[0].id;
+  }
+
+  // Save upline emails on the new user
+  const updates = [];
+  const params = [userId];
+  if (upline2Email) { updates.push(`upline_2_email = $${params.length + 1}`); params.push(upline2Email.trim().toLowerCase()); }
+  if (upline1Email) { updates.push(`upline_1_email = $${params.length + 1}`); params.push(upline1Email.trim().toLowerCase()); }
+  if (updates.length > 0) {
+    await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $1`, params);
+  }
+
+  // Create referral log entries for points tracking
+  const cfg = await getConfig();
+  const now = new Date();
+
+  // Level 1: Direct sponsor gets helped_sponsor_points
+  // (they receive less because upline helped — the premium 10 is only for own effort)
+  if (upline2Id) {
+    await pool.query(
+      `INSERT INTO referral_logs (referrer_id, referred_id, level, points_awarded, status, created_at)
+       VALUES ($1, $2, 1, $3, 'rewarded', $4)`,
+      [upline2Id, userId, cfg.helped_sponsor_points, now]
+    );
+  }
+
+  // Level 2: Parent sponsor gets upline_helper_points for helping the recruiter
+  if (upline1Id) {
+    await pool.query(
+      `INSERT INTO referral_logs (referrer_id, referred_id, level, points_awarded, status, created_at)
+       VALUES ($1, $2, 2, $3, 'rewarded', $4)`,
+      [upline1Id, userId, cfg.upline_helper_points, now]
+    );
+  }
+
+  return { upline2Id, upline1Id };
+}
+
+//-----------------------------------------------------------------------
+// SECTION: Award Direct Sponsor Points (10 pts — own effort, no help)
+// Purpose: Called when a user registers WITHOUT upline emails but
+//          we detect their referrer by other means, OR when we need
+//          to award the full direct sponsor points.
+//-----------------------------------------------------------------------
+async function awardDirectSponsorPoints(referrerId, newUserId) {
+  const cfg = await getConfig();
+  await pool.query(
+    `INSERT INTO referral_logs (referrer_id, referred_id, level, points_awarded, status, created_at)
+     VALUES ($1, $2, 1, $3, 'rewarded', NOW())`,
+    [referrerId, newUserId, cfg.direct_sponsor_points]
+  );
+}
+
+//-----------------------------------------------------------------------
+// SECTION: Get Sponsorship Profile for Current User
+//-----------------------------------------------------------------------
+async function getMySponsorshipProfile(userId) {
+  const { rows: userRows } = await pool.query(
+    "SELECT id, name, email, upline_1_email, upline_2_email, points FROM users WHERE id = $1",
     [userId]
   );
-  if (rows.length === 0) throw createError(404, "not_found", "User not found.");
+  if (userRows.length === 0) throw createError(404, "not_found", "User not found.");
+  const user = userRows[0];
 
-  // Generate code if user doesn't have one yet
-  if (!rows[0].referral_code) {
-    const { rows: userRows } = await pool.query(
-      "SELECT name FROM users WHERE id = $1",
-      [userId]
-    );
-    const code = await generateReferralCode(userId, userRows[0]?.name);
-    return { referral_code: code };
-  }
-
-  return { referral_code: rows[0].referral_code };
-}
-
-//-----------------------------------------------------------------------
-// SECTION: Link Referral on Registration
-// Purpose: Called during registration to link a new user to their referrer.
-//          Sets referred_by_code on the new user.
-//-----------------------------------------------------------------------
-async function linkReferral(newUserId, referralCode) {
-  if (!referralCode) return;
-
-  // Find the referrer
-  const { rows: referrers } = await pool.query(
-    "SELECT id, referral_code, referred_by_code FROM users WHERE referral_code = $1",
-    [referralCode]
-  );
-  if (referrers.length === 0) return; // Invalid code — silently ignore
-
-  const referrer = referrers[0];
-
-  // Update new user with referral code
-  await pool.query(
-    "UPDATE users SET referred_by_code = $1 WHERE id = $2",
-    [referralCode, newUserId]
-  );
-
-  // Create level 1 referral log
-  await pool.query(
-    `INSERT INTO referral_logs (referrer_id, referred_id, level, status)
-     VALUES ($1, $2, 1, 'pending')`,
-    [referrer.id, newUserId]
-  );
-
-  // If referrer has their own upline, create level 2 referral log
-  if (referrer.referred_by_code) {
-    const { rows: upline } = await pool.query(
-      "SELECT id FROM users WHERE referral_code = $1",
-      [referrer.referred_by_code]
-    );
-    if (upline.length > 0) {
-      await pool.query(
-        `INSERT INTO referral_logs (referrer_id, referred_id, level, status)
-         VALUES ($1, $2, 2, 'pending')`,
-        [upline[0].id, newUserId]
-      );
-    }
-  }
-}
-
-//-----------------------------------------------------------------------
-// SECTION: Award Points on First Event Attendance
-// Purpose: Called when a referred volunteer attends their first event.
-//          Level 1 referrer gets 50 pts, Level 2 gets 25 pts.
-//-----------------------------------------------------------------------
-async function awardReferralPoints(referredUserId) {
-  // Check if this user was referred
-  const { rows: users } = await pool.query(
-    "SELECT id, referred_by_code FROM users WHERE id = $1 AND referred_by_code IS NOT NULL",
-    [referredUserId]
-  );
-  if (users.length === 0) return;
-
-  // Find pending referral logs for this user
-  const { rows: logs } = await pool.query(
-    `SELECT rl.id, rl.referrer_id, rl.level
-     FROM referral_logs rl
-     WHERE rl.referred_id = $1 AND rl.status = 'pending'`,
-    [referredUserId]
-  );
-
-  for (const log of logs) {
-    const points = log.level === 1 ? 50 : 25;
-
-    // Award points
-    await pool.query(
-      "UPDATE users SET points = points + $1, referral_points = referral_points + $2 WHERE id = $3",
-      [points, points, log.referrer_id]
-    );
-
-    // Update log status
-    await pool.query(
-      "UPDATE referral_logs SET status = 'rewarded', points_awarded = $1 WHERE id = $2",
-      [points, log.id]
-    );
-  }
-}
-
-//-----------------------------------------------------------------------
-// SECTION: Get Referral Stats & Downline
-// Purpose: Returns the user's referral stats and scrollable downline list.
-//-----------------------------------------------------------------------
-async function getReferralStats(userId) {
-  const { rows: stats } = await pool.query(
-    `SELECT
-       COUNT(*) FILTER (WHERE level = 1) AS level_1_count,
-       COUNT(*) FILTER (WHERE level = 2) AS level_2_count,
-       COALESCE(SUM(points_awarded), 0) AS total_points_earned
-     FROM referral_logs
-     WHERE referrer_id = $1`,
-    [userId]
-  );
-
-  // Get level 1 downline (scrollable text format: "name (email)")
-  const { rows: level1 } = await pool.query(
-    `SELECT u.name, u.email
+  // Get downline level 1 count + names
+  const { rows: downline1 } = await pool.query(
+    `SELECT rl.id, u.name, u.email, rl.created_at
      FROM referral_logs rl
      JOIN users u ON u.id = rl.referred_id
      WHERE rl.referrer_id = $1 AND rl.level = 1
@@ -172,9 +115,9 @@ async function getReferralStats(userId) {
     [userId]
   );
 
-  // Get level 2 downline
-  const { rows: level2 } = await pool.query(
-    `SELECT u.name, u.email
+  // Get downline level 2 count
+  const { rows: downline2 } = await pool.query(
+    `SELECT rl.id, u.name, u.email, rl.created_at
      FROM referral_logs rl
      JOIN users u ON u.id = rl.referred_id
      WHERE rl.referrer_id = $1 AND rl.level = 2
@@ -182,23 +125,27 @@ async function getReferralStats(userId) {
     [userId]
   );
 
-  const formatDownline = (rows) =>
-    rows.map((r) => `${r.name} (${r.email})`).join("\n");
+  // Get total sponsorship points earned
+  const { rows: pointsResult } = await pool.query(
+    "SELECT COALESCE(SUM(points_awarded), 0)::int AS total FROM referral_logs WHERE referrer_id = $1",
+    [userId]
+  );
 
   return {
-    referral_code: (await getMyReferralCode(userId)).referral_code,
-    level_1_count: parseInt(stats[0]?.level_1_count) || 0,
-    level_2_count: parseInt(stats[0]?.level_2_count) || 0,
-    total_points_earned: parseInt(stats[0]?.total_points_earned) || 0,
-    downline_1st_level: formatDownline(level1),
-    downline_2nd_level: formatDownline(level2),
+    email: user.email,
+    upline_1_email: user.upline_1_email || '',
+    upline_2_email: user.upline_2_email || '',
+    downline_1st_level_count: downline1.length,
+    downline_2nd_level_count: downline2.length,
+    downline_1st_level: downline1.map(d => `${d.name} (${d.email})`).join('\n'),
+    downline_2nd_level: downline2.map(d => `${d.name} (${d.email})`).join('\n'),
+    total_sponsorship_points: pointsResult[0]?.total || 0,
   };
 }
 
 module.exports = {
-  generateReferralCode,
-  getMyReferralCode,
-  linkReferral,
-  awardReferralPoints,
-  getReferralStats,
+  linkSponsorship,
+  awardDirectSponsorPoints,
+  getMySponsorshipProfile,
+  getConfig,
 };

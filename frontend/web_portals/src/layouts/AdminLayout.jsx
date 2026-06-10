@@ -25,6 +25,7 @@ const NAV_ITEMS = [
     children: [
       { label: 'Coupons', path: '/admin/coupons', icon: 'Cp' },
       { label: 'Rewards Config', path: '/admin/rewards-config', icon: 'R' },
+      { label: 'Sponsorship Config', path: '/admin/sponsorship-config', icon: 'Sp' },
       { label: 'Redemptions', path: '/admin/redemptions', icon: 'Rd' },
     ],
   },

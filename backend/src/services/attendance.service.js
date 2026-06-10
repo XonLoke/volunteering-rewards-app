@@ -63,13 +63,8 @@ const scanQR = async (eventId, volunteerId) => {
     const result = await awardPointsForEvent(client, eventId, volunteerId);
     await client.query("COMMIT");
 
-    // Award referral points (F3) — fire-and-forget, outside transaction
-    try {
-      const { awardReferralPoints } = require("./referral.service");
-      await awardReferralPoints(volunteerId);
-    } catch (_) {
-      // Silently ignore — referral points are a bonus, not critical
-    }
+    // Note: Sponsorship points (F3) are awarded at registration time
+    // via linkSponsorship() in the auth service, not on attendance.
 
     return result;
   } catch (error) {

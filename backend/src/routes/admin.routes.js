@@ -63,6 +63,10 @@ router.delete("/coupons/:id", controller.deleteCoupon);
 router.get("/rewards/configuration", controller.getRewardsConfig);
 router.put("/rewards/configuration", controller.updateRewardsConfig);
 
+// Sponsorship Config
+router.get("/sponsorship/configuration", controller.getSponsorshipConfig);
+router.put("/sponsorship/configuration", controller.updateSponsorshipConfig);
+
 // Merchants
 router.get("/merchants", controller.listMerchants);
 router.put("/merchants/:id", controller.updateMerchant);

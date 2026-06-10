@@ -39,8 +39,8 @@ const menuItems = [
   {
     id: "7",
     icon: "gift-outline",
-    label: "Referral Program",
-    sub: "Refer friends, earn bonus points",
+    label: "Sponsorship",
+    sub: "Sponsor volunteers, earn bonus points",
     route: "/referral",
     color: "#8b5cf6",
   },

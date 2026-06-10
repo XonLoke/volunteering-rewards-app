@@ -32,8 +32,10 @@ const registerSchema = Joi.object({
     }),
   password_confirm: Joi.string().valid(Joi.ref("password")).required()
     .messages({ "any.only": "Passwords do not match.", "any.required": "Please confirm your password." }),
-  referral_code: Joi.string().max(20).optional().allow("")
-    .messages({ "string.max": "Invalid referral code." }),
+  upline_1_email: Joi.string().email().optional().allow("")
+    .messages({ "string.email": "Invalid parent sponsor email." }),
+  upline_2_email: Joi.string().email().optional().allow("")
+    .messages({ "string.email": "Invalid direct sponsor email." }),
 });
 
 const loginSchema = Joi.object({
@@ -66,7 +68,7 @@ async function register(body) {
     throw createError(400, "validation_error", "Validation failed. Please check your inputs.", details);
   }
 
-  const { name, email, phone, password, referral_code } = value;
+  const { name, email, phone, password, referral_code, upline_1_email, upline_2_email } = value;
 
   // ── Check for existing user ───────────────────────────
   const { rows: existing } = await pool.query(
@@ -113,10 +115,10 @@ async function register(body) {
   const user = rows[0];
   const roleName = await getRoleName(user.role_id);
 
-  // ── Link referral (F3) if referral code was provided ────
-  if (referral_code) {
-    const { linkReferral } = require("./referral.service");
-    await linkReferral(user.id, referral_code);
+  // ── Link sponsorship (F3) if upline emails provided ────
+  if (upline_1_email || upline_2_email) {
+    const { linkSponsorship } = require("./referral.service");
+    await linkSponsorship(user.id, upline_2_email, upline_1_email);
   }
 
   // ── Generate token ────────────────────────────────────
@@ -496,10 +498,10 @@ async function registerOrganiser(body) {
   const user = rows[0];
   const roleName = await getRoleName(user.role_id);
 
-  // ── Link referral (F3) if referral code was provided ────
-  if (referral_code) {
-    const { linkReferral } = require("./referral.service");
-    await linkReferral(user.id, referral_code);
+  // ── Link sponsorship (F3) if upline emails provided ────
+  if (upline_1_email || upline_2_email) {
+    const { linkSponsorship } = require("./referral.service");
+    await linkSponsorship(user.id, upline_2_email, upline_1_email);
   }
 
   // ── Generate token ────────────────────────────────────

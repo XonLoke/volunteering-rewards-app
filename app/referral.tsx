@@ -1,12 +1,11 @@
-import { ActivityIndicator, Alert, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useRouter } from "expo-router";
+import { ActivityIndicator, Alert, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
-
 const COLORS = ["#8b5cf6", "#6366f1", "#10b981", "#f59e0b", "#ef4444"];
 
 async function apiAuthGet(path: string) {
@@ -27,20 +26,15 @@ export default function Referral() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [referralCode, setReferralCode] = useState("");
-  const [stats, setStats] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
 
-  const loadStats = useCallback(async () => {
+  const loadProfile = useCallback(async () => {
     try {
       setError(null);
-      const [codeData, statsData] = await Promise.all([
-        apiAuthGet("/me/referral-code"),
-        apiAuthGet("/me/referral-stats"),
-      ]);
-      setReferralCode(codeData.referral_code || "");
-      setStats(statsData);
+      const data = await apiAuthGet("/me/sponsorship-profile");
+      setProfile(data);
     } catch (err: any) {
-      setError(err.message || "Failed to load referral data");
+      setError(err.message || "Failed to load sponsorship data");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,16 +42,10 @@ export default function Referral() {
   }, []);
 
   useFocusEffect(
-    useCallback(() => { setLoading(true); loadStats(); }, [loadStats])
+    useCallback(() => { setLoading(true); loadProfile(); }, [loadProfile])
   );
 
-  const onRefresh = () => { setRefreshing(true); loadStats(); };
-
-  const copyCode = () => {
-    if (referralCode) {
-      Alert.alert("Referral Code", `Your code: ${referralCode}\n\nShare this code with friends!`);
-    }
-  };
+  const onRefresh = () => { setRefreshing(true); loadProfile(); };
 
   if (loading && !refreshing) {
     return (
@@ -73,7 +61,7 @@ export default function Referral() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Referral Program</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Sponsorship</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -81,65 +69,67 @@ export default function Referral() {
         {error && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={loadStats} style={styles.retryBtn}>
+            <TouchableOpacity onPress={loadProfile} style={styles.retryBtn}>
               <Text style={styles.retryText}>Retry</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Referral Code Card */}
-        <View style={[styles.card, { backgroundColor: COLORS[0] }]}>
-          <Text style={styles.cardLabel}>Your Referral Code</Text>
-          <Text style={styles.cardCode}>{referralCode || "------"}</Text>
-          <Text style={styles.cardSub}>Share this code with friends to earn bonus points!</Text>
-          <TouchableOpacity style={styles.copyBtn} onPress={copyCode}>
-            <Ionicons name="copy-outline" size={16} color="#fff" />
-            <Text style={styles.copyText}>Tap to view</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Stats */}
-        {stats && (
+        {profile && (
           <>
+            {/* My Upline */}
+            <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>My Upline</Text>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Direct Sponsor:</Text>
+                <Text style={[styles.value, { color: theme.colors.text }]}>{profile.upline_2_email || '(none)'}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Parent Sponsor:</Text>
+                <Text style={[styles.value, { color: theme.colors.text }]}>{profile.upline_1_email || '(none)'}</Text>
+              </View>
+            </View>
+
+            {/* Stats */}
             <View style={styles.statsRow}>
               <View style={[styles.statBox, { backgroundColor: theme.colors.surface }]}>
-                <Text style={[styles.statValue, { color: COLORS[0] }]}>{stats.level_1_count}</Text>
+                <Text style={[styles.statValue, { color: COLORS[0] }]}>{profile.downline_1st_level_count}</Text>
                 <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Level 1</Text>
               </View>
               <View style={[styles.statBox, { backgroundColor: theme.colors.surface }]}>
-                <Text style={[styles.statValue, { color: COLORS[1] }]}>{stats.level_2_count}</Text>
+                <Text style={[styles.statValue, { color: COLORS[1] }]}>{profile.downline_2nd_level_count}</Text>
                 <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Level 2</Text>
               </View>
               <View style={[styles.statBox, { backgroundColor: theme.colors.surface }]}>
-                <Text style={[styles.statValue, { color: COLORS[2] }]}>{stats.total_points_earned}</Text>
+                <Text style={[styles.statValue, { color: COLORS[2] }]}>{profile.total_sponsorship_points}</Text>
                 <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Points Earned</Text>
               </View>
             </View>
 
             {/* Downline Level 1 */}
-            {stats.downline_1st_level && (
+            {profile.downline_1st_level ? (
               <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Level 1 Downline</Text>
-                <Text style={[styles.downlineText, { color: theme.colors.textSecondary }]}>{stats.downline_1st_level}</Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Downline Level 1 — {profile.downline_1st_level_count}</Text>
+                <Text style={[styles.downlineText, { color: theme.colors.textSecondary }]}>{profile.downline_1st_level}</Text>
               </View>
-            )}
+            ) : null}
 
             {/* Downline Level 2 */}
-            {stats.downline_2nd_level && (
+            {profile.downline_2nd_level ? (
               <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Level 2 Downline</Text>
-                <Text style={[styles.downlineText, { color: theme.colors.textSecondary }]}>{stats.downline_2nd_level}</Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Downline Level 2 — {profile.downline_2nd_level_count}</Text>
+                <Text style={[styles.downlineText, { color: theme.colors.textSecondary }]}>{profile.downline_2nd_level}</Text>
               </View>
-            )}
+            ) : null}
 
             {/* How it works */}
             <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>How It Works</Text>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>How Sponsorship Works</Text>
               <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-                1. Share your referral code with friends{"\n"}
-                2. They enter it when registering{"\n"}
-                3. You earn 50 points when they attend their first event{"\n"}
-                4. You earn 25 points for their referrals too!
+                • Recruit someone directly: earn 10 pts{"\n"}
+                • Recruit with upline help: earn 4 pts (upline gets 6){"\n"}
+                • Help your downline recruit: earn 6 pts{"\n"}
+                • New volunteers can enter upline emails when registering
               </Text>
             </View>
           </>
@@ -159,18 +149,16 @@ const styles = StyleSheet.create({
   errorText: { color: "#dc2626", fontSize: 14, marginBottom: 8 },
   retryBtn: { padding: 8 },
   retryText: { color: "#6366f1", fontWeight: "600" },
-  card: { borderRadius: 16, padding: 24, alignItems: "center", marginBottom: 20 },
-  cardLabel: { color: "rgba(255,255,255,0.8)", fontSize: 14, marginBottom: 8 },
-  cardCode: { color: "#fff", fontSize: 32, fontWeight: "700", letterSpacing: 4, marginBottom: 8 },
-  cardSub: { color: "rgba(255,255,255,0.7)", fontSize: 13, textAlign: "center", marginBottom: 12 },
-  copyBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  copyText: { color: "#fff", fontSize: 14, fontWeight: "500" },
+  card: { borderRadius: 12, padding: 16, marginBottom: 16 },
+  row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
+  label: { fontSize: 14 },
+  value: { fontSize: 14, fontWeight: "500" },
+  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
   statsRow: { flexDirection: "row", gap: 12, marginBottom: 16 },
   statBox: { flex: 1, borderRadius: 12, padding: 16, alignItems: "center" },
   statValue: { fontSize: 24, fontWeight: "700" },
   statLabel: { fontSize: 12, marginTop: 4 },
   section: { borderRadius: 12, padding: 16, marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
   downlineText: { fontSize: 13, lineHeight: 20 },
   infoText: { fontSize: 13, lineHeight: 20 },
 });

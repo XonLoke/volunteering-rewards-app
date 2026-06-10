@@ -13,6 +13,7 @@ import AdminEvents from './pages/admin/Events';
 import AdminCoupons from './pages/admin/Coupons';
 import AdminRewardsConfig from './pages/admin/RewardsConfig';
 import AdminRedemptions from './pages/admin/Redemptions';
+import AdminSponsorshipConfig from './pages/admin/SponsorshipConfig';
 import AdminQrCodes from './pages/admin/QRCodes';
 import AdminMerchants from './pages/admin/Merchants';
 // Organiser pages
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
       { path: 'events', element: <AdminEvents /> },
       { path: 'coupons', element: <AdminCoupons /> },
       { path: 'rewards-config', element: <AdminRewardsConfig /> },
+      { path: 'sponsorship-config', element: <AdminSponsorshipConfig /> },
       { path: 'redemptions', element: <AdminRedemptions /> },
       { path: 'qr-codes', element: <AdminQrCodes /> },
       { path: 'merchants', element: <AdminMerchants /> },
