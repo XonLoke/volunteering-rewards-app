@@ -1,124 +1,336 @@
-# Handoff: F1, F2, F4 Frontend UI Implementation
+# Handoff: Full Project Takeover
 
-**Handoff ID:** HO-20260608-001  
-**Date:** 8 June 2026  
-**From:** Cowork (Xon)  
-**To:** Claude Desktop Code  
-**Project:** D:\c3000c\volunteering-rewards-app  
-**Runtime:** Expo / React Native (mobile app in `app/` directory)
-
----
-
-## Session Context
-
-All **F1–F4 backends** are complete and pushed to `origin/main`. The backends are running on `http://localhost:3000/api`. What remains is the **frontend UI** for the volunteer mobile app (Expo/React Native in the `app/` directory).
-
-Auth: `POST /api/auth/login` returns `{ token }`. Use `AsyncStorage` to store/retrieve the token (pattern exists in `app/scan.tsx` and other screens).
+**Handoff ID:** HO-20260610-001  
+**Date:** 10 June 2026  
+**From:** Cowork (Xon's AI — planning/analysis)  
+**To:** Claude Desktop Code (execution)  
+**Project:** Volunteering Rewards App (C3000C)  
+**Location:** `D:\c3000c\volunteering-rewards-app`  
+**Repo:** https://github.com/XonLoke/volunteering-rewards-app  
+**Owner:** Xon (sole developer for all additional features)
 
 ---
 
-## What's Already Done
+## Project Overview
 
-- [x] F1 Backend: `GET /api/events/recommended`, `GET /api/events/popular`
-- [x] F2 Backend: `GET /api/events/:id/feedback/summary`
-- [x] F3 Full Stack: Referral Program (migration, API, auth hook, attendance hook, frontend screen at `app/referral.tsx`)
-- [x] F4 Backend: `GET /api/leaderboard`, `/points`, `/events`, `/checkins`, `/redeemed`
-- [x] Unit tests (11/11 passing), Test Plan (92 cases), Sprint schedule v7.2
+A volunteering rewards platform where volunteers earn points by attending events and redeem them for merchant-sponsored coupon rewards with 6-digit PINs.
+
+| Portal | Tech | Location |
+|--------|------|----------|
+| Volunteer Mobile App | Expo / React Native | `app/` |
+| Admin Web Portal | React + Vite | `frontend/web_portals/` |
+| Organiser Web Portal | React + Vite | `frontend/web_portals/` |
+| Merchant Cashier PWA | React + Vite | `frontend/web_portals/` |
+| Backend API | Node.js / Express | `backend/` |
+| Database | PostgreSQL 16 | localhost:5432 |
+
+**Team:** 4 human (Xon, Vivian, Grace, Nurain) + 3 virtual teammates (backup)  
+**Supervisor:** Andy
+
+---
+
+## How to Run
+
+```bash
+# Terminal 1: Backend
+cd D:\c3000c\volunteering-rewards-app\backend
+npm run dev
+
+# Terminal 2: Admin/Oragniser/Merchant web portal
+cd D:\c3000c\volunteering-rewards-app\frontend\web_portals
+npm run dev
+
+# Terminal 3: Mobile app
+cd D:\c3000c\volunteering-rewards-app
+npx expo start
+```
+
+---
+
+## Database
+
+| Field | Value |
+|-------|-------|
+| Host | localhost:5432 |
+| Database | `volunteering_rewards` |
+| User | `postgres` |
+| Password | `9663` |
+
+### Test Accounts
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | carol@test.com | password123 |
+| Organiser | bob@test.com | password123 |
+| Organiser | johnny@test.com | password123 |
+| Organiser | ellen@test.com | password123 |
+| Volunteer | alice@test.com | password123 |
+| Merchant | cheryl@test.com | password123 |
+
+---
+
+## What's Already Built (Complete)
+
+### Sprint 3 — Admin Portal (All Done ✅)
+
+| Feature | Details |
+|---------|---------|
+| Coupon Real-Time Value | Formula: `Math.round(value_cents × ppd ÷ 100)`. Always overrides stored value. |
+| Coupon PIN View Modal | Click "PINs" button → shows all PINs in table |
+| Coupon Filter by Status | Active / Depleted / All filter chips |
+| Redemption History | Sortable columns, date range filter, clickable user names, 7 per page |
+| Value Snapshot | `value_cents` frozen in `redemption_logs` at redemption time |
+| Rewards Config | Persistent save, real-time impact on coupon display |
+| User Sort Order | Admin → Organiser → Merchant → Volunteer |
+| Organiser Contact Email Fix | Field alias mismatch fixed |
+| Role Name Fix | `organizer` → `organiser` (DB has 's', queries now match) |
+
+### Additional Features F1–F4 (All Done ✅)
+
+| Feature | Backend | Frontend | Type |
+|---------|---------|----------|------|
+| **F1:** AI Event Recommendations | `GET /api/events/recommended`, `GET /api/events/popular` | `app/ai-recommendations.tsx` (by Vivian) | Content-based filtering |
+| **F2:** AI Feedback Summarizer | `GET /api/events/:id/feedback/summary` | AI Summary card on organiser Feedback.jsx | Lexicon-based sentiment analysis |
+| **F3:** Volunteer Sponsorship | `GET /api/me/sponsorship-profile`, config via admin panel | `app/referral.tsx` + admin SponsorshipConfig.jsx | Email-based multi-level sponsorship |
+| **F4:** Hall of Fame Leaderboard | `GET /api/leaderboard`, `/points`, `/events`, `/checkins`, `/redeemed` | `app/hall-of-fame.tsx` (by Vivian) | SQL ranking queries |
+
+### Testing (All Done ✅)
+
+| Test Type | Count | Result |
+|-----------|-------|--------|
+| Unit Tests | 11 | ✅ 11/11 pass |
+| Integration Tests | 34 | ✅ 29 pass, 3 bugs fixed, 2 skipped |
+| Performance Tests | 8 | ✅ 6 pass, 2 fail (caused by now-fixed bugs) |
+| Test Cases Documented | 92 | In `docs/Test Plan & Case Spec v1.1.md` |
+
+### Bug Fixes Applied ✅
+
+- `start_time` → `event_date` in events query
+- `redeemReward` argument order fixed
+- Duplicate scan now rejected with 409
+- Role name `organizer` → `organiser` everywhere
+- User sort order by role hierarchy
+- Test data cleaned up
+- `max_depth` removed from sponsorship config
+
+---
+
+## Documents Created (with Version Numbers)
+
+| Document | Version | Purpose |
+|----------|---------|---------|
+| `Sprint Breakdown v7.2.md` | v7.2 | Final sprint schedule |
+| `Additional Features Proposal v1.2.md` | v1.2 | Approved feature proposals |
+| `Test Plan & Case Spec v1.1.md` | v1.1 | 92 test cases (in `docs/`) |
+| `Test Report — Unit Tests (Sprint 3) v1.0.md` | v1.0 | Unit test results (in `docs/`) |
+| `Test Results — Integration Tests.md` | v1.0 | 34 IT results (in `docs/`) |
+| `Test Results — Performance Tests.md` | v1.0 | 8 PT results (in `docs/`) |
+| `Testing Guide — Step by Step v1.1.md` | v1.1 | Team test instructions (in `docs/`) |
+| `Sprint 3 Status Report v1.1.md` | v1.1 | Sprint 3 status |
+| `Jira Amendment List v1.2.md` | v1.2 | For Hermes to update Jira |
+| `Jira Update v4 — 8 Jun 2026.md` | v4.0 | Latest Jira update |
+| `Project Status Report v1.0.md` | v1.0 | Complete status report |
+
+---
+
+## API Reference — All Endpoints
+
+### Auth
+| Method | Endpoint | Auth |
+|--------|----------|------|
+| POST | `/api/auth/register` | None |
+| POST | `/api/auth/login` | None |
+| POST | `/api/auth/refresh` | None |
+| GET | `/api/auth/me` | Any |
+| PUT | `/api/auth/me` | Any |
+
+### Events
+| Method | Endpoint | Auth |
+|--------|----------|------|
+| GET | `/api/events` | Volunteer |
+| GET | `/api/events/recommended` | Volunteer |
+| GET | `/api/events/popular` | Volunteer |
+| GET | `/api/events/categories` | Volunteer |
+| GET | `/api/events/today` | Organiser |
+| GET | `/api/events/:id` | Volunteer |
+| POST | `/api/events/:id/register` | Volunteer |
+| DELETE | `/api/events/:id/register` | Volunteer |
+| GET | `/api/events/:id/feedback/summary` | Any |
+| GET | `/api/events/:id/roster` | Organiser |
+| GET | `/api/events/:id/stats` | Organiser |
+
+### Admin
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/admin/dashboard` |
+| GET/PUT | `/api/admin/users/:id` |
+| GET | `/api/admin/users/:id` |
+| GET/PUT | `/api/admin/organisers/:id/approve` |
+| GET/DELETE | `/api/admin/events/:id` |
+| GET/POST/PUT/DELETE | `/api/admin/coupons/:id` |
+| GET | `/api/admin/coupons/:id/pins` |
+| GET/PUT | `/api/admin/rewards/configuration` |
+| GET/PUT | `/api/admin/sponsorship/configuration` |
+| GET | `/api/admin/redemptions` |
+| POST | `/api/admin/redemptions/cleanup` |
+| GET/POST | `/api/admin/merchants` |
+| GET/POST | `/api/admin/merchants/prospects` |
+
+### Organiser
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/organiser/dashboard` |
+| GET/POST/PUT/DELETE | `/api/organiser/events/:id` |
+| GET | `/api/organiser/events/:id/roster` |
+| GET | `/api/organiser/events/:id/feedback` |
+| GET/POST | `/api/organiser/events/:id/qna` |
+
+### Volunteer (Me)
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/me/events` |
+| GET | `/api/me/points` |
+| GET | `/api/me/coupons` |
+| GET | `/api/me/qr-code` |
+| GET | `/api/me/favorites` |
+| GET | `/api/me/sponsorship-profile` |
+
+### Rewards
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/rewards` |
+| GET/POST | `/api/rewards/:id` |
+
+### Merchant
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/coupons/verify` |
+| POST | `/api/coupons/redeem` |
+| POST | `/api/coupons/reverse` |
+| GET | `/api/merchant/history` |
+
+### Attendance
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/attendance/scan` |
+| POST | `/api/attendance/batch` |
+
+### Leaderboard
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/leaderboard` |
+| GET | `/api/leaderboard/points` |
+| GET | `/api/leaderboard/events` |
+| GET | `/api/leaderboard/checkins` |
+| GET | `/api/leaderboard/redeemed` |
 
 ---
 
 ## Tasks for Claude Desktop Code
 
-### Task 1: F1 Frontend — "Recommended for You" Section (HIGH)
+### Priority Order
 
-**Files to modify:**
-- `app/home.tsx` — Add "Recommended for You" section below upcoming events
-
-**What to do:**
-1. On the volunteer home screen, after the existing upcoming events section, add a new section titled **"Recommended for You"** with a sparkle icon
-2. Call `GET /api/events/recommended` using the stored auth token (pattern: `fetch(BASE_URL + "/events/recommended", { headers: { Authorization: Bearer ... } })`)
-3. Display up to 5 recommended events in a horizontal scrollable list (similar to how events are already displayed)
-4. Each event card should show: title, date, category badge, points value, and a small **relevance score** indicator (e.g., "Match: 85%" or star rating)
-5. If no recommendations (empty array), show a subtle "Explore more events to get recommendations" message
-6. Handle loading state (skeleton/spinner) and error state (retry button)
-7. The `BASE_URL` is `http://192.168.72.201:3000/api` (matching existing pattern in the app)
-
-**Acceptance criteria:**
-- [ ] Section appears below upcoming events on home screen
-- [ ] Data fetched from live API
-- [ ] Loading, error, and empty states handled
-- [ ] Category badges match the event's category
-- [ ] Relevance score visible on each card
-- [ ] Does not interfere with existing home screen functionality
-
-**Dependencies:** None (F1 backend is already deployed)
+Work through these in order. Commit and push after each batch.
 
 ---
 
-### Task 2: F4 Frontend — Hall of Fame Leaderboard (MEDIUM)
-
-**Files to modify/create:**
-- `app/home.tsx` — Add "Hall of Fame" section with a "View All" button
-- `app/leaderboard.tsx` — New full leaderboard page
+### Task 1: Push All Pending Changes to GitHub
 
 **What to do:**
+1. Check git status — there are uncommitted changes
+2. `git add -A`
+3. `git commit -m "Latest updates: F3 redesign, bug fixes, status report"`
+4. `git push origin main`
 
-**Part A — Home screen section:**
-1. Add a "Hall of Fame" section at the bottom of the home screen
-2. Show a condensed view: top 3 in "Most Points" only, with medal emojis (🥇🥈🥉)
-3. Add a "View All" button that navigates to `/leaderboard`
-
-**Part B — Full leaderboard page (`app/leaderboard.tsx`):**
-1. Call `GET /api/leaderboard` (returns `most_points`, `most_events`, `most_checkins`, `most_redeemed`)
-2. Display 4 tabs/categories: "Points" / "Events" / "Check-ins" / "Redeemed"
-3. Each tab shows top 3 with gold/silver/bronze styling
-4. Show rank number, name, and their score
-5. Header with back button and title "Hall of Fame"
-6. Handle loading, error, and empty states
-
-**Acceptance criteria:**
-- [ ] Home screen shows top 3 by points with medals
-- [ ] "View All" navigates to full leaderboard
-- [ ] 4 category tabs work with live data
-- [ ] Loading/error/empty states handled
-- [ ] Back button works
-
-**Dependencies:** None (F4 backend is already deployed)
+**Acceptance:** All changes pushed to `origin/main`.
 
 ---
 
-### Task 3: F2 Frontend — AI Feedback Summary (MEDIUM)
-
-**Files to modify:**
-- `app/event-detail.tsx` or wherever event feedback is displayed — Add AI Summary card
+### Task 2: Verify Everything Still Works After Push
 
 **What to do:**
-1. On the event detail page (after an event is completed), add a card titled **"AI Feedback Summary"** with a sparkle/robot icon
-2. Call `GET /api/events/:id/feedback/summary` to get the AI-generated summary
-3. Display:
-   - Overall sentiment: positive (😊 green) / neutral (😐 grey) / negative (☹️ red) with a colored badge
-   - Average rating (if exists) as stars
-   - Breakdown bar: positive count, neutral count, negative count
-   - Top positive keywords (as green pills/tags)
-   - Top negative keywords (as red pills/tags)
-   - "X feedback contained suggestions" if applicable
-4. If no feedback exists (total_feedback = 0), show "No feedback yet. Check back after volunteers submit reviews."
-5. Handle loading and error states
+1. Restart backend: `cd backend && npm run dev` (in separate terminal)
+2. Run unit tests: `cd backend && npm test`
+3. Login as admin and test key APIs:
+   - `POST /api/auth/login` with carol@test.com
+   - `GET /api/admin/dashboard`
+   - `GET /api/events/recommended`
+   - `GET /api/leaderboard`
+   - `GET /api/me/sponsorship-profile`
 
-**Acceptance criteria:**
-- [ ] AI Summary card visible on completed event detail
-- [ ] Sentiment displayed with correct color/emoji
-- [ ] Keyword pills render correctly
-- [ ] Empty state shown when no feedback
-- [ ] Loading/error states handled
+**Acceptance:** All 11 unit tests pass. All 5 APIs return valid data.
 
-**Dependencies:** Need to know which screen shows event feedback. Check `app/` for the right file.
+---
+
+### Task 3: Run Full Test Suite & Report
+
+**What to do:**
+1. Run integration smoke test: `bash tests/integration/smoke_test.sh`
+2. Run all unit tests: `npm test`
+3. Record results in `docs/Test Results — Final Suite.md`
+
+**Acceptance:** Test results documented with pass/fail counts.
+
+---
+
+### Task 4: Sprint 5 — Backend Deployment Preparation
+
+**When it's time (29 Jun – 6 Jul):**
+1. Verify `.env.example` has all required variables
+2. Ensure `Dockerfile` and `docker-compose.yml` are up to date
+3. Test production build: `cd frontend/web_portals && npm run build`
+4. Check for any hardcoded localhost URLs that need changing
+5. Document deployment steps in README
+
+**Acceptance:** Backend ready for Render/Railway deployment.
+
+---
+
+### Task 5: Sprint 5 — Security Audit (if Vivian doesn't deliver)
+
+**What to do:**
+1. Search for hardcoded secrets in codebase
+2. Verify all auth endpoints have role guards
+3. Check rate limiting is active on auth routes
+4. Verify password hashes are never returned in API responses
+
+**Acceptance:** Report generated in `docs/Security Audit.md`.
+
+---
+
+### Task 6: Sprint 5 — Final E2E Test Pass (if Grace doesn't deliver)
+
+**What to do:**
+1. Follow the system tests (ST-01 to ST-04) from `Test Plan & Case Spec v1.1.md`
+2. Execute full volunteer journey: register → browse → join → scan → earn → redeem
+3. Execute full admin journey: login → approve → create coupons → view redemptions
+4. Execute full merchant journey: login → verify PIN → redeem → view history
+
+**Acceptance:** All 4 end-to-end workflows verified and documented.
 
 ---
 
 ## Technical Context
 
-### Auth Pattern (used in all API calls)
+### Auth Pattern (for all API calls)
+```javascript
+// Login
+const res = await fetch('http://localhost:3000/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email, password }),
+});
+const data = await res.json();
+const token = data.token;
+```
+
+### Admin/Oragniser/Merchant Web Pattern
+```javascript
+import { apiGet, apiPost, apiPut, apiDel } from '../../services/api';
+const result = await apiGet('/admin/dashboard');
+```
+
+### Mobile App Pattern
 ```typescript
 const stored = await AsyncStorage.getItem("user");
 const user = JSON.parse(stored);
@@ -127,44 +339,59 @@ const resp = await fetch(`${BASE_URL}/path`, {
 });
 ```
 
-### BASE_URL
-`http://192.168.72.201:3000/api` (matches existing pattern in the codebase)
+---
 
-### API Endpoints Summary
+## Known Issues
 
-| Feature | Endpoint | Returns |
-|---------|----------|---------|
-| F1 | `GET /api/events/recommended` | `{ data: [{ id, title, event_date, category, points_value, relevance_score }] }` |
-| F1 | `GET /api/events/popular` | `{ data: [{ id, title, event_date, category, points_value, registrations }] }` |
-| F2 | `GET /api/events/:id/feedback/summary` | `{ data: { event_title, total_feedback, overall_sentiment, average_rating, breakdown, top_positive_keywords, top_negative_keywords } }` |
-| F4 | `GET /api/leaderboard` | `{ data: { most_points: [...], most_events: [...], most_checkins: [...], most_redeemed: [...] } }` |
-
-### Existing Patterns to Follow
-- Theme: use `useTheme()` hook from `@/contexts/ThemeContext`
-- Navigation: `useRouter()` from `expo-router`
-- Styling: `StyleSheet.create()` with theme colors
-- Icons: `@expo/vector-icons` Ionicons
-- Storage: `@react-native-async-storage/async-storage`
+| Issue | Status | Notes |
+|-------|--------|-------|
+| F1/F2/F4 frontends built by Vivian may need integration with live APIs | ⚠️ Verify | `app/ai-recommendations.tsx`, `app/hall-of-fame.tsx` — built 9 Jun, check they call the right endpoints |
+| F2 frontend on organiser Feedback.jsx calls `GET /api/events/:id/feedback/summary` | ✅ Built | Uses new route mounted at `/api/events` |
+| F3 frontend (`app/referral.tsx`) rewritten for email-based sponsorship | ✅ Done | Calls `GET /api/me/sponsorship-profile` |
+| Bob's role was restored to organiser | ✅ Fixed | Was changed during testing |
+| Test users cleaned up | ✅ Done | IDs 39-43, 5 deleted (one `test@test.com` may remain) |
+| Test events cleaned up | ✅ Done | IDs 32-40 deleted |
+| Duplicate organisations for bob@test.com | ✅ Cleaned | Only 1 remains |
+| VM (Linux workspace) frequently crashes | ⚠️ Known | Code runs on Windows directly — no issue |
+| GitHub blocked from Cowork | ⚠️ Known | Code can access GitHub directly |
 
 ---
 
-## Notes for Code
+## Quick Do's and Don'ts
 
-1. **Do NOT modify any backend files** — all backend work is complete
-2. **Do NOT modify `app/referral.tsx`** — F3 frontend is already built
-3. **Follow the existing code patterns** in the `app/` directory exactly (look at `app/home.tsx`, `app/profile.tsx`, `app/scan.tsx` for reference)
-4. **Test each feature** by running `npx expo start` and verifying against the live backend
-5. **Update the Status Tracking table** below as each task is completed
+| Do | Don't |
+|----|-------|
+| Push changes to `origin/main` | Don't force push |
+| Run `npm test` before pushing | Don't push broken code |
+| Keep version numbers in filenames | Don't create unversioned docs |
+| Ask Xon if you're unsure | Don't delete team members' branches |
 
 ---
 
 ## Status Tracking
 
+Update this table as you complete tasks.
+
 | Task | Status | Notes |
 |------|--------|-------|
-| T1: F1 Frontend — Recommended for You | ✅ Done | Built by Vivian — `app/ai-recommendations.tsx` (1,477 lines) |
-| T2: F4 Frontend — Hall of Fame | ✅ Done | Built by Vivian — `app/hall-of-fame.tsx` (934 lines) |
-| T3: F2 Frontend — AI Feedback Summary | ✅ Done | Built — AI Summary card on organiser Feedback.jsx |
-| T4: Integration Tests (34 IT) | ✅ Done | 29 pass, 3 fail, 2 skip — see docs/Test Results — Integration Tests.md |
-| T5: Performance Tests (8 PT) | ✅ Done | 6 pass, 2 fail — see docs/Test Results — Performance Tests.md |
-| T6: Bug Fixes (IT-20, IT-27, IT-34) | ✅ Done | Fixed events.service.js, rewards.controller.js, attendance.service.js, attendance.controller.js |
+| T1: Push pending changes | ⬜ Pending | |
+| T2: Verify everything works | ⬜ Pending | |
+| T3: Run full test suite | ⬜ Pending | |
+| T4: Backend deployment prep | ⬜ Pending (29 Jun) | |
+| T5: Security audit | ⬜ Pending (29 Jun) | |
+| T6: Final E2E test pass | ⬜ Pending (29 Jun) | |
+
+---
+
+## Final Notes for Code
+
+1. **Start by pushing pending changes** — there are uncommitted file edits from the last Cowork session
+2. **Run the tests** to verify nothing is broken after push
+3. **Read these key docs** for full context:
+   - `Project Status Report v1.0.md` — Complete change log
+   - `Sprint Breakdown v7.2.md` — Sprint schedule
+   - `Test Plan & Case Spec v1.1.md` — Full test plan
+4. **If anything fails**, fix it, commit, push, and update this status table
+5. **Xon will come back** to check progress. Make sure this file is up to date when he does.
+
+Good luck!
