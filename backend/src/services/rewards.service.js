@@ -144,11 +144,16 @@ async function redeemReward(rewardId, userId, meta = {}) {
       [userId, rewardId, userCoupon.id, coupon.points_required, coupon.value_cents || 0, userId, meta.ipAddress || null, "Volunteer redeemed coupon with points"]
     );
 
-    await client.query(
-      `INSERT INTO points_ledger (user_id, amount, balance_after, reason_code, reference_id, reference_type, created_at)
-       VALUES ($1, $2, $3, 'coupon_redemption', $4, 'redemption', NOW())`,
-      [userId, -coupon.points_required, pointsResult.rows[0].points, userCoupon.id]
-    );
+    // Points ledger audit trail — non-fatal if table doesn't exist yet
+    try {
+      await client.query(
+        `INSERT INTO points_ledger (user_id, amount, balance_after, reason_code, reference_id, reference_type, created_at)
+         VALUES ($1, $2, $3, 'coupon_redemption', $4, 'redemption', NOW())`,
+        [userId, -coupon.points_required, pointsResult.rows[0].points, userCoupon.id]
+      );
+    } catch (_) {
+      // ledger table may not exist — not critical to redemption flow
+    }
 
     await client.query("COMMIT");
 

@@ -37,7 +37,7 @@ const browseEvents = async ({ page = 1, limit = 20, search, category } = {}) => 
       GROUP BY event_id
     ) reg ON reg.event_id = e.id
     ${whereClause}
-    ORDER BY e.start_time DESC, e.id
+    ORDER BY e.event_date DESC, e.id
     LIMIT $${values.length + 1}
     OFFSET $${values.length + 2}
   `;

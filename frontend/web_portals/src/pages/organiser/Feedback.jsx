@@ -64,6 +64,14 @@ export default function Feedback() {
   const [total, setTotal] = useState(0);
   const [eventTitle, setEventTitle] = useState('');
 
+  //-----------------------------------------------------------------------
+  // SECTION: AI Feedback Summary (F2)
+  // Purpose: Fetch AI-generated sentiment summary alongside feedback data.
+  //-----------------------------------------------------------------------
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiError, setAiError] = useState(null);
+
   const fetchFeedback = async () => {
     setLoading(true);
     setError(null);
@@ -88,8 +96,23 @@ export default function Feedback() {
     }
   };
 
+  // Fetch AI summary separately
+  const fetchAiSummary = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await apiGet(`/events/${id}/feedback/summary`);
+      setAiSummary(res.data || null);
+    } catch (err) {
+      setAiError(err.message || null);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchFeedback();
+    fetchAiSummary();
   }, [id]);
 
   if (loading) {
@@ -142,6 +165,132 @@ export default function Feedback() {
             </button>
           </div>
         </div>
+
+        {/* ─── AI Feedback Summary Card (F2) ──────────────────── */}
+        {aiLoading && (
+          <div className="card" style={{ marginBottom: 24, padding: 20 }}>
+            <div className="loading-state" style={{ padding: 0 }}>
+              <p style={{ fontSize: 13 }}>Analysing feedback sentiment...</p>
+            </div>
+          </div>
+        )}
+
+        {aiError && (
+          <div className="card" style={{ marginBottom: 24, padding: 16, borderLeft: '3px solid var(--warning)' }}>
+            <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+              AI Summary temporarily unavailable. Individual feedback below.
+            </p>
+          </div>
+        )}
+
+        {aiSummary && !aiLoading && (
+          <div className="card" style={{ marginBottom: 24, padding: 20 }}>
+            <div className="card-header" style={{ padding: 0, marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 20 }}>✨</span>
+                <h3 className="card-title" style={{ margin: 0 }}>AI Feedback Summary</h3>
+                {aiSummary.total_feedback === 0 && (
+                  <span className="badge badge-secondary" style={{ fontSize: 11 }}>No data</span>
+                )}
+              </div>
+            </div>
+
+            {aiSummary.total_feedback === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+                No feedback yet. Check back after volunteers submit reviews.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Sentiment Badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+                    background: aiSummary.overall_sentiment === 'positive' ? '#dcfce7' :
+                               aiSummary.overall_sentiment === 'negative' ? '#fef2f2' : '#f5f5f5',
+                    color: aiSummary.overall_sentiment === 'positive' ? '#16a34a' :
+                           aiSummary.overall_sentiment === 'negative' ? '#dc2626' : '#6b7280',
+                  }}>
+                    <span>{aiSummary.overall_sentiment === 'positive' ? '😊' :
+                            aiSummary.overall_sentiment === 'negative' ? '☹️' : '😐'}</span>
+                    <span>{aiSummary.overall_sentiment.charAt(0).toUpperCase() + aiSummary.overall_sentiment.slice(1)}</span>
+                  </span>
+                  {aiSummary.average_rating && (
+                    <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+                      Avg: <strong>{aiSummary.average_rating.toFixed(1)}</strong> / 5
+                    </span>
+                  )}
+                </div>
+
+                {/* Breakdown Bar */}
+                <div>
+                  <div style={{ display: 'flex', gap: 4, height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
+                    {aiSummary.breakdown.positive > 0 && (
+                      <div style={{
+                        flex: aiSummary.breakdown.positive, background: '#16a34a',
+                        minWidth: 4,
+                      }} title={`${aiSummary.breakdown.positive} positive`} />
+                    )}
+                    {aiSummary.breakdown.neutral > 0 && (
+                      <div style={{
+                        flex: aiSummary.breakdown.neutral, background: '#9ca3af',
+                        minWidth: 4,
+                      }} title={`${aiSummary.breakdown.neutral} neutral`} />
+                    )}
+                    {aiSummary.breakdown.negative > 0 && (
+                      <div style={{
+                        flex: aiSummary.breakdown.negative, background: '#dc2626',
+                        minWidth: 4,
+                      }} title={`${aiSummary.breakdown.negative} negative`} />
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--muted)' }}>
+                    <span>😊 {aiSummary.breakdown.positive}</span>
+                    <span>😐 {aiSummary.breakdown.neutral}</span>
+                    <span>☹️ {aiSummary.breakdown.negative}</span>
+                    {aiSummary.breakdown.with_suggestions > 0 && (
+                      <span>💡 {aiSummary.breakdown.with_suggestions} with suggestions</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Top Keywords */}
+                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                  {aiSummary.top_positive_keywords?.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#16a34a', marginBottom: 6 }}>Positive Keywords</div>
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                        {aiSummary.top_positive_keywords.map((kw, i) => (
+                          <span key={i} style={{
+                            padding: '2px 8px', borderRadius: 12, fontSize: 12,
+                            background: '#dcfce7', color: '#166534',
+                          }}>
+                            {kw.word} ({kw.count})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {aiSummary.top_negative_keywords?.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#dc2626', marginBottom: 6 }}>Negative Keywords</div>
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                        {aiSummary.top_negative_keywords.map((kw, i) => (
+                          <span key={i} style={{
+                            padding: '2px 8px', borderRadius: 12, fontSize: 12,
+                            background: '#fef2f2', color: '#991b1b',
+                          }}>
+                            {kw.word} ({kw.count})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Rating Summary */}
         <div className="card" style={{ marginBottom: 24 }}>

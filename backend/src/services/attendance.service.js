@@ -3,7 +3,7 @@ const { createError } = require("../middleware/errorHandler.middleware");
 
 const awardPointsForEvent = async (client, eventId, volunteerId) => {
   const eventResult = await client.query(
-    `SELECT id, COALESCE(points_reward, points, 0)::int AS points_reward FROM events WHERE id = $1 FOR SHARE`,
+    `SELECT id, COALESCE(points_value, 0)::int AS points_reward FROM events WHERE id = $1 FOR SHARE`,
     [eventId]
   );
 
@@ -23,7 +23,7 @@ const awardPointsForEvent = async (client, eventId, volunteerId) => {
   }
 
   const existing = await client.query(
-    `SELECT 1 FROM attendance_logs WHERE event_id = $1 AND volunteer_id = $2`,
+    `SELECT 1 FROM attendance_logs WHERE event_id = $1 AND user_id = $2`,
     [eventId, volunteerId]
   );
 
@@ -33,11 +33,11 @@ const awardPointsForEvent = async (client, eventId, volunteerId) => {
 
   const insertLog = await client.query(
     `
-      INSERT INTO attendance_logs (event_id, volunteer_id, scanned_at, points_awarded)
-      VALUES ($1, $2, NOW(), $3)
+      INSERT INTO attendance_logs (event_id, user_id, scanned_by, scan_type, qr_code_value, points_awarded)
+      VALUES ($1, $2, $3, 'check_in', $4, $5)
       RETURNING *
     `,
-    [eventId, volunteerId, points]
+    [eventId, volunteerId, null, null, points]
   );
 
   await client.query(

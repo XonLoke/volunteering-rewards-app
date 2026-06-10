@@ -645,7 +645,7 @@ export default function Home() {
               onPress={() => router.push("/scan" as any)}
             >
               <Ionicons name="qr-code-outline" size={20} color="#fff" />
-              <Text style={styles.walletActionText}>Scan</Text>
+              <Text style={styles.walletActionText}>My QR</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -664,6 +664,87 @@ export default function Home() {
               <Text style={styles.walletActionText}>Coupons</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        <View
+          style={[
+            styles.phaseTwoCard,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
+          <View style={styles.phaseTwoHeader}>
+            <View>
+              <Text style={[styles.phaseTwoTitle, { color: theme.colors.text }]}>
+                Smart Volunteering
+              </Text>
+              <Text
+                style={[
+                  styles.phaseTwoSubtitle,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                Discover events picked for you and track top volunteers
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.phaseTwoHeaderIcon,
+                { backgroundColor: theme.colors.primary + "22" },
+              ]}
+            >
+              <Ionicons
+                name="sparkles-outline"
+                size={22}
+                color={theme.colors.primary}
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.phaseTwoButton, { backgroundColor: "#6366f1" }]}
+            onPress={() => router.push("/ai-recommendations" as any)}
+            activeOpacity={0.88}
+          >
+            <View style={styles.phaseTwoButtonLeft}>
+              <View style={styles.phaseTwoButtonIcon}>
+                <Ionicons name="bulb-outline" size={22} color="#fff" />
+              </View>
+
+              <View style={styles.phaseTwoButtonTextWrap}>
+                <Text style={styles.phaseTwoButtonTitle}>AI Recommendations</Text>
+                <Text style={styles.phaseTwoButtonSub}>
+                  Get events based on your activity
+                </Text>
+              </View>
+            </View>
+
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.phaseTwoButton, { backgroundColor: "#f59e0b" }]}
+            onPress={() => router.push("/hall-of-fame" as any)}
+            activeOpacity={0.88}
+          >
+            <View style={styles.phaseTwoButtonLeft}>
+              <View style={styles.phaseTwoButtonIcon}>
+                <Ionicons name="trophy-outline" size={22} color="#fff" />
+              </View>
+
+              <View style={styles.phaseTwoButtonTextWrap}>
+                <Text style={styles.phaseTwoButtonTitle}>Hall of Fame</Text>
+                <Text style={styles.phaseTwoButtonSub}>
+                  See your ranking and top volunteers
+                </Text>
+              </View>
+            </View>
+
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
+          </TouchableOpacity>
         </View>
 
         {bookedEvents.length > 0 ? (
@@ -1549,6 +1630,74 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 11,
     fontWeight: "800",
+  },
+
+  phaseTwoCard: {
+    marginHorizontal: 24,
+    marginBottom: 28,
+    borderRadius: 28,
+    padding: 18,
+    borderWidth: 1,
+  },
+  phaseTwoHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  phaseTwoTitle: {
+    fontSize: 19,
+    fontWeight: "900",
+  },
+  phaseTwoSubtitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 4,
+    lineHeight: 17,
+    maxWidth: 245,
+  },
+  phaseTwoHeaderIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  phaseTwoButton: {
+    borderRadius: 22,
+    padding: 17,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  phaseTwoButtonLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  phaseTwoButtonIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  phaseTwoButtonTextWrap: {
+    flex: 1,
+  },
+  phaseTwoButtonTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  phaseTwoButtonSub: {
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 3,
   },
 
   section: {

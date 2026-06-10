@@ -22,10 +22,7 @@ async function redeem(req, res, next) {
     const userId = req.user.id;
     const rewardId = req.params.id;
 
-    const result = await rewardsService.redeemReward({
-      userId,
-      rewardId,
-    });
+    const result = await rewardsService.redeemReward(rewardId, userId);
 
     res.status(201).json(result);
   } catch (err) {

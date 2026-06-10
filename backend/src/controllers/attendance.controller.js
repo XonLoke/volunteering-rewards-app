@@ -4,15 +4,39 @@
  * Response shapes defined in API_CONTRACTS.md (Organiser Scanning App section).
  */
 
+const attendanceService = require("../services/attendance.service");
+const { pool } = require("../config/database");
+const { createError } = require("../middleware/errorHandler.middleware");
+
 // ─── POST /api/attendance/scan ───────────────────────────────
 async function scan(req, res, next) {
   try {
-    // TODO: EVT-04 — Record attendance, award points
-    // Body: { volunteer_id, event_id, scanned_at }
-    // Errors: not_registered, already_checked_in, event_not_today
-    res.json({
-      attendance: { id: "", volunteer_id: "", volunteer_name: "", event_id: "", event_title: "", points_awarded: 0, checked_in_at: "" },
-      volunteer: { name: "", points_balance: 0 },
+    const { event_id, qr_code_value } = req.body;
+
+    if (!event_id || !qr_code_value) {
+      throw createError(400, "validation_error", "event_id and qr_code_value are required.");
+    }
+
+    // Look up volunteer by QR code
+    const userResult = await pool.query(
+      `SELECT id FROM users WHERE volunteer_qr_code = $1 AND role_id = (SELECT id FROM roles WHERE role_name = 'volunteer')`,
+      [qr_code_value]
+    );
+
+    if (!userResult.rows.length) {
+      throw createError(404, "volunteer_not_found", "No volunteer found with that QR code.");
+    }
+
+    const volunteerId = userResult.rows[0].id;
+
+    const result = await attendanceService.scanQR(event_id, volunteerId);
+
+    res.status(201).json({
+      message: "Check-in recorded successfully.",
+      data: {
+        attendance_id: result.attendance.id,
+        points_awarded: result.awardedPoints,
+      },
     });
   } catch (err) { next(err); }
 }
@@ -20,9 +44,14 @@ async function scan(req, res, next) {
 // ─── POST /api/attendance/batch ──────────────────────────────
 async function batch(req, res, next) {
   try {
-    // TODO: EVT-05 — Batch sync offline scans
-    // Body: { scans: [{ volunteer_id, event_id, scanned_at }], device_id }
-    res.json({ results: [], success_count: 0, skipped_count: 0 });
+    const scans = req.body.scans || [];
+    const result = await attendanceService.batchSync(scans);
+    res.json({
+      results: result,
+      success_count: result.success.length,
+      skipped_count: result.skipped.length,
+      error_count: result.errors.length,
+    });
   } catch (err) { next(err); }
 }
 
