@@ -16,6 +16,8 @@ const attendanceRoutes = require("./routes/attendance.routes");
 const profileRoutes = require("./routes/profile.routes");
 const recommendationRoutes = require("./routes/recommendations.routes");
 const leaderboardRoutes = require("./routes/leaderboard.routes");
+const settingsRoutes = require("./routes/settings.routes");
+const contactRoutes = require("./routes/contact.routes");
 
 const { errorHandler } = require("./middleware/errorHandler.middleware");
 
@@ -50,6 +52,8 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/contact", contactRoutes);
 
 // 404 fallback
 app.use((req, res) => {
