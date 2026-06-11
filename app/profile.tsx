@@ -48,7 +48,7 @@ const menuItems = [
     id: "4",
     icon: "settings-outline",
     label: "Settings",
-    sub: "Theme and app preferences",
+    sub: "App preferences",
     route: "/settings",
     color: "#06b6d4",
   },
