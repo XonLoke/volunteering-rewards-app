@@ -1,8 +1,8 @@
 # Test Plan & Test Case Specification
 
 **Project:** Volunteering Rewards App (C3000C)  
-**Version:** 1.1  
-**Date:** 5 June 2026 (Updated)  
+**Version:** 1.2  
+**Date:** 10 June 2026 (Updated — added F1-F4 features, manual testing, bug fix regressions)  
 **Prepared by:** Xon (Team Lead)  
 **Status:** Final  
 
@@ -15,6 +15,13 @@
 3. [Test Deliverables](#3-test-deliverables)
 4. [Unit Tests](#4-unit-tests)
 5. [Integration Tests](#5-integration-tests)
+5b. [Additional Feature Tests (F1–F4)](#5b-additional-feature-integration-tests-f1f4)
+5c. [Bug Fix Regression Tests](#5c-bug-fix-regression-tests)
+5d. [Manual Tests — Volunteer Mobile App](#5d-manual-testing--volunteer-mobile-app)
+5e. [Manual Tests — Cashier Merchant App](#5e-manual-testing--cashier-merchant-app)
+5f. [Manual Tests — Organiser QR Scanner](#5f-manual-testing--organiser-qr-scanner)
+5g. [Manual Tests — Admin Portal](#5g-manual-testing--admin-portal-extended)
+5h. [End-to-End Cross-Portal Workflow](#5h-end-to-end-cross-portal-workflow)
 6. [System Tests](#6-system-tests)
 7. [User Acceptance Tests](#7-user-acceptance-tests)
 8. [Security Tests](#8-security-tests)
@@ -56,7 +63,7 @@ All tests use the seeded test database with the following accounts:
 | Admin | carol@test.com | password123 |
 | Organiser | bob@test.com | password123 |
 | Volunteer | alice@test.com | password123 |
-| Merchant | merchant@test.com | password123 |
+| Merchant | cheryl@test.com | password123 |
 
 ---
 
@@ -691,6 +698,344 @@ TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
 
 ---
 
+## 5b. Additional Feature Integration Tests (F1–F4)
+
+### Scope
+Test the four new features added during Sprint 3-4. Covers AI recommendations, feedback summarizer, sponsorship referral, and leaderboard.
+
+---
+
+### IT-35: F1 — AI Event Recommendations
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/events/recommended` |
+| **Auth** | Volunteer token |
+| **Steps** | 1. Login as volunteer alice@test.com. 2. `GET /api/events/recommended`. |
+| **Expected Result** | `{ data: [{ id, title, event_date, category, points_value, relevance_score }] }`. Max 5 events. |
+| **Pass/Fail Criteria** | Pass if returns array with relevance_score field |
+
+### IT-36: F1 — Popular Events (Fallback)
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/events/popular` |
+| **Auth** | Volunteer token |
+| **Steps** | 1. Login as volunteer. 2. `GET /api/events/popular`. |
+| **Expected Result** | `{ data: [{ id, title, event_date, category, points_value, registrations }] }`. Sorted by registration count. |
+| **Pass/Fail Criteria** | Pass if returns array sorted by popularity |
+
+### IT-37: F1 — Recommendations Without History
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/events/recommended` |
+| **Auth** | Newly registered volunteer token (no event history) |
+| **Steps** | 1. Register new volunteer. 2. `GET /api/events/recommended`. |
+| **Expected Result** | Falls back to popular events. Returns `{ data: [...] }` — not empty. |
+| **Pass/Fail Criteria** | Pass if gracefully falls back to popular events |
+
+### IT-38: F2 — AI Feedback Summary
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/events/:id/feedback/summary` |
+| **Auth** | Any authenticated user |
+| **Steps** | 1. Login. 2. `GET /api/events/{eventId}/feedback/summary` for event with feedback. |
+| **Expected Result** | `{ data: { event_title, total_feedback, overall_sentiment, average_rating, breakdown, top_positive_keywords, top_negative_keywords } }` |
+| **Pass/Fail Criteria** | Pass if sentiment analysis returns valid structure |
+
+### IT-39: F2 — Feedback Summary Empty Event
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/events/:id/feedback/summary` |
+| **Auth** | Any authenticated user |
+| **Steps** | 1. Login. 2. `GET /api/events/{eventId}/feedback/summary` for event with no feedback. |
+| **Expected Result** | `{ data: { total_feedback: 0, overall_sentiment: "neutral" } }` |
+| **Pass/Fail Criteria** | Pass if returns neutral with zero count |
+
+### IT-40: F3 — Sponsorship Registration with Upline Emails
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `POST /api/auth/register` |
+| **Auth** | None |
+| **Steps** | 1. Register new user with `{ ..., upline_1_email: "carol@test.com", upline_2_email: "alice@test.com" }`. |
+| **Expected Result** | User created. Upline emails saved. Referral logs created. |
+| **Pass/Fail Criteria** | Pass if new user's profile shows both upline emails |
+
+### IT-41: F3 — Sponsorship Profile
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/me/sponsorship-profile` |
+| **Auth** | Volunteer token |
+| **Steps** | 1. Login as volunteer who was referred. 2. `GET /api/me/sponsorship-profile`. |
+| **Expected Result** | `{ email, upline_1_email, upline_2_email, downline_1st_level_count, downline_2nd_level_count, total_sponsorship_points }` |
+| **Pass/Fail Criteria** | Pass if all fields present with correct upline data |
+
+### IT-42: F3 — Admin Sponsorship Config Read
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/admin/sponsorship/configuration` |
+| **Auth** | Admin token |
+| **Steps** | 1. Login as admin. 2. `GET /api/admin/sponsorship/configuration`. |
+| **Expected Result** | `{ direct_sponsor_points, helped_sponsor_points, upline_helper_points, updated_at }` |
+| **Pass/Fail Criteria** | Pass if returns all 3 point config fields |
+
+### IT-43: F3 — Admin Sponsorship Config Update
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `PUT /api/admin/sponsorship/configuration` |
+| **Auth** | Admin token |
+| **Steps** | 1. Login as admin. 2. Update with `{ direct_sponsor_points: 20, helped_sponsor_points: 5, upline_helper_points: 10 }`. 3. Read back. |
+| **Expected Result** | Config persists. Updated values return on next read. |
+| **Pass/Fail Criteria** | Pass if values persist after save and reload |
+
+### IT-44: F4 — Leaderboard All Categories
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/leaderboard` |
+| **Auth** | Any authenticated user |
+| **Steps** | 1. Login. 2. `GET /api/leaderboard`. |
+| **Expected Result** | `{ data: { most_points: [...], most_events: [...], most_checkins: [...], most_redeemed: [...] } }`. Each max 3 items with rank. |
+| **Pass/Fail Criteria** | Pass if returns all 4 categories with rank numbers |
+
+### IT-45: F4 — Leaderboard Individual Categories
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/leaderboard/points`, `/events`, `/checkins`, `/redeemed` |
+| **Auth** | Any authenticated user |
+| **Steps** | 1. Login. 2. Test each endpoint. |
+| **Expected Result** | Each returns `{ data: [{ id, name, score, rank }] }`. Max 3 items. |
+| **Pass/Fail Criteria** | Pass if each endpoint returns valid data |
+
+---
+
+## 5c. Bug Fix Regression Tests
+
+### Scope
+Verify previously identified bugs remain fixed.
+
+---
+
+### REG-01: Organiser Role Name Query
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/admin/organisers` |
+| **Auth** | Admin token |
+| **Steps** | 1. Login as admin. 2. `GET /api/admin/organisers`. |
+| **Expected Result** | Returns list of organisers, not empty array. |
+| **Pass/Fail Criteria** | Pass if organiser list is not empty |
+
+### REG-02: Events Query Uses event_date
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/events` |
+| **Auth** | Volunteer token |
+| **Steps** | 1. Login as volunteer. 2. `GET /api/events`. |
+| **Expected Result** | Returns events. No HTTP 500. |
+| **Pass/Fail Criteria** | Pass if 200 returned with event data |
+
+### REG-03: Duplicate Scan Returns 409
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `POST /api/attendance/scan` |
+| **Auth** | Organiser token |
+| **Steps** | 1. Login as organiser. 2. Scan volunteer QR. 3. Scan same volunteer+event again. |
+| **Expected Result** | First: 200. Second: 409 already_checked_in. |
+| **Pass/Fail Criteria** | Pass if duplicate scan correctly rejected |
+
+### REG-04: User List Sorted by Role
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `GET /api/admin/users` |
+| **Auth** | Admin token |
+| **Steps** | 1. Login as admin. 2. `GET /api/admin/users`. 3. Check role order. |
+| **Expected Result** | Users ordered: Admin → Organiser → Merchant → Volunteer |
+| **Pass/Fail Criteria** | Pass if role order matches hierarchy |
+
+### REG-05: RedeemReward Argument Order
+
+| Field | Value |
+|-------|-------|
+| **Endpoint** | `POST /api/rewards/:id/redeem` |
+| **Auth** | Volunteer with sufficient points |
+| **Steps** | 1. Login as volunteer. 2. POST to redeem a reward. |
+| **Expected Result** | Returns `{ data: { id, pin, points_balance } }`. No SQL error. |
+| **Pass/Fail Criteria** | Pass if redemption succeeds without error |
+
+---
+
+## 5d. Manual Testing — Volunteer Mobile App
+
+### Scope
+Manual tests on the Expo mobile app to verify UI, navigation, and flows.
+
+---
+
+### MT-01: Volunteer Registration Flow
+| **App** | Volunteer Mobile App (Expo) |
+| **Steps** | 1. Open app. 2. Tap Register. 3. Fill name, email, password. 4. Optionally enter upline emails. 5. Tap Create Account. |
+| **Expected Result** | Account created. Redirected to home. | ⬜ |
+
+### MT-02: Home Screen Sections
+| **App** | Volunteer Mobile App (Expo) |
+| **Steps** | 1. Login. 2. Verify upcoming events load. 3. Verify Recommended for You (F1) appears. 4. Verify Hall of Fame (F4) appears at bottom. |
+| **Expected Result** | All 3 sections visible with live data. | ⬜ |
+
+### MT-03: Browse and Join Events
+| **App** | Volunteer Mobile App (Expo) |
+| **Steps** | 1. Events tab. 2. Browse list. 3. Tap event for details. 4. Tap Join Event. |
+| **Expected Result** | Joins confirmed. | ⬜ |
+
+### MT-04: View QR Code
+| **App** | Volunteer Mobile App (Expo) |
+| **Steps** | 1. Navigate to QR screen. 2. Verify QR code displays. |
+| **Expected Result** | QR code from user UUID. Scannable. | ⬜ |
+
+### MT-05: Redeem Reward
+| **App** | Volunteer Mobile App (Expo) |
+| **Steps** | 1. Rewards tab. 2. Browse rewards. 3. Redeem one. 4. View PIN. |
+| **Expected Result** | Points deducted. PIN shown. Coupon in My Coupons. | ⬜ |
+
+### MT-06: Sponsorship Profile
+| **App** | Volunteer Mobile App (Expo) |
+| **Steps** | 1. Profile → Sponsorship. 2. Verify upline, downline, points. |
+| **Expected Result** | All sponsorship data displayed. | ⬜ |
+
+### MT-07: AI Recommendations Screen
+| **App** | Volunteer Mobile App (Expo) |
+| **Steps** | 1. Navigate to AI Recommendations screen. 2. Verify events load with scores. |
+| **Expected Result** | Recommendations visible with relevance scores. | ⬜ |
+
+### MT-08: Hall of Fame Screen
+| **App** | Volunteer Mobile App (Expo) |
+| **Steps** | 1. Hall of Fame screen. 2. Verify 4 tabs, top 3 with medals. |
+| **Expected Result** | Leaderboard displays correctly. Tab switching works. | ⬜ |
+
+---
+
+## 5e. Manual Testing — Cashier Merchant App
+
+### MT-09: Merchant Login
+| **App** | Merchant Cashier PWA |
+| **Steps** | Login as cheryl@test.com / password123. |
+| **Expected Result** | Redirected to PIN verify. | ⬜ |
+
+### MT-10: PIN Verification
+| **App** | Merchant Cashier PWA |
+| **Steps** | Enter valid 6-digit PIN from volunteer's redeemed coupon. |
+| **Expected Result** | Coupon details displayed (title, volunteer, expiry). | ⬜ |
+
+### MT-11: Invalid PIN
+| **App** | Merchant Cashier PWA |
+| **Steps** | Enter invalid PIN (e.g., 000000). |
+| **Expected Result** | Error: Wrong 6-digit PIN. | ⬜ |
+
+### MT-12: Redeem Coupon
+| **App** | Merchant Cashier PWA |
+| **Steps** | Verify valid PIN. Confirm redemption. |
+| **Expected Result** | PIN marked as used. | ⬜ |
+
+### MT-13: Reverse Redemption
+| **App** | Merchant Cashier PWA |
+| **Steps** | Verify + redeem PIN. Immediately reverse. |
+| **Expected Result** | Reversal succeeds within 5-min window. PIN returns to unused. | ⬜ |
+
+### MT-14: Merchant History
+| **App** | Merchant Cashier PWA |
+| **Steps** | Navigate to History. Verify past transactions listed. |
+| **Expected Result** | History shows PIN, coupon title, date, status. | ⬜ |
+
+---
+
+## 5f. Manual Testing — Organiser QR Scanner
+
+### MT-15: Organiser Login
+| **App** | Organiser Web Portal |
+| **Steps** | Login as bob@test.com / password123. |
+| **Expected Result** | Dashboard shows event stats. | ⬜ |
+
+### MT-16: Dashboard Stats
+| **App** | Organiser Web Portal |
+| **Steps** | Verify dashboard stats and event list. |
+| **Expected Result** | Stats display correctly. | ⬜ |
+
+### MT-17: Create Event
+| **App** | Organiser Web Portal |
+| **Steps** | Create event with title, date, location, capacity, points. |
+| **Expected Result** | Event created. Shows in events list. | ⬜ |
+
+### MT-18: View Event Roster
+| **App** | Organiser Web Portal |
+| **Steps** | Navigate to event. View roster. |
+| **Expected Result** | Roster shows registered volunteers with check-in status. | ⬜ |
+
+### MT-19: QR Scan Attendance
+| **App** | Organiser Scanner |
+| **Steps** | Scan volunteer's QR code. Verify check-in recorded. |
+| **Expected Result** | Attendance recorded. Points awarded. | ⬜ |
+
+---
+
+## 5g. Manual Testing — Admin Portal (Extended)
+
+### MT-20: Dashboard E2E
+| **App** | Admin Web Portal |
+| **Steps** | Login. Verify stats + recent activity. Navigate all sidebar sections. |
+| **Expected Result** | Dashboard complete. Navigation works. | ⬜ |
+
+### MT-21: Users Management
+| **App** | Admin Web Portal |
+| **Steps** | Users sorted by role. Search filter. Click View on user. |
+| **Expected Result** | Sorted correctly. Detail modal works. | ⬜ |
+
+### MT-22: Coupon Management
+| **App** | Admin Web Portal |
+| **Steps** | Test filter chips. Create coupon. View PINs. Delete. |
+| **Expected Result** | CRUD works. PINs viewable. Filter works. | ⬜ |
+
+### MT-23: Redemption History
+| **App** | Admin Web Portal |
+| **Steps** | Verify columns. Click sort. Use date filter. |
+| **Expected Result** | Sorting and filtering work. | ⬜ |
+
+### MT-24: Rewards Config
+| **App** | Admin Web Portal |
+| **Steps** | Change ppd. Save. Verify coupons update. |
+| **Expected Result** | Config persists. Coupons update in real-time. | ⬜ |
+
+### MT-25: Sponsorship Config
+| **App** | Admin Web Portal |
+| **Steps** | Change values. Save. Verify persists. |
+| **Expected Result** | Sponsorship config page works. | ⬜ |
+
+---
+
+## 5h. End-to-End Cross-Portal Workflow
+
+### E2E-01: Complete Volunteer + Organiser + Merchant Workflow
+
+| Field | Value |
+|-------|-------|
+| **Workflow** | Admin creates coupons → Organiser creates event → Volunteer joins → Organiser scans QR → Volunteer earns points → Redeems reward → Merchant verifies PIN |
+| **Steps** | 1. Admin: Create coupon batch. 2. Organiser: Create event. 3. Volunteer: Join event on mobile. 4. Organiser: Scan volunteer's QR code. 5. Volunteer: Check points. Redeem reward. View PIN. 6. Merchant: Enter PIN. Verify. Redeem. |
+| **Expected Result** | Full cycle completes. Points earned, spent, PIN verified, redeemed. |
+| **Pass/Fail Criteria** | ✅ Pass / ❌ Fail |
+| **Actual Result** | ⬜ |
+
+---
+
 ## 6. System Tests
 
 ### Scope
@@ -1071,96 +1416,138 @@ Verify that the system responds within acceptable time limits under normal and m
 
 ## 10. Test Results Log
 
-*To be filled during Sprint 4 execution.*
+*Execution status as of 10 June 2026. Updated results from automated test runs.*
 
 | Test ID | Test Type | Tester | Date | Status | Notes / Defect ID |
 |---------|-----------|--------|------|--------|-------------------|
-| UT-01 | Unit | | | ⬜ | |
-| UT-02 | Unit | | | ⬜ | |
-| UT-03 | Unit | | | ⬜ | |
-| UT-04 | Unit | | | ⬜ | |
-| UT-05 | Unit | | | ⬜ | |
-| UT-06 | Unit | | | ⬜ | |
-| UT-07 | Unit | | | ⬜ | |
-| UT-08 | Unit | | | ⬜ | |
-| UT-09 | Unit | | | ⬜ | |
-| UT-10 | Unit | | | ⬜ | |
-| UT-11 | Unit | | | ⬜ | |
-| UT-12 | Unit | | | ⬜ | |
-| UT-13 | Unit | | | ⬜ | |
-| UT-14 | Unit | | | ⬜ | |
-| UT-15 | Unit | | | ⬜ | |
-| UT-16 | Unit | | | ⬜ | |
-| UT-17 | Unit | | | ⬜ | |
-| UT-18 | Unit | | | ⬜ | |
-| IT-01 | Integration | | | ⬜ | |
-| IT-02 | Integration | | | ⬜ | |
-| IT-03 | Integration | | | ⬜ | |
-| IT-04 | Integration | | | ⬜ | |
-| IT-05 | Integration | | | ⬜ | |
-| IT-06 | Integration | | | ⬜ | |
-| IT-07 | Integration | | | ⬜ | |
-| IT-08 | Integration | | | ⬜ | |
-| IT-09 | Integration | | | ⬜ | |
-| IT-10 | Integration | | | ⬜ | |
-| IT-11 | Integration | | | ⬜ | |
-| IT-12 | Integration | | | ⬜ | |
-| IT-13 | Integration | | | ⬜ | |
-| IT-14 | Integration | | | ⬜ | |
-| IT-15 | Integration | | | ⬜ | |
-| IT-16 | Integration | | | ⬜ | |
-| IT-17 | Integration | | | ⬜ | |
-| IT-18 | Integration | | | ⬜ | |
-| IT-19 | Integration | | | ⬜ | |
-| IT-20 | Integration | | | ⬜ | |
-| IT-21 | Integration | | | ⬜ | |
-| IT-22 | Integration | | | ⬜ | |
-| IT-23 | Integration | | | ⬜ | |
-| IT-24 | Integration | | | ⬜ | |
-| IT-25 | Integration | | | ⬜ | |
-| IT-26 | Integration | | | ⬜ | |
-| IT-27 | Integration | | | ⬜ | |
-| IT-28 | Integration | | | ⬜ | |
-| IT-29 | Integration | | | ⬜ | |
-| IT-30 | Integration | | | ⬜ | |
-| IT-31 | Integration | | | ⬜ | |
-| IT-32 | Integration | | | ⬜ | |
-| IT-33 | Integration | | | ⬜ | |
-| IT-34 | Integration | | | ⬜ | |
-| ST-01 | System | | | ⬜ | |
-| ST-02 | System | | | ⬜ | |
-| ST-03 | System | | | ⬜ | |
-| ST-04 | System | | | ⬜ | |
-| ST-05 | System | | | ⬜ | |
-| ST-06 | System | | | ⬜ | |
-| UAT-01 | UAT | | | ⬜ | |
-| UAT-02 | UAT | | | ⬜ | |
-| UAT-03 | UAT | | | ⬜ | |
-| UAT-04 | UAT | | | ⬜ | |
-| UAT-05 | UAT | | | ⬜ | |
-| UAT-06 | UAT | | | ⬜ | |
-| UAT-07 | UAT | | | ⬜ | |
-| UAT-08 | UAT | | | ⬜ | |
-| SEC-01 | Security | | | ⬜ | |
-| SEC-02 | Security | | | ⬜ | |
-| SEC-03 | Security | | | ⬜ | |
-| SEC-04 | Security | | | ⬜ | |
-| SEC-05 | Security | | | ⬜ | |
-| SEC-06 | Security | | | ⬜ | |
-| SEC-07 | Security | | | ⬜ | |
-| SEC-08 | Security | | | ⬜ | |
-| SEC-09 | Security | | | ⬜ | |
-| SEC-10 | Security | | | ⬜ | |
-| SEC-11 | Security | | | ⬜ | |
-| SEC-12 | Security | | | ⬜ | |
-| PT-01 | Performance | | | ⬜ | |
-| PT-02 | Performance | | | ⬜ | |
-| PT-03 | Performance | | | ⬜ | |
-| PT-04 | Performance | | | ⬜ | |
-| PT-05 | Performance | | | ⬜ | |
-| PT-06 | Performance | | | ⬜ | |
-| PT-07 | Performance | | | ⬜ | |
-| PT-08 | Performance | | | ⬜ | |
+| UT-01 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-02 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-03 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-04 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-05 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-06 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-07 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-08 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-09 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-10 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-11 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-12 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-13 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-14 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-15 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-16 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-17 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| UT-18 | Unit | Xon/Code | 8 Jun | ✅ Pass | |
+| IT-01 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-02 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-03 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-04 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-05 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-06 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-07 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-08 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-09 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-10 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-11 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-12 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-13 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-14 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-15 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-16 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-17 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-18 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-19 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-20 | Integration | Code | 10 Jun | ❌ Fail→✅ Fixed | DB column start_time→event_date |
+| IT-21 | Integration | Code | 10 Jun | ⏭️ Skip | Depends on IT-20 |
+| IT-22 | Integration | Code | 10 Jun | ⏭️ Skip | Depends on IT-20 |
+| IT-23 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-24 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-25 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-26 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-27 | Integration | Code | 10 Jun | ❌ Fail→✅ Fixed | Controller/service arg mismatch |
+| IT-28 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-29 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-30 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-31 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-32 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-33 | Integration | Code | 10 Jun | ✅ Pass | |
+| IT-34 | Integration | Code | 10 Jun | ❌ Fail→✅ Fixed | Missing duplicate check |
+| IT-35 | Integration | — | — | ⬜ Not Run | F1 Recommendations |
+| IT-36 | Integration | — | — | ⬜ Not Run | F1 Popular |
+| IT-37 | Integration | — | — | ⬜ Not Run | F1 No history |
+| IT-38 | Integration | — | — | ⬜ Not Run | F2 Summary |
+| IT-39 | Integration | — | — | ⬜ Not Run | F2 Empty |
+| IT-40 | Integration | — | — | ⬜ Not Run | F3 Sponsorship reg |
+| IT-41 | Integration | — | — | ⬜ Not Run | F3 Profile |
+| IT-42 | Integration | — | — | ⬜ Not Run | F3 Config read |
+| IT-43 | Integration | — | — | ⬜ Not Run | F3 Config update |
+| IT-44 | Integration | — | — | ⬜ Not Run | F4 Leaderboard |
+| IT-45 | Integration | — | — | ⬜ Not Run | F4 Categories |
+| REG-01 | Regression | — | — | ⬜ Not Run | Role name fix |
+| REG-02 | Regression | — | — | ⬜ Not Run | Event date fix |
+| REG-03 | Regression | — | — | ⬜ Not Run | Duplicate scan fix |
+| REG-04 | Regression | — | — | ⬜ Not Run | User sort order |
+| REG-05 | Regression | — | — | ⬜ Not Run | Redeem args fix |
+| MT-01 | Manual | — | — | ⬜ Not Run | Volunteer reg flow |
+| MT-02 | Manual | — | — | ⬜ Not Run | Home screen |
+| MT-03 | Manual | — | — | ⬜ Not Run | Events |
+| MT-04 | Manual | — | — | ⬜ Not Run | QR code |
+| MT-05 | Manual | — | — | ⬜ Not Run | Rewards |
+| MT-06 | Manual | — | — | ⬜ Not Run | Sponsorship |
+| MT-07 | Manual | — | — | ⬜ Not Run | AI Recs screen |
+| MT-08 | Manual | — | — | ⬜ Not Run | Hall of Fame |
+| MT-09 | Manual | — | — | ⬜ Not Run | Merchant login |
+| MT-10 | Manual | — | — | ⬜ Not Run | PIN verify |
+| MT-11 | Manual | — | — | ⬜ Not Run | Invalid PIN |
+| MT-12 | Manual | — | — | ⬜ Not Run | Redeem coupon |
+| MT-13 | Manual | — | — | ⬜ Not Run | Reverse |
+| MT-14 | Manual | — | — | ⬜ Not Run | History |
+| MT-15 | Manual | — | — | ⬜ Not Run | Organiser login |
+| MT-16 | Manual | — | — | ⬜ Not Run | Dashboard |
+| MT-17 | Manual | — | — | ⬜ Not Run | Create event |
+| MT-18 | Manual | — | — | ⬜ Not Run | Roster |
+| MT-19 | Manual | — | — | ⬜ Not Run | QR scan |
+| MT-20 | Manual | — | — | ⬜ Not Run | Admin dashboard |
+| MT-21 | Manual | — | — | ⬜ Not Run | Users |
+| MT-22 | Manual | — | — | ⬜ Not Run | Coupons |
+| MT-23 | Manual | — | — | ⬜ Not Run | Redemptions |
+| MT-24 | Manual | — | — | ⬜ Not Run | Rewards config |
+| MT-25 | Manual | — | — | ⬜ Not Run | Sponsorship config |
+| E2E-01 | E2E | — | — | ⬜ Not Run | Full workflow |
+| ST-01 | System | — | — | ⬜ Not Run | |
+| ST-02 | System | — | — | ⬜ Not Run | |
+| ST-03 | System | — | — | ⬜ Not Run | |
+| ST-04 | System | — | — | ⬜ Not Run | |
+| ST-05 | System | — | — | ⬜ Not Run | |
+| ST-06 | System | — | — | ⬜ Not Run | |
+| UAT-01 | UAT | — | — | ⬜ Not Run | |
+| UAT-02 | UAT | — | — | ⬜ Not Run | |
+| UAT-03 | UAT | — | — | ⬜ Not Run | |
+| UAT-04 | UAT | — | — | ⬜ Not Run | |
+| UAT-05 | UAT | — | — | ⬜ Not Run | |
+| UAT-06 | UAT | — | — | ⬜ Not Run | |
+| UAT-07 | UAT | — | — | ⬜ Not Run | |
+| UAT-08 | UAT | — | — | ⬜ Not Run | |
+| SEC-01 | Security | — | — | ⬜ Not Run | |
+| SEC-02 | Security | — | — | ⬜ Not Run | |
+| SEC-03 | Security | — | — | ⬜ Not Run | |
+| SEC-04 | Security | — | — | ⬜ Not Run | |
+| SEC-05 | Security | — | — | ⬜ Not Run | |
+| SEC-06 | Security | — | — | ⬜ Not Run | |
+| SEC-07 | Security | — | — | ⬜ Not Run | |
+| SEC-08 | Security | — | — | ⬜ Not Run | |
+| SEC-09 | Security | — | — | ⬜ Not Run | |
+| SEC-10 | Security | — | — | ⬜ Not Run | |
+| SEC-11 | Security | — | — | ⬜ Not Run | |
+| SEC-12 | Security | — | — | ⬜ Not Run | |
+| PT-01 | Performance | Code | 10 Jun | ✅ Pass | avg=159ms |
+| PT-02 | Performance | Code | 10 Jun | ✅ Pass | avg=141ms |
+| PT-03 | Performance | Code | 10 Jun | ✅ Pass | avg=146ms |
+| PT-04 | Performance | Code | 10 Jun | ✅ Pass | avg=365ms |
+| PT-05 | Performance | Code | 10 Jun | ❌ Fail | start_time bug (now fixed) |
+| PT-06 | Performance | Code | 10 Jun | ❌ Fail | redeem arg bug (now fixed) |
+| PT-07 | Performance | Code | 10 Jun | ✅ Pass | No duplicates |
+| PT-08 | Performance | Code | 10 Jun | ✅ Pass | No deadlock |
 
 ---
 

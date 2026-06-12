@@ -121,7 +121,7 @@ npx expo start
 |----------|---------|---------|
 | `Sprint Breakdown v7.2.md` | v7.2 | Final sprint schedule |
 | `Additional Features Proposal v1.2.md` | v1.2 | Approved feature proposals |
-| `Test Plan & Case Spec v1.1.md` | v1.1 | 92 test cases (in `docs/`) |
+| `Test Plan & Case Spec v1.2.md` | v1.2 | 133 test cases (in `docs/`) |
 | `Test Report — Unit Tests (Sprint 3) v1.0.md` | v1.0 | Unit test results (in `docs/`) |
 | `Test Results — Integration Tests.md` | v1.0 | 34 IT results (in `docs/`) |
 | `Test Results — Performance Tests.md` | v1.0 | 8 PT results (in `docs/`) |
@@ -377,9 +377,13 @@ Update this table as you complete tasks.
 | T1: Push pending changes | ✅ Done | HANDOFF.md + Project Status Report committed & pushed |
 | T2: Verify everything works | ✅ Done | 11/11 unit tests pass, all 7 key APIs verified |
 | T3: Run full test suite | ✅ Done | 9/9 smoke tests pass, results in docs/Test Results — Final Suite.md |
-| T4: Backend deployment prep | ⬜ Pending (29 Jun) | |
-| T5: Security audit | ⬜ Pending (29 Jun) | |
-| T6: Final E2E test pass | ⬜ Pending (29 Jun) | |
+| T4: Manual test — Volunteer Mobile App | ⬜ Pending | Run Expo app, test all screens, QR, events, rewards flow |
+| T5: Manual test — Cashier Merchant App | ⬜ Pending | Test PIN verify, redeem, history screens |
+| T6: Manual test — Organiser QR Scanner | ⬜ Pending | Test organiser scanning volunteer QR code for attendance |
+| T7: Manual test — Admin Portal UI | ⬜ Pending | Extensive E2E user flow testing beyond API calls |
+| T7: Backend deployment prep | ⬜ Pending (29 Jun) | |
+| T8: Security audit | ⬜ Pending (29 Jun) | |
+| T9: Final E2E test pass | ⬜ Pending (29 Jun) | |
 
 ---
 
