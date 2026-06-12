@@ -70,6 +70,10 @@ app.use("/api/admin", require("./src/routes/admin.routes"));
 // Merchant Redemption App
 app.use("/api", require("./src/routes/merchant.routes"));
 
+// User Settings & Contact (Vivian's routes — adapted)
+app.use("/api/settings", require("./src/routes/settings.routes"));
+app.use("/api/contact", require("./src/routes/contact.routes"));
+
 // ─── 404 Handler ─────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({ error: { code: "not_found", message: "Route not found" } });
