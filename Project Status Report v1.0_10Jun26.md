@@ -1,10 +1,10 @@
 # Project Status Report — All Changes Summary
 
-**Version:** 1.0  
-**Date:** 10 June 2026  
+**Version:** 1.1  
+**Date:** 12 June 2026  
 **Project:** Volunteering Rewards App (C3000C)  
 **Author:** Xon  
-**Status:** Final  
+**Status:** Updated — Sprint 3 complete  
 
 ---
 
@@ -23,13 +23,15 @@
 
 ## 1. Executive Summary
 
-From **4 Jun – 10 Jun 2026**, the following was completed for the Volunteering Rewards App:
+From **4 Jun – 12 Jun 2026**, the following was completed for the Volunteering Rewards App:
 
 - **Admin Portal amendments** — Coupons, redemption history, rewards config, UI fixes
 - **4 Additional Features (F1–F4)** — AI Event Recommendations, AI Feedback Summarizer, Volunteer Referral Program, Hall of Fame Leaderboard
-- **Full test suite** — 11 unit tests, 34 integration tests, 8 performance tests, 92 documented test cases
+- **Full test suite** — 11 unit tests, 34 integration tests, 8 performance tests, 133 documented test cases
 - **Bug fixes** — 3 critical bugs fixed, data cleanup, role name mismatch resolved
 - **Team branch merge** — Vivian's mobile app updates merged into main
+- **6 backend stubs replaced** — events/today, roster, stats, feedback, Q&A, categories now live SQL
+- **Vivian's settings & contact routes integrated** — Migration 022, nodemailer, shared auth
 
 All backends (F1–F4) are complete and operational. Frontend UIs for F1, F3, and F4 are built. F2 frontend (Feedback Summary card) built on the organiser web portal.
 
@@ -57,6 +59,8 @@ All backends (F1–F4) are complete and operational. Frontend UIs for F1, F3, an
 |------|-------------|--------|
 | Vivan's Branch Merge | Merged `origin/vivian` into `main` (notifications, event enhancements, mobile screens). | ✅ Done |
 | Sprint Schedule v7.2 | Updated sprint breakdown with testing + additional feature focus. | ✅ Done |
+| **6 Backend Stubs Replaced** | `events/today`, `events/categories`, `events/:id/roster`, `events/:id/stats`, `events/:id/qna`, `events/:id/feedback` — now use live SQL queries | ✅ Done (12 Jun) |
+| **Vivian's Settings/Contact Integrated** | Migration 022 (user_settings), settings.routes.js, contact.routes.js, email.service.js — adapted to shared auth middleware | ✅ Done (12 Jun) |
 
 ---
 

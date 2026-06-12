@@ -15,7 +15,9 @@
 
 Sprint 3 (Frontend Completion + Integration) is finished. All backend endpoints are live, all web portal screens are wired, and the scan PWA works. Key deliverable: **6 formerly-stubbed endpoints** (`events/today`, `events/categories`, `events/:id/roster`, `events/:id/stats`, `events/:id/qna`, `events/:id/feedback`) now use real SQL queries.
 
-**Last commit pushed:** `59c62ea` — Fix backend stubs (on `origin/main`)
+**Vivian's settings & contact routes integrated:** Migration 022 (user_settings), 3 adapted files moved from `backend/src/src/` to `backend/src/`, shared auth middleware, nodemailer installed. Pushed as `b4e5fe3`.
+
+**Last commit pushed:** `b4e5fe3` — Integrate Vivian's settings & contact routes (on `origin/main`)
 
 ---
 
