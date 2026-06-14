@@ -136,7 +136,7 @@ export default function PinVerify() {
     setIsRateLimited(false);
     try {
       const res = await apiPost('/coupons/verify', { pin });
-      setCoupon(res.coupon);
+      setCoupon(res.data || res.coupon);
       setPhase('verified');
     } catch (err) {
       setVerifyError(err);
@@ -152,6 +152,7 @@ export default function PinVerify() {
     setRedeemError(null);
     try {
       const res = await apiPost('/coupons/redeem', { pin, userCouponId: coupon.user_coupon_id || coupon.id,});
+      setRedemption(res.data || res.redemption || res);
       setRedemption(res.redemption);
       setRedeemedAt(Date.now());
       setUndoWindowExpired(false);
@@ -166,7 +167,9 @@ export default function PinVerify() {
     setShowReverseConfirm(false);
     setReversing(true);
     try {
-      await apiPost('/coupons/reverse', {userCouponId: redemption.user_coupon_id || redemption.id,});
+      await apiPost('/coupons/reverse', {
+        userCouponId: redemption?.user_coupon_id || redemption?.id || coupon?.user_coupon_id || coupon?.id
+    });
       toast('Redemption reversed successfully', 'success');
       resetAll();
     } catch (err) {

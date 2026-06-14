@@ -18,7 +18,7 @@ async function findCouponByPin(pin) {
   const result = await pool.query(
     `SELECT uc.id AS user_coupon_id, uc.user_id, uc.coupon_id, uc.status,
             uc.expiry_date, uc.created_at, uc.redeemed_at, uc.verified_by,
-            c.title, c.description, c.points_required,
+            c.title, c.description, c.points_required,c.value_cents,
             u.name AS volunteer_name, u.email AS volunteer_email
        FROM user_coupons uc
        JOIN coupons c ON c.id = uc.coupon_id
@@ -50,7 +50,7 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
     let query;
     let params;
     if (userCouponId) {
-      query = `SELECT uc.id AS user_coupon_id, uc.status, uc.expiry_date, c.title, u.name AS volunteer_name
+      query = `SELECT uc.id AS user_coupon_id, uc.status, uc.expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
                  FROM user_coupons uc
                  JOIN coupons c ON c.id = uc.coupon_id
                  JOIN users u ON u.id = uc.user_id
@@ -58,7 +58,7 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
                 FOR UPDATE`;
       params = [userCouponId];
     } else {
-      query = `SELECT uc.id AS user_coupon_id, uc.status, uc.expiry_date, c.title, u.name AS volunteer_name
+      query = `SELECT uc.id AS user_coupon_id, uc.status, uc.expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
                  FROM user_coupons uc
                  JOIN coupons c ON c.id = uc.coupon_id
                  JOIN users u ON u.id = uc.user_id
@@ -86,10 +86,18 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
     if (updated.rows.length === 0) throw createError(409, "already_redeemed", "Coupon already used.");
 
     await client.query(
-      `INSERT INTO redemption_logs (user_coupon_id, action, action_by, ip_address, created_at, notes)
-       VALUES ($1, 'used', $2, $3, NOW(), $4)`,
-      [coupon.user_coupon_id, cashierId, meta.ipAddress || null, notes || "Cashier marked coupon as used"]
-    );
+      `INSERT INTO redemption_logs
+          (user_coupon_id, action, action_by, ip_address, created_at, notes, points_spent, value_cents)
+        VALUES ($1, 'used', $2, $3, NOW(), $4, $5, $6)`,
+    [
+    coupon.user_coupon_id,
+    cashierId,
+    meta.ipAddress || null,
+    notes || "Cashier marked coupon as used",
+    coupon.points_required || 0,
+    coupon.value_cents || 0
+  ]
+);
 
     await client.query("COMMIT");
 
@@ -141,10 +149,18 @@ async function reverseRedemption({ userCouponId, notes } = {}, cashierId, meta =
     );
 
     await client.query(
-      `INSERT INTO redemption_logs (user_coupon_id, action, action_by, ip_address, created_at, notes)
-       VALUES ($1, 'redeemed', $2, $3, NOW(), $4)`,
-      [userCouponId, cashierId, meta.ipAddress || null, notes || "Cashier reversed redemption within 5-minute window"]
-    );
+      `INSERT INTO redemption_logs
+         (user_coupon_id, action, action_by, ip_address, created_at, notes, points_spent, value_cents)
+       VALUES ($1, 'redeemed', $2, $3, NOW(), $4, $5, $6)`,
+   [
+     userCouponId,
+     cashierId,
+     meta.ipAddress || null,
+     notes || "Cashier reversed redemption within 5-minute window",
+     0,
+     0
+   ]
+  );
 
     await client.query("COMMIT");
     return { data: updated.rows[0] };
