@@ -10,10 +10,11 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import QRCode from "react-native-qrcode-svg";
+
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface User {
   id: number;
@@ -67,26 +68,19 @@ export default function Scan() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
-  // Complete value placed inside the QR code.
+  // Full value stored inside the QR code.
   const [qrValue, setQrValue] = useState("");
 
-  // Original database QR ID displayed under the QR.
+  // Database QR value displayed underneath.
   const [qrId, setQrId] = useState("");
 
-  /*
-   * The backend only returns attendance recorded after
-   * the QR screen was opened.
-   */
+  // Only detect attendance recorded after this screen is opened.
   const qrOpenedAtRef = useRef(new Date().toISOString());
 
-  /*
-   * Prevents navigation from running more than once.
-   */
+  // Prevent duplicate navigation.
   const successOpenedRef = useRef(false);
 
-  /*
-   * Prevents multiple polling requests from overlapping.
-   */
+  // Prevent overlapping backend requests.
   const pollingInProgressRef = useRef(false);
 
   useEffect(() => {
@@ -94,11 +88,10 @@ export default function Scan() {
   }, []);
 
   /*
-   * Poll the backend while this QR screen is open.
+   * Silently check the backend every 2.5 seconds.
    *
-   * When the organiser scans the QR and your backend inserts
-   * the attendance record, this effect detects it and opens
-   * /scan-success.
+   * When attendance is recorded, the volunteer phone
+   * automatically navigates to /scan-success.
    */
   useEffect(() => {
     if (!user?.id || !qrValue) {
@@ -109,9 +102,9 @@ export default function Scan() {
 
     const checkLatestAttendance = async () => {
       if (
+        !screenIsActive ||
         successOpenedRef.current ||
-        pollingInProgressRef.current ||
-        !screenIsActive
+        pollingInProgressRef.current
       ) {
         return;
       }
@@ -137,9 +130,7 @@ export default function Scan() {
         let result: AttendanceResult;
 
         try {
-          result = JSON.parse(
-            responseText,
-          ) as AttendanceResult;
+          result = JSON.parse(responseText) as AttendanceResult;
         } catch {
           console.log(
             "Attendance endpoint returned invalid JSON:",
@@ -183,22 +174,35 @@ export default function Scan() {
           attendance.location ||
           "Attendance confirmed";
 
-        const pointsEarned = Number(
+        const rawPointsEarned =
           attendance.pointsEarned ??
-            attendance.points_earned ??
-            attendance.pointsAwarded ??
-            attendance.points_awarded ??
-            0,
-        );
+          attendance.points_earned ??
+          attendance.pointsAwarded ??
+          attendance.points_awarded ??
+          0;
 
-        const totalPoints = Number(
+        const rawTotalPoints =
           attendance.totalPoints ??
-            attendance.total_points ??
-            0,
-        );
+          attendance.total_points ??
+          0;
+
+        const parsedPointsEarned = Number(rawPointsEarned);
+        const parsedTotalPoints = Number(rawTotalPoints);
+
+        const pointsEarned = Number.isFinite(
+          parsedPointsEarned,
+        )
+          ? parsedPointsEarned
+          : 0;
+
+        const totalPoints = Number.isFinite(
+          parsedTotalPoints,
+        )
+          ? parsedTotalPoints
+          : 0;
 
         console.log(
-          "New attendance detected:",
+          "Attendance confirmation received:",
           attendance,
         );
 
@@ -213,12 +217,8 @@ export default function Scan() {
           },
         } as any);
       } catch (error) {
-        /*
-         * Do not show an alert every 2.5 seconds if the network
-         * is temporarily unavailable. Log it instead.
-         */
         console.log(
-          "Attendance polling failed:",
+          "Unable to check attendance status:",
           error,
         );
       } finally {
@@ -257,16 +257,12 @@ export default function Scan() {
       setQrValue("");
       setQrId("");
 
-      /*
-       * Reset the attendance listening session whenever
-       * the volunteer refreshes the QR.
-       */
+      // Start a new attendance-checking session.
       qrOpenedAtRef.current = new Date().toISOString();
       successOpenedRef.current = false;
       pollingInProgressRef.current = false;
 
-      const storedUser =
-        await AsyncStorage.getItem("user");
+      const storedUser = await AsyncStorage.getItem("user");
 
       if (!storedUser) {
         Alert.alert(
@@ -287,9 +283,7 @@ export default function Scan() {
       let parsedUser: User;
 
       try {
-        parsedUser = JSON.parse(
-          storedUser,
-        ) as User;
+        parsedUser = JSON.parse(storedUser) as User;
       } catch (error) {
         console.error(
           "Unable to parse stored user:",
@@ -340,7 +334,7 @@ export default function Scan() {
       });
 
       /*
-       * Do not create a fake fallback such as VOL-12.
+       * Do not generate a fake QR fallback.
        * This value must come from PostgreSQL.
        */
       if (!volunteerQrCode) {
@@ -353,7 +347,7 @@ export default function Scan() {
       }
 
       /*
-       * Your classmate's scanner expects:
+       * The organiser scanner expects:
        *
        * VR_VOLUNTEER:<volunteer_qr_code>
        */
@@ -466,8 +460,7 @@ export default function Scan() {
             style={[
               styles.loadingIconBox,
               {
-                backgroundColor:
-                  theme.colors.surface,
+                backgroundColor: theme.colors.surface,
               },
             ]}
           >
@@ -492,8 +485,7 @@ export default function Scan() {
             style={[
               styles.loadingText,
               {
-                color:
-                  theme.colors.textSecondary,
+                color: theme.colors.textSecondary,
               },
             ]}
           >
@@ -509,8 +501,7 @@ export default function Scan() {
             style={[
               styles.passCard,
               {
-                backgroundColor:
-                  theme.colors.primary,
+                backgroundColor: theme.colors.primary,
               },
             ]}
           >
@@ -534,8 +525,7 @@ export default function Scan() {
                   style={styles.passEmail}
                   numberOfLines={1}
                 >
-                  {user?.email ||
-                    "Ready for attendance"}
+                  {user?.email || "Ready for attendance"}
                 </Text>
               </View>
 
@@ -561,9 +551,7 @@ export default function Scan() {
 
               <View style={styles.passStatBox}>
                 <Text style={styles.passStatValue}>
-                  {qrValue
-                    ? "Active"
-                    : "Unavailable"}
+                  {qrValue ? "Active" : "Unavailable"}
                 </Text>
 
                 <Text style={styles.passStatLabel}>
@@ -577,8 +565,7 @@ export default function Scan() {
             style={[
               styles.qrCard,
               {
-                backgroundColor:
-                  theme.colors.surface,
+                backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.border,
               },
             ]}
@@ -616,7 +603,7 @@ export default function Scan() {
                   ]}
                 >
                   {qrValue
-                    ? "Waiting for organiser scan"
+                    ? "Ready to scan"
                     : "QR unavailable"}
                 </Text>
               </View>
@@ -681,47 +668,15 @@ export default function Scan() {
               style={[
                 styles.qrSubtitle,
                 {
-                  color:
-                    theme.colors.textSecondary,
+                  color: theme.colors.textSecondary,
                 },
               ]}
             >
-              Show this QR code to the onsite controller.
-              Keep this screen open while it is being scanned.
-              Once attendance is confirmed, this screen will
-              automatically open the success page.
+              Show this QR code to the onsite controller
+              after the event. Your attendance and reward
+              points will be updated once the scan is
+              confirmed.
             </Text>
-
-            {qrValue && (
-              <View
-                style={[
-                  styles.listeningCard,
-                  {
-                    backgroundColor:
-                      theme.colors.primary + "10",
-                    borderColor:
-                      theme.colors.primary + "35",
-                  },
-                ]}
-              >
-                <ActivityIndicator
-                  size="small"
-                  color={theme.colors.primary}
-                />
-
-                <Text
-                  style={[
-                    styles.listeningText,
-                    {
-                      color:
-                        theme.colors.primary,
-                    },
-                  ]}
-                >
-                  Listening for attendance confirmation
-                </Text>
-              </View>
-            )}
 
             <View
               style={[
@@ -738,8 +693,7 @@ export default function Scan() {
                   style={[
                     styles.qrIdLabel,
                     {
-                      color:
-                        theme.colors.textSecondary,
+                      color: theme.colors.textSecondary,
                     },
                   ]}
                 >
@@ -782,10 +736,8 @@ export default function Scan() {
               style={[
                 styles.actionCard,
                 {
-                  backgroundColor:
-                    theme.colors.surface,
-                  borderColor:
-                    theme.colors.border,
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
                 },
               ]}
               activeOpacity={0.86}
@@ -821,12 +773,11 @@ export default function Scan() {
                 style={[
                   styles.actionSub,
                   {
-                    color:
-                      theme.colors.textSecondary,
+                    color: theme.colors.textSecondary,
                   },
                 ]}
               >
-                Restart listening
+                Reload QR
               </Text>
             </TouchableOpacity>
 
@@ -837,10 +788,8 @@ export default function Scan() {
               style={[
                 styles.actionCard,
                 {
-                  backgroundColor:
-                    theme.colors.surface,
-                  borderColor:
-                    theme.colors.border,
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
                 },
               ]}
               activeOpacity={0.86}
@@ -875,8 +824,7 @@ export default function Scan() {
                 style={[
                   styles.actionSub,
                   {
-                    color:
-                      theme.colors.textSecondary,
+                    color: theme.colors.textSecondary,
                   },
                 ]}
               >
@@ -1165,30 +1113,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
 
-  listeningCard: {
-    width: "100%",
-    borderWidth: 1,
-    borderRadius: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginTop: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  listeningText: {
-    fontSize: 12,
-    fontWeight: "900",
-    marginLeft: 9,
-  },
-
   qrIdBox: {
     width: "100%",
     borderWidth: 1,
     borderRadius: 20,
     padding: 14,
-    marginTop: 12,
+    marginTop: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
