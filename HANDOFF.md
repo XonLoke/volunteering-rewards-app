@@ -131,9 +131,10 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 |------|--------|-------|
 | Backend API deployed | ✅ Done | Render + Neon, working |
 | Frontend deployed | ✅ Done | Vercel, app loads |
-| Login shows "Failed to fetch" | ❌ **Bug** | CORS or fetch issue |
-| Diagnose exact error | ⬜ Pending | Open browser DevTools, check Network tab |
-| Fix and verify | ⬜ Pending | |
+| Login shows "Failed to fetch" | ✅ **Fixed** | CORS wildcard + credentials bug |
+| Diagnose exact error | ✅ Done | Render env `CORS_ORIGINS=*` with `credentials: true` is rejected by browsers — must reflect origin |
+| Fix applied | ✅ Done | Changed CORS config to `origin: true` (reflect request origin) when `CORS_ORIGINS` is unset or `*` |
+| Deployed | ✅ Done | Commit `59fd45b` pushed to main, auto-deployed to Render |
 
 ---
 
