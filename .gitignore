@@ -28,3 +28,4 @@ Thumbs.db
 frontend/mobile_UI/
 frontend/web_UI/
 frontend/web_portal/
+.vercel
