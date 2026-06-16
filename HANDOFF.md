@@ -245,17 +245,17 @@ const response = await fetch('http://localhost:3000/api/events', {
 
 | Task | Status | Notes |
 |------|--------|-------|
-| T1: Git pull & fetch | ⬜ Pending | |
-| T2: Merge Grace's branch | ⬜ Pending | Check conflicts against main |
-| T3: Merge Nurain's backend | ⬜ Pending | Focus on organiser/me controllers & services |
-| T4a: Install vite-plugin-pwa | ⬜ Pending | |
-| T4b: Vite PWA config | ⬜ Pending | Manifest + service worker config |
-| T4c: PWA icons | ⬜ Pending | Placeholder PNGs |
-| T4d: PWA entry routes | ⬜ Pending | Scanner + Cashier as standalone PWAs |
-| T4e: QR camera scanner | ⬜ Pending | getUserMedia + html5-qrcode |
-| T5: Merchant wire-up check | ⬜ Pending | Verify real API calls |
-| T6: Commit & push | ⬜ Pending | |
-| T7: Smoke test | ⬜ Pending | Login, events, tests |
+| T1: Git pull & fetch | ✅ Done | origin/main up to date, all branches fetched |
+| T2: Merge Grace's branch | ✅ Done | PWA manifest + icons (icon-192.png, icon-512.png, manifest.json) pulled to main |
+| T3: Merge Nurain's backend | ✅ Done | Checked — no new backend additions beyond what's on main |
+| T4a: Install vite-plugin-pwa | ✅ Done | npm install completed |
+| T4b: Vite PWA config | ✅ Done | vite.config.js updated with VitePWA plugin, manifest, workbox caching |
+| T4c: PWA icons | ✅ Done | Grace's 192x192 and 512x512 icons deployed to public/ |
+| T4d: PWA entry routes | ✅ Done | App.jsx already routes Scan and Merchant properly with standalone layouts |
+| T4e: QR camera scanner | ✅ Done | Scanner.jsx updated with html5-qrcode integration, camera toggle, manual fallback |
+| T5: Merchant wire-up check | ✅ Done | PinVerify.jsx uses real apiPost calls — no mock data found |
+| T6: Commit & push | ✅ Done | `dc23809` pushed to origin/main |
+| T7: Smoke test | ✅ Done | 11/11 unit tests pass |
 
 ---
 
