@@ -2,17 +2,14 @@
  * Seed Data Script (INF-04)
  *
  * Populates the database with initial reference data:
- *   - 3 roles (volunteer, organizer, admin)
- *   - 1 test user per role
+ *   - 4 roles (volunteer, organizer, admin, merchant)
+ *   - 2 test users per role (total 8 users)
  *   - 1 sample organization
  *   - 3 sample events
- *   - 3 sample coupons
+ *   - 3 sample coupons with merchant association
+ *   - 2 merchant business records linked to merchant users
  *
  * Safe to run multiple times — uses ON CONFLICT DO NOTHING / skipping.
- *
- * Usage:
- *   node src/utils/seed.js
- *   npm run seed
  */
 
 require("dotenv").config({ path: require("path").resolve(__dirname, "../../.env") });
@@ -32,10 +29,18 @@ const ROLES = [
 ];
 
 const TEST_USERS = [
-  { name: "Alice Volunteer", email: "alice@test.com",   role: "volunteer", points: 500 },
-  { name: "Bob Organizer",   email: "bob@test.com",     role: "organizer", points: 0 },
-  { name: "Carol Admin",     email: "carol@test.com",   role: "admin",     points: 0 },
-  { name: "Diana Merchant",  email: "diana@test.com",   role: "merchant",  points: 0 },
+  // Volunteers
+  { name: "Alice Volunteer",  email: "alice@test.com",    role: "volunteer", points: 500 },
+  { name: "Eve Volunteer",    email: "eve@test.com",      role: "volunteer", points: 300 },
+  // Organisers
+  { name: "Bob Organizer",    email: "bob@test.com",      role: "organizer", points: 0 },
+  { name: "Johnny Organizer", email: "johnny@test.com",   role: "organizer", points: 0 },
+  // Admin
+  { name: "Carol Admin",      email: "carol@test.com",    role: "admin",     points: 0 },
+  // Merchants
+  { name: "Cheryl Merchant",  email: "cheryl@test.com",   role: "merchant",  points: 0 },
+  { name: "Diana Merchant",   email: "diana@test.com",    role: "merchant",  points: 0 },
+  { name: "Frank Merchant",   email: "frank@test.com",    role: "merchant",  points: 0 },
 ];
 
 const TEST_ORGANIZATION = {
@@ -55,10 +60,16 @@ const TEST_EVENTS = [
   { title: "Food Distribution @ Jalan Besar",description: "Pack and distribute meals to low-income families in Jalan Besar.",     location: "Jalan Besar Community Centre",    event_date: "2026-06-25 10:00:00+08", capacity: 40,  points_value: 25, category: "Community" },
 ];
 
+const TEST_MERCHANTS = [
+  { name: "FairPrice Singapore",    contact_person: "Cheryl", contact_email: "cheryl@test.com", contact_phone: "+65 8111 1111", address: "1 Tampines Central, Singapore" },
+  { name: "Kopitiam Pte Ltd",      contact_person: "Diana",  contact_email: "diana@test.com",  contact_phone: "+65 8222 2222", address: "2 Jalan Besar, Singapore" },
+  { name: "GrabFood Asia",         contact_person: "Frank",  contact_email: "frank@test.com",  contact_phone: "+65 8333 3333", address: "3 Marina Boulevard, Singapore" },
+];
+
 const TEST_COUPONS = [
-  { title: "$5 FairPrice Voucher",       description: "Redeem for a $5 FairPrice grocery voucher.",                  points_required: 100, quantity: 50,  expiry_date: "2026-12-31 23:59:59+08" },
-  { title: "Kopitiam Coffee & Toast Set",description: "A set of coffee and toast at any Kopitiam outlet.",            points_required: 50,  quantity: 100, expiry_date: "2026-10-31 23:59:59+08" },
-  { title: "$10 GrabFood Promo Code",    description: "$10 off your next GrabFood order (min. $20 spend).",          points_required: 200, quantity: 25,  expiry_date: "2026-09-30 23:59:59+08" },
+  { title: "$5 FairPrice Voucher",       description: "Redeem for a $5 FairPrice grocery voucher.",                  points_required: 100, quantity: 50,  value_cents: 500,  merchant_name: "FairPrice Singapore",  expiry_date: "2026-12-31 23:59:59+08" },
+  { title: "Kopitiam Coffee & Toast Set",description: "A set of coffee and toast at any Kopitiam outlet.",            points_required: 50,  quantity: 100, value_cents: 400,  merchant_name: "Kopitiam Pte Ltd",     expiry_date: "2026-10-31 23:59:59+08" },
+  { title: "$10 GrabFood Promo Code",    description: "$10 off your next GrabFood order (min. $20 spend).",          points_required: 200, quantity: 25,  value_cents: 1000, merchant_name: "GrabFood Asia",        expiry_date: "2026-09-30 23:59:59+08" },
 ];
 
 // ─── Seed Logic ──────────────────────────────────────────
@@ -144,7 +155,25 @@ async function seed() {
       console.log("  ✓ Events seeded");
     }
 
-    // 5. Seed Coupons
+    // 5. Seed Merchants (link to merchant users)
+    console.log("\n  ▶ Seeding merchants...");
+    for (const m of TEST_MERCHANTS) {
+      const { rows: userRows } = await client.query(
+        `SELECT id FROM users WHERE email = $1`, [m.contact_email]
+      );
+      if (userRows.length > 0) {
+        const userId = userRows[0].id;
+        await client.query(
+          `INSERT INTO merchants (name, contact_person, contact_email, contact_phone, address, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT DO NOTHING`,
+          [m.name, m.contact_person, m.contact_email, m.contact_phone, m.address, userId]
+        );
+      }
+    }
+    console.log("  ✓ Merchants seeded");
+
+    // 6. Seed Coupons
     console.log("\n  ▶ Seeding coupons...");
     const { rows: carolRows } = await client.query(
       `SELECT id FROM users WHERE email = 'carol@test.com'`
@@ -154,10 +183,10 @@ async function seed() {
     if (adminId) {
       for (const cp of TEST_COUPONS) {
         await client.query(
-          `INSERT INTO coupons (title, description, points_required, quantity, expiry_date, status, created_by)
-           VALUES ($1, $2, $3, $4, $5, 'active', $6)
+          `INSERT INTO coupons (title, description, points_required, quantity, value_cents, merchant_name, expiry_date, status, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8)
            ON CONFLICT DO NOTHING`,
-          [cp.title, cp.description, cp.points_required, cp.quantity, cp.expiry_date, adminId]
+          [cp.title, cp.description, cp.points_required, cp.quantity, cp.value_cents, cp.merchant_name, cp.expiry_date, adminId]
         );
       }
       console.log("  ✓ Coupons seeded");

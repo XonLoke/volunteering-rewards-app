@@ -6,7 +6,7 @@ const { pool } = require("../config/database");
 
 async function getSponsorshipConfig() {
   const { rows } = await pool.query(
-    "SELECT direct_sponsor_points, helped_sponsor_points, upline_helper_points, max_depth, updated_at FROM sponsorship_configuration ORDER BY id DESC LIMIT 1"
+    "SELECT direct_sponsor_points, helped_sponsor_points, upline_helper_points, updated_at FROM sponsorship_configuration ORDER BY id DESC LIMIT 1"
   );
   if (rows.length === 0) {
     return { direct_sponsor_points: 10, helped_sponsor_points: 4, upline_helper_points: 6 };
