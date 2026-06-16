@@ -181,7 +181,7 @@ app.post("/api/debug/seed", async (_req, res) => {
         if (r.rowCount > 0) seeded.users++;
       }
     }
-    const orgRes = await pool.query("INSERT INTO organizations (org_name, org_type, uen, contact_person, contact_email, approval_status, status) VALUES ('Green Earth Society', 'Non-Profit', 'S80SS0011A', 'Bob Organizer', 'bob@test.com', 'approved', 'active') ON CONFLICT (org_name) DO NOTHING RETURNING id");
+    const orgRes = await pool.query("INSERT INTO organizations (org_name, org_type, uen, contact_person, contact_email, approval_status, status) VALUES ('Green Earth Society', 'Non-Profit', 'S80SS0011A', 'Bob Organizer', 'bob@test.com', 'approved', 'active') ON CONFLICT DO NOTHING RETURNING id");
     if (orgRes.rows.length > 0) { seeded.org = true; }
     const orgRow = await pool.query("SELECT id FROM organizations LIMIT 1");
     const bobRow = await pool.query("SELECT id FROM users WHERE email = 'bob@test.com' LIMIT 1");
