@@ -63,6 +63,25 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// ─── Diagnostic: Check DB Schema & Tables ─────────────────
+app.get("/api/debug/db", async (_req, res) => {
+  try {
+    const { pool } = require("./src/config/database");
+    const schema = await pool.query("SELECT current_database(), current_schema(), inet_server_addr(), version()");
+    const searchPath = await pool.query("SHOW search_path");
+    const tables = await pool.query("SELECT table_name, table_schema FROM information_schema.tables WHERE table_catalog = current_database() AND table_schema NOT IN ('pg_catalog', 'information_schema') ORDER BY table_schema, table_name");
+    const usersCount = await pool.query("SELECT COUNT(*)::int AS cnt FROM information_schema.tables WHERE table_name = 'users'");
+    res.json({
+      db: schema.rows[0],
+      search_path: searchPath.rows,
+      tables: tables.rows,
+      users_table_exists: usersCount.rows[0].cnt > 0,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, detail: err.stack });
+  }
+});
+
 // ─── API Routes ─────────────────────────────────────────
 // Workflow A — Auth & User Management
 app.use("/api/auth", require("./src/routes/auth.routes"));
