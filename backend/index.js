@@ -34,10 +34,11 @@ console.log("─".repeat(50));
 // ─── Middleware Stack ────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false })); // Disable CSP for dev — enable in prod
 
-// CORS — allow configured origins (fallback to all origins in dev)
-const corsOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
-  : "*";
+// CORS — allow configured origins (reflect request origin when wildcard)
+const rawCors = process.env.CORS_ORIGINS;
+const corsOrigins = rawCors && rawCors !== "*"
+  ? rawCors.split(",").map((s) => s.trim())
+  : true; // true = reflect the request Origin header (safe with credentials)
 app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(rateLimiter.global);

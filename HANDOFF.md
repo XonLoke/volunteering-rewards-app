@@ -1,6 +1,6 @@
-# Handoff: Deploy Frontend Web Portal to Vercel
+# Handoff: Fix Frontend "Failed to Fetch" Login Error
 
-**Handoff ID:** HO-20260616-009
+**Handoff ID:** HO-20260616-010
 **Date:** 16 June 2026
 **From:** Cowork (Xon)
 **To:** Claude Desktop Code / Project
@@ -13,127 +13,115 @@
 
 ## Session Context
 
-The backend API is fully deployed and live at `https://vol-rewards-api.onrender.com`. All endpoints work (health, login, events, rewards, leaderboard). Now the frontend web portal needs to be deployed so the admin, organiser, merchant PWA, and scanner PWA can be accessed via a public URL.
+The backend is fully deployed and working at `https://vol-rewards-api.onrender.com` (verified: health check 200, login returns JWT token).
 
-The frontend is a React/Vite app at `frontend/web_portals/`. It uses `VITE_API_URL` env var to point to the backend API. Vercel is the recommended platform (free tier, no cold starts, global CDN).
+The frontend is deployed at `https://webportals-lovat.vercel.app` but login shows **"Failed to fetch"** even though:
+
+- The backend API is running and returns valid tokens (tested via curl)
+- The latest JS build (`index-CUWb0Dlg.js`) contains the correct Render URL `vol-rewards-api.onrender.com`
+- The `api.js` hardcodes the production URL as default
+
+The "Failed to fetch" error in the browser suggests a **CORS issue** or a **network/fetch runtime error** — the API and frontend are on different domains.
 
 ---
 
 ## ✅ What's Already Done
 
-- Backend deployed to Render: `https://vol-rewards-api.onrender.com`
-- All API endpoints verified working (health, login for all 4 roles, events, rewards, leaderboard)
-- `CORS_ORIGINS=*` — any frontend domain is allowed
-- Frontend source code ready at `frontend/web_portals/`
-- vite.config.js already configured with PWA support (vite-plugin-pwa)
-- `api.js` reads `VITE_API_URL` env var (falls back to localhost for dev)
+### Backend (Render)
+- API live at `https://vol-rewards-api.onrender.com`
+- All 23 migrations run, seed data loaded
+- Health check: ✅ 200 OK, `db_connected: true`
+- Login via curl: ✅ Returns JWT token for carol@test.com
+- `CORS_ORIGINS=*` in Render env vars
+
+### Frontend (Vercel)
+- Deployed at `https://webportals-lovat.vercel.app`
+- `api.js` defaults to `'https://vol-rewards-api.onrender.com/api'`
+- `vercel.json` has SPA rewrites configured
+- Vite build passes with correct API URL baked in
 
 ---
 
-## 🎯 Task: Deploy Frontend to Vercel
+## 🎯 Task: Diagnose & Fix "Failed to Fetch"
 
-**Duration:** ~10 minutes
+### Step 1 — Open Browser DevTools
+1. Open Chrome DevTools (F12)
+2. Go to **Network** tab
+3. Try logging in as carol@test.com / password123
+4. Look at the failed network request:
+   - What URL is it trying to reach? (should be `https://vol-rewards-api.onrender.com/api/auth/login`)
+   - What is the exact error? (CORS? DNS? Timeout?)
+   - What does the browser Console tab show?
 
-### Step 1 — Go to Vercel
+### Step 2 — If CORS Issue
+The backend has `CORS_ORIGINS=*` in Render env vars, but Render might not load it correctly. Check:
+- Can you call the API directly from a different browser tab?
+  `https://vol-rewards-api.onrender.com/api/health`
+- If CORS is the issue, update `backend/src/middleware/errorHandler.middleware.js` or the CORS config in `backend/index.js` to explicitly allow the Vercel domain.
 
-1. Go to [vercel.com](https://vercel.com)
-2. Sign in with **GitHub** (same account as Render)
-3. Click **"Add New" → "Project"**
-4. Find and import `XonLoke/volunteering-rewards-app`
+### Step 3 — If Mixed Content / HTTPS Issue
+- Vercel is HTTPS, but the API might have mixed content issues
+- Check if the API is accessible over HTTPS from the browser
+- Test: `curl -v https://vol-rewards-api.onrender.com/api/auth/login -X POST -H "Content-Type: application/json" -d '{"email":"carol@test.com","password":"password123"}'`
 
-### Step 2 — Configure Project
+### Step 4 — Build a local test first
+```bash
+cd D:\c3000c\volunteering-rewards-app\frontend\web_portals
+npm run build
+npm run preview
+```
+Then test login at `http://localhost:4173/admin/login`. This isolates whether it's a build issue or a deployment issue.
 
-| Field | Value |
-|-------|-------|
-| **Framework Preset** | `Vite` (auto-detected) |
-| **Root Directory** | `frontend/web_portals` (click edit → select from dropdown) |
-| **Build Command** | `npm run build` (should auto-detect) |
-| **Output Directory** | `dist` (should auto-detect) |
-
-### Step 3 — Add Environment Variable
-
-| Key | Value |
-|-----|-------|
-| `VITE_API_URL` | `https://vol-rewards-api.onrender.com/api` |
-
-### Step 4 — Deploy
-
-Click **"Deploy"**. Wait ~1-2 minutes for the build.
-
-Vercel will give you a URL like: `https://volunteering-rewards-app.vercel.app`
-
-### Step 5 — Verify
-
-Visit the Vercel URL in your browser. You should see the web portal login page.
-
-Test:
-1. Login as `carol@test.com` / `password123` → should redirect to Admin Dashboard
-2. Login as `bob@test.com` / `password123` → should see Organiser Dashboard
-3. Login as `cheryl@test.com` / `password123` → should see Merchant PIN page
-4. Navigate to `/scan/events` → should show event selection for QR scanner
-
-### Step 6 — Optional: Fix Workbox Cache URL
-
-In `frontend/web_portals/vite.config.js`, line 38-40, the `runtimeCaching` URL pattern is hardcoded to `localhost:3000`. Update it to accept the Render URL:
-
-```javascript
-urlPattern: /^https?:\/\/.*\/api\/.*/i,
+### Step 5 — If needed, create a minimal test
+Create a simple HTML page that calls the Render API directly to isolate the issue:
+```html
+<!DOCTYPE html>
+<html><body>
+<script>
+fetch('https://vol-rewards-api.onrender.com/api/auth/login', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({email:'carol@test.com',password:'password123'})
+}).then(r => r.text()).then(console.log).catch(console.error);
+</script>
+</body></html>
 ```
 
-This ensures the PWA's service worker caches API responses properly in production. **But this is optional** — the app works without it, it just won't cache API responses in the PWA.
-
 ### Acceptance Criteria
-- [ ] Frontend deployed at a public Vercel URL
-- [ ] Admin login works against the live Render API
-- [ ] Organiser portal accessible
-- [ ] Merchant PIN page accessible
-- [ ] Scanner event selection page accessible
-- [ ] All API calls go to `https://vol-rewards-api.onrender.com/api/...`
-- [ ] No CORS errors in browser console
+- [ ] Login works at `https://webportals-lovat.vercel.app/admin/login`
+- [ ] Redirects to Admin Dashboard after login
+- [ ] No errors in browser Console or Network tabs
 
 ---
 
 ## Technical Context
 
-### Frontend API Config
+### Current api.js (lines 1-4)
 ```javascript
-// frontend/web_portals/src/services/api.js (line 1)
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://vol-rewards-api.onrender.com/api';
 ```
 
-### Vite PWA Config
-The vite.config.js already includes:
-- `vite-plugin-pwa` with `registerType: 'autoUpdate'`
-- Manifest for standalone install
-- Workbox caching for static assets
-- PWA icons at `frontend/web_portals/public/icon-192.png` and `icon-512.png`
-
-### Portals Available
-| Portal | Route | Login |
-|--------|-------|-------|
-| Admin | `/admin/login` → `/admin` | carol@test.com |
-| Organiser | `/organiser` | bob@test.com / johnny@test.com |
-| Merchant PWA | `/merchant` | cheryl@test.com |
-| Scanner PWA | `/scan/events` | (uses organiser JWT) |
+### Render CORS Config (backend/index.js)
+```javascript
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
+  : "*";
+app.use(cors({ origin: corsOrigins, credentials: true }));
+```
 
 ### Test Accounts
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | carol@test.com | password123 |
 | Organiser | bob@test.com | password123 |
-| Organiser 2 | johnny@test.com | password123 |
-| Volunteer | alice@test.com | password123 |
 | Merchant | cheryl@test.com | password123 |
+| Volunteer | alice@test.com | password123 |
 
-### Commands (for local build verification)
-```bash
-# Build the frontend
-cd D:\c3000c\volunteering-rewards-app\frontend\web_portals
-npm run build
+### Vercel URL
+`https://webportals-lovat.vercel.app`
 
-# Preview the build locally
-npm run preview
-```
+### Render API
+`https://vol-rewards-api.onrender.com`
 
 ---
 
@@ -141,17 +129,20 @@ npm run preview
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Backend deployed (Render) | ✅ Done | Live at `https://vol-rewards-api.onrender.com` |
-| Frontend deploy to Vercel | 🔄 **Pending** | Follow steps above |
-| Verify frontend works | ⬜ Pending | |
-| Update HANDOFF.md | ⬜ Pending | When done |
+| Backend API deployed | ✅ Done | Render + Neon, working |
+| Frontend deployed | ✅ Done | Vercel, app loads |
+| Login shows "Failed to fetch" | ❌ **Bug** | CORS or fetch issue |
+| Diagnose exact error | ⬜ Pending | Open browser DevTools, check Network tab |
+| Fix and verify | ⬜ Pending | |
 
 ---
 
 ## How to Use
 
 1. Read this HANDOFF.md in full
-2. Go to vercel.com and deploy the frontend
-3. Verify all portals work against the live API
-4. Update the Status Tracking table
-5. Say "Frontend deployment handoff complete" when ready to hand back to Cowork
+2. Open browser DevTools on the Vercel URL to check the actual network error
+3. Fix the cause (likely CORS or URL mismatch)
+4. Commit and push the fix
+5. Verify login works end-to-end
+6. Update the Status Tracking table
+7. Say "Frontend fetch handoff complete" when done
