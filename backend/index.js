@@ -124,6 +124,16 @@ if (process.env.NODE_ENV === "production") {
             }
           }
           console.log("  ✓ test users seeded");
+
+          // Seed a sample event so there's content
+          const orgRes = await pool.query("INSERT INTO organizations (org_name, org_type, uen, contact_person, contact_email, approval_status, status) VALUES ('Green Earth Society', 'Non-Profit', 'S80SS0011A', 'Bob Organizer', 'bob@test.com', 'approved', 'active') ON CONFLICT DO NOTHING RETURNING id");
+          if (orgRes.rows.length > 0) {
+            const bobRes = await pool.query("SELECT id FROM users WHERE email = 'bob@test.com'");
+            if (bobRes.rows.length > 0) {
+              await pool.query("INSERT INTO events (organization_id, organizer_id, title, description, location, event_date, capacity, points_value, category, status) VALUES ($1, $2, 'Beach Cleanup @ East Coast', 'Help clean up East Coast Park.', 'East Coast Park', NOW() + INTERVAL \'7 days\', 50, 20, 'Environment', 'upcoming') ON CONFLICT DO NOTHING", [orgRes.rows[0].id, bobRes.rows[0].id]);
+            }
+          }
+          console.log("  ✓ sample content seeded");
         } catch (seedErr) {
           console.error("Auto-seed error:", seedErr.message);
         }
