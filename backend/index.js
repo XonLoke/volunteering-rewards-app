@@ -63,6 +63,32 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// ─── Auto-Migrate on Startup (production only) ────────────
+if (process.env.NODE_ENV === "production") {
+  (async () => {
+    try {
+      const { pool } = require("./src/config/database");
+      const { readFileSync, readdirSync } = require("fs");
+      const path = require("path");
+      const migrationDir = path.resolve(__dirname, "migrations");
+      const files = readdirSync(migrationDir).filter(f => f.endsWith(".sql")).sort();
+      console.log(`Auto-migrate: running ${files.length} migration(s)...`);
+      for (const file of files) {
+        const sql = readFileSync(path.join(migrationDir, file), "utf-8");
+        try {
+          await pool.query(sql);
+          console.log(`  ✓ ${file}`);
+        } catch (err) {
+          console.error(`  ✗ ${file}: ${err.message}`);
+        }
+      }
+      console.log("Auto-migrate: done.");
+    } catch (err) {
+      console.error("Auto-migrate error:", err.message);
+    }
+  })();
+}
+
 // ─── Diagnostic: Check DB Schema & Tables ─────────────────
 app.get("/api/debug/db", async (_req, res) => {
   try {
@@ -71,9 +97,15 @@ app.get("/api/debug/db", async (_req, res) => {
     const searchPath = await pool.query("SHOW search_path");
     const tables = await pool.query("SELECT table_name, table_schema FROM information_schema.tables WHERE table_catalog = current_database() AND table_schema NOT IN ('pg_catalog', 'information_schema') ORDER BY table_schema, table_name");
     const usersCount = await pool.query("SELECT COUNT(*)::int AS cnt FROM information_schema.tables WHERE table_name = 'users'");
+    // Also check all available databases on this server
+    const databases = await pool.query("SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname");
+    // Check if schema exists with tables
+    const schemas = await pool.query("SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('pg_catalog', 'information_schema', 'pg_toast') ORDER BY schema_name");
     res.json({
       db: schema.rows[0],
       search_path: searchPath.rows,
+      databases: databases.rows.map(r => r.datname),
+      schemas: schemas.rows.map(r => r.schema_name),
       tables: tables.rows,
       users_table_exists: usersCount.rows[0].cnt > 0,
     });
