@@ -1,4 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_URL || (
+  location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000/api'
+    : 'https://vol-rewards-api.onrender.com/api'
+);
 
 let authToken = localStorage.getItem('auth_token');
 let refreshToken = localStorage.getItem('refresh_token');
