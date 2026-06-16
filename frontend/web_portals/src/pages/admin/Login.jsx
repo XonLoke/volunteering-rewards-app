@@ -152,11 +152,7 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <div style={{ marginTop: '24px', padding: '12px', background: '#f8f9fa', borderRadius: '8px', fontSize: '12px', color: '#666' }}>
-          <strong>Test credentials:</strong><br />
-          Admin: carol@test.com / password123
-        </div>
-      </div>
-    </div>
-  );
-}
+	      </div>
+	    </div>
+	  );
+	}
