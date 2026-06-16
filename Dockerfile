@@ -6,11 +6,11 @@ RUN apk add --no-cache python3 make g++
 
 WORKDIR /build
 
-# Copy package files and install ALL dependencies (dev included for migrations)
+# Copy package files first (leverage Docker cache)
 COPY backend/package*.json ./
 RUN npm ci
 
-# Copy backend source (node_modules excluded via .dockerignore)
+# Copy source files — node_modules from host (Windows) is excluded by .dockerignore
 COPY backend/ .
 
 # Force rebuild bcrypt for Linux Alpine (avoids Windows binary mismatch)
