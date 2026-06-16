@@ -170,19 +170,42 @@ node -e "..."  (diagnostic commands above)
 
 ---
 
+## ✅ Fixed: 42P01 Bug — Root Cause & Resolution
+
+### Root Cause
+The `render.yaml` had `fromDatabase:` references linking the web service to a Render-managed PostgreSQL. This caused Render to inject a `DATABASE_URL` env var into the Docker container that **pointed to a different database** than the manually-set Neon `DB_*` vars. The Render Shell connected to one database (migrations ran fine), while the Node `pg` pool in the web service connected to another (tables didn't exist → `42P01`).
+
+### Fixes Applied
+1. **Removed** `fromDatabase` references from `render.yaml` — web service uses only manually-set Neon env vars
+2. **Added** auto-migration + auto-seed on startup (`NODE_ENV=production` only) — tables and test data are created using the **same connection** the web service uses
+3. **Added** `DATABASE_URL` support in `database.js` as fallback (standard PaaS pattern)
+4. **Added** `/api/debug/db` diagnostic endpoint (schemas, tables, databases)
+5. **Added** `/api/debug/seed` HTTP endpoint for on-demand seeding without Render Shell
+6. **Reduced** pool `max` from 20 to 5 (Neon free tier limit)
+7. **Increased** `connectionTimeoutMillis` from 5s to 10s
+
+### Verification ✅
+| Check | Result |
+|-------|--------|
+| `GET /api/health` | ✅ `db_connected: true`, uptime working |
+| `POST /api/auth/login` carol@test.com | ✅ Returns JWT token (role: admin) |
+| `POST /api/auth/login` bob@test.com | ✅ Returns JWT token (role: organiser) |
+| `POST /api/auth/login` alice@test.com | ✅ Returns JWT token (role: volunteer) |
+| `POST /api/auth/login` cheryl@test.com | ✅ Returns JWT token (role: merchant) |
+| `GET /api/events` (as alice) | ✅ 3 events returned |
+| `GET /api/rewards` (as alice) | ✅ 3 rewards returned |
+| `GET /api/leaderboard` | ✅ Alice Volunteer #1 with 500 points |
+| No `42P01` errors | ✅ All endpoints clean |
+
 ## Status Tracking
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Render web service live | ✅ Done | `vol-rewards-api` — health check 200 |
+| Render web service live | ✅ Done | `vol-rewards-api` |
 | Docker build fixed | ✅ Done | bcrypt binary, .dockerignore |
-| Migrations in Shell | ✅ Done | 23/23 succeed |
-| Seed in Shell | ✅ Done | Test users created |
-| Login via web service | ❌ BUG | `42P01` relation not found |
-| Diagnose root cause | ⬜ Pending | See diagnostic steps above |
-| Fix connection issue | ⬜ Pending | |
-| Verify all endpoints | ⬜ Pending | |
-| Update HANDOFF.md | ⬜ Pending | When done |
+| **42P01 diagnosed & fixed** | ✅ **Done** | Shell vs web service: different DB (Render `fromDatabase` injected `DATABASE_URL`) |
+| Verify all endpoints | ✅ Done | All 4 roles login, events, rewards, leaderboard working |
+| Update HANDOFF.md | ✅ Done | |
 
 ---
 
