@@ -61,33 +61,41 @@ async function apiFetch(url, method, body) {
   const headers = { 'Content-Type': 'application/json' };
   if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
-  const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
-  const json = await res.json();
+  try {
+    const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    const json = await res.json();
 
-  if (res.status === 401 && json.error?.code === 'token_expired' && refreshToken) {
-    if (!isRefreshing) {
-      isRefreshing = true;
-      const refreshed = await tryRefreshToken();
-      isRefreshing = false;
-      if (refreshed) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-        const retryRes = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
-        const retryJson = await retryRes.json();
-        if (!retryRes.ok) {
-          throw { code: retryJson.error?.code || 'unknown', message: retryJson.error?.message || 'Request failed', status: retryRes.status };
+    if (res.status === 401 && json.error?.code === 'token_expired' && refreshToken) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        const refreshed = await tryRefreshToken();
+        isRefreshing = false;
+        if (refreshed) {
+          headers['Authorization'] = `Bearer ${authToken}`;
+          const retryRes = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+          const retryJson = await retryRes.json();
+          if (!retryRes.ok) {
+            throw { code: retryJson.error?.code || 'unknown', message: retryJson.error?.message || 'Request failed', status: retryRes.status };
+          }
+          return retryJson;
         }
-        return retryJson;
       }
+      setAuthToken(null);
+      setRefreshToken(null);
     }
-    setAuthToken(null);
-    setRefreshToken(null);
-  }
 
-  if (!res.ok) {
-    throw { code: json.error?.code || 'unknown', message: json.error?.message || 'Request failed', status: res.status };
-  }
+    if (!res.ok) {
+      throw { code: json.error?.code || 'unknown', message: json.error?.message || 'Request failed', status: res.status };
+    }
 
-  return json;
+    return json;
+  } catch (err) {
+    // Network error — provide a clearer message
+    if (err instanceof TypeError && err.message === 'Failed to fetch') {
+      throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+    }
+    throw err;
+  }
 }
 
 export async function apiLogin(email, password) {
