@@ -34,6 +34,9 @@ const ERROR_MAP = {
   not_found: 'Volunteer not found. Please check the ID.',
 };
 
+// QR code prefix expected from the volunteer app
+const QR_PREFIX = 'VR_VOLUNTEER:';
+
 export default function Scanner() {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -51,6 +54,13 @@ export default function Scanner() {
 
   const [offlineScans, setOfflineScans] = useState([]);
   const [syncing, setSyncing] = useState(false);
+
+  // Camera / QR scanner state
+  const videoRef = useRef(null);
+  const scannerRef = useRef(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const [manualMode, setManualMode] = useState(false);
 
   // Load offline scans on mount
   useEffect(() => {
@@ -91,6 +101,99 @@ export default function Scanner() {
     fetchEvent();
   }, [eventId]);
 
+  // Initialize QR scanner on mount
+  useEffect(() => {
+    let html5QrCode = null;
+
+    const startCamera = async () => {
+      try {
+        // Dynamically import html5-qrcode to avoid issues if not available
+        const { Html5Qrcode } = await import('html5-qrcode');
+        html5QrCode = new Html5Qrcode('qr-reader');
+
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+          },
+          async (decodedText) => {
+            // QR code detected — process it
+            if (submitting) return;
+
+            // Parse QR value — expected format: VR_VOLUNTEER:<volunteer_qr_code>
+            let extractedId = decodedText;
+            if (decodedText.startsWith(QR_PREFIX)) {
+              extractedId = decodedText.substring(QR_PREFIX.length);
+            }
+
+            // Use the extracted ID to scan
+            setVolunteerId(extractedId);
+            await performScan(extractedId);
+
+            // Brief pause to avoid double-scan
+            if (html5QrCode) {
+              try { await html5QrCode.pause(); } catch {}
+              setTimeout(() => {
+                if (html5QrCode) {
+                  try { html5QrCode.resume(); } catch {}
+                }
+              }, 2000);
+            }
+          },
+          (errorMessage) => {
+            // QR scan error (no code visible) — ignore, this fires continuously
+          }
+        );
+
+        setCameraActive(true);
+        setCameraError(null);
+      } catch (err) {
+        console.warn('Camera QR scanner not available:', err.message);
+        setCameraError('Camera not available. Use manual entry instead.');
+        setManualMode(true);
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      if (html5QrCode) {
+        try { html5QrCode.stop(); } catch {}
+        try { html5QrCode.clear(); } catch {}
+      }
+    };
+  }, [eventId]);
+
+  const performScan = async (volunteerIdValue) => {
+    if (!volunteerIdValue || volunteerIdValue.trim() === '') return;
+    if (submitting) return;
+
+    setSubmitting(true);
+    setScanResult(null);
+    setScanError(null);
+
+    try {
+      const res = await apiPost('/attendance/scan', {
+        volunteer_id: volunteerIdValue.trim(),
+        event_id: Number(eventId),
+        scanned_at: new Date().toISOString(),
+      });
+      setScanResult({
+        volunteerName: res.volunteer?.name || res.attendance?.volunteer_name || 'Volunteer',
+        pointsAwarded: res.attendance?.points_awarded || 0,
+        newBalance: res.volunteer?.points_balance || 0,
+        action: 'Checked In',
+        time: formatTimeDisplay(),
+      });
+      setVolunteerId('');
+    } catch (err) {
+      handleScanError(err, volunteerIdValue);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleScan = useCallback(
     async (actionType) => {
       if (!volunteerId.trim()) {
@@ -118,41 +221,44 @@ export default function Scanner() {
         });
         setVolunteerId('');
       } catch (err) {
-        if (err.status === 409) {
-          const friendly = ERROR_MAP[err.code] || err.message;
-          setScanError({ message: friendly, code: err.code });
-        } else if (err.status === 400 || err.status === 404) {
-          const friendly = ERROR_MAP[err.code] || err.message;
-          setScanError({ message: friendly, code: err.code });
-          // Store failed scan offline for batch sync
-          const failed = {
-            volunteer_id: volunteerId.trim(),
-            event_id: Number(eventId),
-            attempted_at: new Date().toISOString(),
-            error: err.code,
-          };
-          const updated = [...offlineScans, failed];
-          setOfflineScans(updated);
-          saveOfflineScans(updated);
-        } else {
-          setScanError({ message: err.message || 'Scan failed', code: 'unknown' });
-          // Network error — store offline
-          const failed = {
-            volunteer_id: volunteerId.trim(),
-            event_id: Number(eventId),
-            attempted_at: new Date().toISOString(),
-            error: 'network_error',
-          };
-          const updated = [...offlineScans, failed];
-          setOfflineScans(updated);
-          saveOfflineScans(updated);
-        }
+        handleScanError(err, volunteerId);
       } finally {
         setSubmitting(false);
       }
     },
     [volunteerId, eventId, submitting, offlineScans, toast]
   );
+
+  const handleScanError = (err, volId) => {
+    if (err.status === 409) {
+      const friendly = ERROR_MAP[err.code] || err.message;
+      setScanError({ message: friendly, code: err.code });
+    } else if (err.status === 400 || err.status === 404) {
+      const friendly = ERROR_MAP[err.code] || err.message;
+      setScanError({ message: friendly, code: err.code });
+      // Store failed scan offline for batch sync
+      const failed = {
+        volunteer_id: volId,
+        event_id: Number(eventId),
+        attempted_at: new Date().toISOString(),
+        error: err.code,
+      };
+      const updated = [...offlineScans, failed];
+      setOfflineScans(updated);
+      saveOfflineScans(updated);
+    } else {
+      setScanError({ message: err.message || 'Scan failed', code: 'unknown' });
+      const failed = {
+        volunteer_id: volId,
+        event_id: Number(eventId),
+        attempted_at: new Date().toISOString(),
+        error: 'network_error',
+      };
+      const updated = [...offlineScans, failed];
+      setOfflineScans(updated);
+      saveOfflineScans(updated);
+    }
+  };
 
   const handleSync = useCallback(async () => {
     if (offlineScans.length === 0 || syncing) return;
@@ -225,15 +331,60 @@ export default function Scanner() {
           </div>
         </div>
 
-        {/* Camera viewfinder placeholder */}
-        <div style={styles.viewfinder}>
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6C6C70" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-            <circle cx="12" cy="13" r="4" />
-          </svg>
-          <p style={styles.viewfinderText}>Camera viewfinder</p>
-          <p style={styles.viewfinderHint}>Camera available in native app</p>
+        {/* QR Scanner or Manual Entry toggle */}
+        <div style={styles.modeToggle}>
+          <button
+            style={{
+              ...styles.modeTab,
+              background: manualMode ? '#F2F2F5' : '#FF9500',
+              color: manualMode ? '#1C1C1E' : '#FFFFFF',
+            }}
+            onClick={() => setManualMode(false)}
+            disabled={!manualMode}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+            Camera Scan
+          </button>
+          <button
+            style={{
+              ...styles.modeTab,
+              background: manualMode ? '#FF9500' : '#F2F2F5',
+              color: manualMode ? '#FFFFFF' : '#1C1C1E',
+            }}
+            onClick={() => setManualMode(true)}
+            disabled={manualMode}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+            Manual Entry
+          </button>
         </div>
+
+        {/* Camera QR Scanner */}
+        {!manualMode && (
+          <div style={styles.viewfinder}>
+            <div id="qr-reader" style={styles.qrReader} />
+            {cameraError && (
+              <div style={styles.cameraNotice}>
+                <p style={styles.cameraNoticeText}>{cameraError}</p>
+                <button
+                  style={styles.manualSwitchBtn}
+                  onClick={() => setManualMode(true)}
+                >
+                  Switch to Manual Entry
+                </button>
+              </div>
+            )}
+            {cameraActive && (
+              <p style={styles.cameraHint}>Point camera at volunteer's QR code</p>
+            )}
+          </div>
+        )}
 
         {/* Manual entry */}
         <div style={styles.manualSection}>
@@ -640,5 +791,61 @@ const styles = {
     cursor: 'pointer',
     minHeight: 44,
     marginTop: 8,
+  },
+  //-------------------------------------------------------------------------
+  // QR Scanner specific styles
+  //-------------------------------------------------------------------------
+  modeToggle: {
+    display: 'flex',
+    gap: 8,
+    marginBottom: 16,
+  },
+  modeTab: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    flex: 1,
+    minHeight: 42,
+    padding: '10px 16px',
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+  },
+  qrReader: {
+    width: '100%',
+    maxWidth: 400,
+    margin: '0 auto',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  cameraNotice: {
+    textAlign: 'center',
+    padding: 12,
+  },
+  cameraNoticeText: {
+    fontSize: 13,
+    color: '#6C6C70',
+    margin: '0 0 8px',
+  },
+  manualSwitchBtn: {
+    padding: '8px 16px',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    background: '#FF9500',
+    color: '#FFFFFF',
+    border: 'none',
+    cursor: 'pointer',
+    minHeight: 36,
+  },
+  cameraHint: {
+    fontSize: 12,
+    color: '#6C6C70',
+    textAlign: 'center',
+    margin: '8px 0 0',
   },
 };

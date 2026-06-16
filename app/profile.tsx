@@ -37,14 +37,6 @@ const menuItems = [
     color: "#f59e0b",
   },
   {
-    id: "7",
-    icon: "gift-outline",
-    label: "Sponsorship",
-    sub: "Sponsor volunteers, earn bonus points",
-    route: "/referral",
-    color: "#8b5cf6",
-  },
-  {
     id: "3",
     icon: "scan-outline",
     label: "Scan History",
@@ -56,7 +48,7 @@ const menuItems = [
     id: "4",
     icon: "settings-outline",
     label: "Settings",
-    sub: "Theme and app preferences",
+    sub: "App preferences",
     route: "/settings",
     color: "#06b6d4",
   },

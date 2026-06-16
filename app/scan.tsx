@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,10 +10,11 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import QRCode from "react-native-qrcode-svg";
+
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface User {
   id: number;
@@ -25,23 +26,226 @@ interface User {
   qr_code?: string;
 }
 
+interface AttendanceResult {
+  success?: boolean;
+  found?: boolean;
+  message?: string;
+
+  attendance?: {
+    id?: number;
+
+    eventId?: number;
+    event_id?: number;
+
+    eventName?: string;
+    event_name?: string;
+
+    location?: string;
+
+    pointsEarned?: number;
+    points_earned?: number;
+    pointsAwarded?: number;
+    points_awarded?: number;
+
+    totalPoints?: number;
+    total_points?: number;
+
+    scannedAt?: string;
+    scanned_at?: string;
+  };
+}
+
+const QR_PREFIX = "VR_VOLUNTEER:";
+
+const API_BASE_URL = "http://192.168.72.201:3000/api";
+
+const POLLING_INTERVAL_MS = 2500;
+
 export default function Scan() {
   const router = useRouter();
   const { theme } = useTheme();
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+
+  // Full value stored inside the QR code.
   const [qrValue, setQrValue] = useState("");
+
+  // Database QR value displayed underneath.
+  const [qrId, setQrId] = useState("");
+
+  // Only detect attendance recorded after this screen is opened.
+  const qrOpenedAtRef = useRef(new Date().toISOString());
+
+  // Prevent duplicate navigation.
+  const successOpenedRef = useRef(false);
+
+  // Prevent overlapping backend requests.
+  const pollingInProgressRef = useRef(false);
 
   useEffect(() => {
     loadVolunteerQR();
   }, []);
 
+  /*
+   * Silently check the backend every 2.5 seconds.
+   *
+   * When attendance is recorded, the volunteer phone
+   * automatically navigates to /scan-success.
+   */
+  useEffect(() => {
+    if (!user?.id || !qrValue) {
+      return;
+    }
+
+    let screenIsActive = true;
+
+    const checkLatestAttendance = async () => {
+      if (
+        !screenIsActive ||
+        successOpenedRef.current ||
+        pollingInProgressRef.current
+      ) {
+        return;
+      }
+
+      pollingInProgressRef.current = true;
+
+      try {
+        const after = encodeURIComponent(qrOpenedAtRef.current);
+
+        const response = await fetch(
+          `${API_BASE_URL}/attendance/volunteer/${user.id}/latest?after=${after}`,
+        );
+
+        const responseText = await response.text();
+
+        if (!responseText) {
+          console.log(
+            "Attendance endpoint returned an empty response.",
+          );
+          return;
+        }
+
+        let result: AttendanceResult;
+
+        try {
+          result = JSON.parse(responseText) as AttendanceResult;
+        } catch {
+          console.log(
+            "Attendance endpoint returned invalid JSON:",
+            responseText,
+          );
+          return;
+        }
+
+        if (!response.ok) {
+          console.log(
+            "Attendance polling error:",
+            result.message || `HTTP ${response.status}`,
+          );
+          return;
+        }
+
+        if (
+          !result.found ||
+          !result.attendance ||
+          successOpenedRef.current ||
+          !screenIsActive
+        ) {
+          return;
+        }
+
+        successOpenedRef.current = true;
+
+        const attendance = result.attendance;
+
+        const eventId =
+          attendance.eventId ??
+          attendance.event_id ??
+          0;
+
+        const eventName =
+          attendance.eventName ||
+          attendance.event_name ||
+          "Volunteer Event";
+
+        const location =
+          attendance.location ||
+          "Attendance confirmed";
+
+        const rawPointsEarned =
+          attendance.pointsEarned ??
+          attendance.points_earned ??
+          attendance.pointsAwarded ??
+          attendance.points_awarded ??
+          0;
+
+        const rawTotalPoints =
+          attendance.totalPoints ??
+          attendance.total_points ??
+          0;
+
+        const parsedPointsEarned = Number(rawPointsEarned);
+        const parsedTotalPoints = Number(rawTotalPoints);
+
+        const pointsEarned = Number.isFinite(
+          parsedPointsEarned,
+        )
+          ? parsedPointsEarned
+          : 0;
+
+        const totalPoints = Number.isFinite(
+          parsedTotalPoints,
+        )
+          ? parsedTotalPoints
+          : 0;
+
+        console.log(
+          "Attendance confirmation received:",
+          attendance,
+        );
+
+        router.replace({
+          pathname: "/scan-success",
+          params: {
+            eventName,
+            location,
+            eventId: String(eventId),
+            pointsEarned: String(pointsEarned),
+            totalPoints: String(totalPoints),
+          },
+        } as any);
+      } catch (error) {
+        console.log(
+          "Unable to check attendance status:",
+          error,
+        );
+      } finally {
+        pollingInProgressRef.current = false;
+      }
+    };
+
+    checkLatestAttendance();
+
+    const pollingTimer = setInterval(
+      checkLatestAttendance,
+      POLLING_INTERVAL_MS,
+    );
+
+    return () => {
+      screenIsActive = false;
+      clearInterval(pollingTimer);
+    };
+  }, [user?.id, qrValue, router]);
+
   const initials = useMemo(() => {
-    const name = user?.name || "Volunteer";
+    const name = user?.name?.trim() || "Volunteer";
+
     return name
-      .split(" ")
-      .map((part) => part[0])
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0))
       .join("")
       .slice(0, 2)
       .toUpperCase();
@@ -50,47 +254,141 @@ export default function Scan() {
   const loadVolunteerQR = async () => {
     try {
       setLoading(true);
+      setQrValue("");
+      setQrId("");
+
+      // Start a new attendance-checking session.
+      qrOpenedAtRef.current = new Date().toISOString();
+      successOpenedRef.current = false;
+      pollingInProgressRef.current = false;
 
       const storedUser = await AsyncStorage.getItem("user");
 
       if (!storedUser) {
-        Alert.alert("Login required", "Please login again.");
-        router.replace("/login");
+        Alert.alert(
+          "Login required",
+          "Your login session was not found. Please log in again.",
+          [
+            {
+              text: "Go to login",
+              onPress: () =>
+                router.replace("/login" as any),
+            },
+          ],
+        );
+
         return;
       }
 
-      const parsedUser: User = JSON.parse(storedUser);
+      let parsedUser: User;
+
+      try {
+        parsedUser = JSON.parse(storedUser) as User;
+      } catch (error) {
+        console.error(
+          "Unable to parse stored user:",
+          error,
+        );
+
+        await AsyncStorage.removeItem("user");
+
+        Alert.alert(
+          "Session error",
+          "Your saved login information is invalid. Please log in again.",
+          [
+            {
+              text: "Go to login",
+              onPress: () =>
+                router.replace("/login" as any),
+            },
+          ],
+        );
+
+        return;
+      }
+
+      const volunteerId = Number(parsedUser.id);
+
+      if (
+        !Number.isInteger(volunteerId) ||
+        volunteerId <= 0
+      ) {
+        setUser(parsedUser);
+
+        Alert.alert(
+          "Invalid account",
+          "Your account does not contain a valid volunteer ID. Please log out and log in again.",
+        );
+
+        return;
+      }
 
       const volunteerQrCode =
-        parsedUser.volunteer_qr_code ||
-        parsedUser.volunteerQrCode ||
-        parsedUser.qr_code ||
-        `VOL-${parsedUser.id}`;
+        parsedUser.volunteer_qr_code?.trim() ||
+        parsedUser.volunteerQrCode?.trim() ||
+        parsedUser.qr_code?.trim();
 
-      setUser(parsedUser);
-      setQrValue(volunteerQrCode);
-    } catch (err) {
-      console.error("Failed to load volunteer QR:", err);
-      Alert.alert("Error", "Failed to load your QR code.");
+      setUser({
+        ...parsedUser,
+        id: volunteerId,
+      });
+
+      /*
+       * Do not generate a fake QR fallback.
+       * This value must come from PostgreSQL.
+       */
+      if (!volunteerQrCode) {
+        Alert.alert(
+          "QR code unavailable",
+          "Your account does not have a volunteer QR code. Confirm that volunteer_qr_code exists in PostgreSQL, then log out and log in again.",
+        );
+
+        return;
+      }
+
+      /*
+       * The organiser scanner expects:
+       *
+       * VR_VOLUNTEER:<volunteer_qr_code>
+       */
+      const encodedQrValue =
+        `${QR_PREFIX}${volunteerQrCode}`;
+
+      console.log(
+        "Volunteer QR database value:",
+        volunteerQrCode,
+      );
+
+      console.log(
+        "Complete encoded QR value:",
+        encodedQrValue,
+      );
+
+      setQrId(volunteerQrCode);
+      setQrValue(encodedQrValue);
+    } catch (error) {
+      console.error(
+        "Failed to load volunteer QR:",
+        error,
+      );
+
+      Alert.alert(
+        "Unable to load QR code",
+        "Something went wrong while preparing your attendance QR code.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const goToSuccessDemo = () => {
-    router.push({
-      pathname: "/scan-success",
-      params: {
-        eventName: "Demo Volunteer Event",
-        pointsEarned: "50",
-        totalPoints: String((user?.points ?? 0) + 50),
-      },
-    });
-  };
-
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.colors.background,
+        },
+      ]}
     >
       <View style={styles.header}>
         <TouchableOpacity
@@ -104,20 +402,41 @@ export default function Scan() {
           ]}
           activeOpacity={0.85}
         >
-          <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+          <Ionicons
+            name="chevron-back"
+            size={22}
+            color={theme.colors.text}
+          />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
-          <Text style={[styles.headerMini, { color: theme.colors.textSecondary }]}>
+          <Text
+            style={[
+              styles.headerMini,
+              {
+                color: theme.colors.textSecondary,
+              },
+            ]}
+          >
             Attendance Pass
           </Text>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+
+          <Text
+            style={[
+              styles.headerTitle,
+              {
+                color: theme.colors.text,
+              },
+            ]}
+          >
             My QR Code
           </Text>
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push("/scan-history" as any)}
+          onPress={() =>
+            router.push("/scan-history" as any)
+          }
           style={[
             styles.iconButton,
             {
@@ -127,7 +446,11 @@ export default function Scan() {
           ]}
           activeOpacity={0.85}
         >
-          <Ionicons name="time-outline" size={21} color={theme.colors.text} />
+          <Ionicons
+            name="time-outline"
+            size={21}
+            color={theme.colors.text}
+          />
         </TouchableOpacity>
       </View>
 
@@ -136,18 +459,35 @@ export default function Scan() {
           <View
             style={[
               styles.loadingIconBox,
-              { backgroundColor: theme.colors.surface },
+              {
+                backgroundColor: theme.colors.surface,
+              },
             ]}
           >
-            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <ActivityIndicator
+              size="large"
+              color={theme.colors.primary}
+            />
           </View>
 
-          <Text style={[styles.loadingTitle, { color: theme.colors.text }]}>
+          <Text
+            style={[
+              styles.loadingTitle,
+              {
+                color: theme.colors.text,
+              },
+            ]}
+          >
             Preparing your pass
           </Text>
 
           <Text
-            style={[styles.loadingText, { color: theme.colors.textSecondary }]}
+            style={[
+              styles.loadingText,
+              {
+                color: theme.colors.textSecondary,
+              },
+            ]}
           >
             Getting your personal volunteer QR code ready.
           </Text>
@@ -169,32 +509,54 @@ export default function Scan() {
             <View style={styles.passDecorTwo} />
 
             <View style={styles.passTop}>
-              <View>
-                <Text style={styles.passLabel}>VOLUNTEER PASS</Text>
-                <Text style={styles.passName} numberOfLines={1}>
+              <View style={styles.passUserDetails}>
+                <Text style={styles.passLabel}>
+                  VOLUNTEER PASS
+                </Text>
+
+                <Text
+                  style={styles.passName}
+                  numberOfLines={1}
+                >
                   {user?.name || "Volunteer"}
                 </Text>
-                <Text style={styles.passEmail} numberOfLines={1}>
+
+                <Text
+                  style={styles.passEmail}
+                  numberOfLines={1}
+                >
                   {user?.email || "Ready for attendance"}
                 </Text>
               </View>
 
               <View style={styles.avatarCircle}>
-                <Text style={styles.avatarText}>{initials}</Text>
+                <Text style={styles.avatarText}>
+                  {initials}
+                </Text>
               </View>
             </View>
 
             <View style={styles.passStatsRow}>
               <View style={styles.passStatBox}>
-                <Text style={styles.passStatValue}>{user?.points ?? 0}</Text>
-                <Text style={styles.passStatLabel}>Points</Text>
+                <Text style={styles.passStatValue}>
+                  {user?.points ?? 0}
+                </Text>
+
+                <Text style={styles.passStatLabel}>
+                  Points
+                </Text>
               </View>
 
               <View style={styles.passStatDivider} />
 
               <View style={styles.passStatBox}>
-                <Text style={styles.passStatValue}>Active</Text>
-                <Text style={styles.passStatLabel}>Status</Text>
+                <Text style={styles.passStatValue}>
+                  {qrValue ? "Active" : "Unavailable"}
+                </Text>
+
+                <Text style={styles.passStatLabel}>
+                  Status
+                </Text>
               </View>
             </View>
           </View>
@@ -212,12 +574,37 @@ export default function Scan() {
               <View
                 style={[
                   styles.readyPill,
-                  { backgroundColor: theme.colors.primary + "18" },
+                  {
+                    backgroundColor: qrValue
+                      ? theme.colors.primary + "18"
+                      : "#ef444418",
+                  },
                 ]}
               >
-                <View style={styles.liveDot} />
-                <Text style={[styles.readyText, { color: theme.colors.primary }]}>
-                  Ready to scan
+                <View
+                  style={[
+                    styles.liveDot,
+                    {
+                      backgroundColor: qrValue
+                        ? "#10b981"
+                        : "#ef4444",
+                    },
+                  ]}
+                />
+
+                <Text
+                  style={[
+                    styles.readyText,
+                    {
+                      color: qrValue
+                        ? theme.colors.primary
+                        : "#ef4444",
+                    },
+                  ]}
+                >
+                  {qrValue
+                    ? "Ready to scan"
+                    : "QR unavailable"}
                 </Text>
               </View>
 
@@ -225,7 +612,10 @@ export default function Scan() {
                 onPress={loadVolunteerQR}
                 style={[
                   styles.smallRefreshButton,
-                  { backgroundColor: theme.colors.background },
+                  {
+                    backgroundColor:
+                      theme.colors.background,
+                  },
                 ]}
                 activeOpacity={0.8}
               >
@@ -245,57 +635,97 @@ export default function Scan() {
                     size={230}
                     backgroundColor="#ffffff"
                     color="#111827"
+                    quietZone={4}
                   />
                 ) : (
                   <View style={styles.noQrBox}>
-                    <Ionicons name="qr-code-outline" size={76} color="#9ca3af" />
-                    <Text style={styles.noQrText}>No QR code found</Text>
+                    <Ionicons
+                      name="qr-code-outline"
+                      size={76}
+                      color="#9ca3af"
+                    />
+
+                    <Text style={styles.noQrText}>
+                      No QR code found
+                    </Text>
                   </View>
                 )}
               </View>
             </View>
 
-            <Text style={[styles.qrTitle, { color: theme.colors.text }]}>
+            <Text
+              style={[
+                styles.qrTitle,
+                {
+                  color: theme.colors.text,
+                },
+              ]}
+            >
               Volunteer Attendance QR
             </Text>
 
             <Text
-              style={[styles.qrSubtitle, { color: theme.colors.textSecondary }]}
+              style={[
+                styles.qrSubtitle,
+                {
+                  color: theme.colors.textSecondary,
+                },
+              ]}
             >
-              Show this to the organiser after the event. Once scanned, your
-              attendance will be confirmed and points will be awarded.
+              Show this QR code to the onsite controller
+              after the event. Your attendance and reward
+              points will be updated once the scan is
+              confirmed.
             </Text>
 
             <View
               style={[
                 styles.qrIdBox,
                 {
-                  backgroundColor: theme.colors.background,
+                  backgroundColor:
+                    theme.colors.background,
                   borderColor: theme.colors.border,
                 },
               ]}
             >
-              <View>
+              <View style={styles.qrIdDetails}>
                 <Text
                   style={[
                     styles.qrIdLabel,
-                    { color: theme.colors.textSecondary },
+                    {
+                      color: theme.colors.textSecondary,
+                    },
                   ]}
                 >
-                  QR ID
+                  Volunteer QR ID
                 </Text>
+
                 <Text
-                  style={[styles.qrIdValue, { color: theme.colors.text }]}
+                  style={[
+                    styles.qrIdValue,
+                    {
+                      color: theme.colors.text,
+                    },
+                  ]}
                   numberOfLines={1}
+                  ellipsizeMode="middle"
                 >
-                  {qrValue || "Not available"}
+                  {qrId || "Not available"}
                 </Text>
               </View>
 
               <Ionicons
-                name="shield-checkmark-outline"
+                name={
+                  qrValue
+                    ? "shield-checkmark-outline"
+                    : "alert-circle-outline"
+                }
                 size={22}
-                color={theme.colors.primary}
+                color={
+                  qrValue
+                    ? theme.colors.primary
+                    : "#ef4444"
+                }
               />
             </View>
           </View>
@@ -315,7 +745,10 @@ export default function Scan() {
               <View
                 style={[
                   styles.actionIconBox,
-                  { backgroundColor: theme.colors.primary + "18" },
+                  {
+                    backgroundColor:
+                      theme.colors.primary + "18",
+                  },
                 ]}
               >
                 <Ionicons
@@ -324,13 +757,24 @@ export default function Scan() {
                   color={theme.colors.primary}
                 />
               </View>
-              <Text style={[styles.actionTitle, { color: theme.colors.text }]}>
+
+              <Text
+                style={[
+                  styles.actionTitle,
+                  {
+                    color: theme.colors.text,
+                  },
+                ]}
+              >
                 Refresh
               </Text>
+
               <Text
                 style={[
                   styles.actionSub,
-                  { color: theme.colors.textSecondary },
+                  {
+                    color: theme.colors.textSecondary,
+                  },
                 ]}
               >
                 Reload QR
@@ -338,7 +782,9 @@ export default function Scan() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/scan-history" as any)}
+              onPress={() =>
+                router.push("/scan-history" as any)
+              }
               style={[
                 styles.actionCard,
                 {
@@ -351,18 +797,35 @@ export default function Scan() {
               <View
                 style={[
                   styles.actionIconBox,
-                  { backgroundColor: "#f59e0b22" },
+                  {
+                    backgroundColor: "#f59e0b22",
+                  },
                 ]}
               >
-                <Ionicons name="time-outline" size={23} color="#f59e0b" />
+                <Ionicons
+                  name="time-outline"
+                  size={23}
+                  color="#f59e0b"
+                />
               </View>
-              <Text style={[styles.actionTitle, { color: theme.colors.text }]}>
+
+              <Text
+                style={[
+                  styles.actionTitle,
+                  {
+                    color: theme.colors.text,
+                  },
+                ]}
+              >
                 History
               </Text>
+
               <Text
                 style={[
                   styles.actionSub,
-                  { color: theme.colors.textSecondary },
+                  {
+                    color: theme.colors.textSecondary,
+                  },
                 ]}
               >
                 Past scans
@@ -370,17 +833,22 @@ export default function Scan() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            onPress={goToSuccessDemo}
-            style={[
-              styles.mainButton,
-              { backgroundColor: theme.colors.primary },
-            ]}
-            activeOpacity={0.86}
-          >
-            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-            <Text style={styles.mainButtonText}>Demo Scan Success</Text>
-          </TouchableOpacity>
+          {!qrValue && (
+            <View style={styles.warningCard}>
+              <Ionicons
+                name="information-circle-outline"
+                size={22}
+                color="#ef4444"
+              />
+
+              <Text style={styles.warningText}>
+                Your saved account does not contain a
+                volunteer QR code. Confirm that
+                volunteer_qr_code exists in PostgreSQL,
+                then log out and log in again.
+              </Text>
+            </View>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -470,6 +938,11 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
 
+  passUserDetails: {
+    flex: 1,
+    paddingRight: 12,
+  },
+
   passLabel: {
     color: "rgba(255,255,255,0.72)",
     fontSize: 11,
@@ -479,11 +952,10 @@ const styles = StyleSheet.create({
   },
 
   passName: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 27,
     fontWeight: "900",
     letterSpacing: -0.7,
-    maxWidth: 220,
   },
 
   passEmail: {
@@ -491,7 +963,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     marginTop: 5,
-    maxWidth: 230,
   },
 
   avatarCircle: {
@@ -504,7 +975,7 @@ const styles = StyleSheet.create({
   },
 
   avatarText: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 18,
     fontWeight: "900",
   },
@@ -525,7 +996,7 @@ const styles = StyleSheet.create({
   },
 
   passStatValue: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 18,
     fontWeight: "900",
   },
@@ -549,8 +1020,11 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: "center",
     marginBottom: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
     shadowOpacity: 0.09,
     shadowRadius: 18,
     elevation: 4,
@@ -576,7 +1050,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#10b981",
     marginRight: 8,
   },
 
@@ -651,6 +1124,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
+  qrIdDetails: {
+    flex: 1,
+    paddingRight: 12,
+  },
+
   qrIdLabel: {
     fontSize: 11,
     fontWeight: "900",
@@ -662,7 +1140,6 @@ const styles = StyleSheet.create({
   qrIdValue: {
     fontSize: 13,
     fontWeight: "800",
-    maxWidth: 230,
   },
 
   actionGrid: {
@@ -698,19 +1175,23 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  mainButton: {
-    height: 56,
+  warningCard: {
+    borderWidth: 1,
+    borderColor: "#ef444440",
     borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 15,
     flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#ef444410",
   },
 
-  mainButtonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "900",
-    marginLeft: 8,
+  warningText: {
+    flex: 1,
+    color: "#b91c1c",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginLeft: 10,
   },
 
   loadingContainer: {
