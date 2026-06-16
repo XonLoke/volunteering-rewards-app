@@ -22,7 +22,7 @@
 | T5: Deployment prep | ✅ Done | Dockerfile reviewed. `render.yaml` created. Env vars documented. `.env` gitignored. |
 | T6: Security audit | ✅ Done | All middleware clean, SQL injection safe, no data leaks. JWT secrets replaced with generated secrets. |
 | **T7: E2E Test Pass** | ✅ **Done** | All 4 portals pass. Found & fixed 3 bugs (see below). Doc at `docs/E2E Test Results v1.0.md`. |
-| **T8: Backend Deployment** | 🔄 Pending | Git push done. Connect to Render, set env vars, deploy. |
+| **T8: Backend Deployment** | ✅ Pushed | Code pushed to GitHub. Connect to Render, set env vars, deploy. |
 
 ---
 
@@ -52,15 +52,6 @@ All 4 portals pass. Found & fixed 3 bugs during testing:
 - Final README update
 - Tag v1.0.0 release
 
-### T9: Project Report & Presentation (~2 hr)
-- Nurain's task, but contribute test results appendix, architecture overview
-- Sprint 3 + Sprint 4 completion summary
-
-### T10: Final Verification (~30 min)
-- Version numbers in all docs (filename + header)
-- Final README update
-- Tag v1.0.0 release
-
 ---
 
 ## Key Files Created This Session
@@ -76,18 +67,20 @@ All 4 portals pass. Found & fixed 3 bugs during testing:
 | `docs/E2E Test Results v1.0.md` | E2E test results documenting all 4 portal passes |
 | `backend/migrations/023_create_points_ledger.sql` | Fix: missing points_ledger table for audit trail |
 
-## One Thing to Fix Before Deploying
-**JWT secrets** in `backend/.env` are still `change_this_to_a_random_secret`. Generate real ones:
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-Run twice, update `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` in Render env vars.
-
-## Fixed During Sprint 4 (Session 2)
+## All Issues Fixed ✅
 1. ✅ **JWT secrets** — replaced placeholders with generated secrets
 2. ✅ **PIN_SECRET** — added dedicated env var and regenerated 40 PIN hashes in DB
 3. ✅ **Missing `points_ledger` table** — created migration #023
 4. ✅ **Missing `points_spent` in merchant routes** — fixed SQL queries
+
+## Env Vars for Deployment (Render)
+Set these in Render dashboard — they are NOT in `.env` (gitignored):
+```
+JWT_ACCESS_SECRET=f4e2e21b0272d7991d7f22e842893f59aa5f06bc4f5944c8f68718852256eaad
+JWT_REFRESH_SECRET=d96ae641c1dbb9d255ff6d49b7f4149e59fa00af2a33259cd943a14fd969bd19
+PIN_SECRET=volunteering-rewards-pin-secret-v1
+```
+Full list at `docs/Deployment Environment Variables.md`
 
 
 ## How to Start a New Session
