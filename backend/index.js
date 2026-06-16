@@ -68,7 +68,7 @@ if (process.env.NODE_ENV === "production") {
   (async () => {
     try {
       const { pool } = require("./src/config/database");
-      const { readFileSync, readdirSync } = require("fs");
+      const { readFileSync, readdirSync, existsSync } = require("fs");
       const path = require("path");
       const migrationDir = path.resolve(__dirname, "migrations");
       const files = readdirSync(migrationDir).filter(f => f.endsWith(".sql")).sort();
@@ -83,6 +83,53 @@ if (process.env.NODE_ENV === "production") {
         }
       }
       console.log("Auto-migrate: done.");
+
+      // Auto-seed if users table is empty
+      const { rows } = await pool.query("SELECT COUNT(*)::int AS cnt FROM users");
+      if (rows[0].cnt === 0) {
+        console.log("Auto-seed: users table empty, running seed...");
+        try {
+          // Inline minimal seed
+          const bcrypt = require("bcrypt");
+          const { v4: uuidv4 } = require("uuid");
+
+          // Seed roles
+          const roles = [
+            ["volunteer", "Volunteer — browses events, earns points, redeems rewards"],
+            ["organiser", "Event Organizer — creates events, scans QR codes, manages attendance"],
+            ["admin", "System Admin — manages users, creates coupons, verifies PINs, audits"],
+            ["merchant", "Merchant Cashier — verifies PINs, redeems coupons"],
+          ];
+          for (const [name, desc] of roles) {
+            await pool.query("INSERT INTO roles (role_name, description) VALUES ($1, $2) ON CONFLICT (role_name) DO NOTHING", [name, desc]);
+          }
+          console.log("  ✓ roles seeded");
+
+          // Seed test users
+          const hash = await bcrypt.hash("password123", 12);
+          const testUsers = [
+            {name: "Alice Volunteer", email: "alice@test.com", role: "volunteer", points: 500},
+            {name: "Bob Organizer", email: "bob@test.com", role: "organiser", points: 0},
+            {name: "Carol Admin", email: "carol@test.com", role: "admin", points: 0},
+            {name: "Cheryl Merchant", email: "cheryl@test.com", role: "merchant", points: 0},
+          ];
+          for (const u of testUsers) {
+            const roleRes = await pool.query("SELECT id FROM roles WHERE role_name = $1", [u.role]);
+            if (roleRes.rows.length > 0) {
+              const qr = uuidv4();
+              await pool.query(
+                "INSERT INTO users (email, password_hash, name, role_id, points, volunteer_qr_code, status) VALUES ($1, $2, $3, $4, $5, $6, 'active') ON CONFLICT (email) DO NOTHING",
+                [u.email, hash, u.name, roleRes.rows[0].id, u.points, qr]
+              );
+            }
+          }
+          console.log("  ✓ test users seeded");
+        } catch (seedErr) {
+          console.error("Auto-seed error:", seedErr.message);
+        }
+      } else {
+        console.log(`Auto-seed: skipped (${rows[0].cnt} users already exist)`);
+      }
     } catch (err) {
       console.error("Auto-migrate error:", err.message);
     }
