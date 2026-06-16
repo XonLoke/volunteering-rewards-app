@@ -14,6 +14,23 @@ const errorHandler = require("./src/middleware/errorHandler.middleware");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ─── Startup Diagnostics ──────────────────────────────────
+console.log("─".repeat(50));
+console.log("Volunteering Rewards API — startup diagnostics");
+console.log("─".repeat(50));
+console.log(`NODE_ENV:          ${process.env.NODE_ENV}`);
+console.log(`PORT:              ${PORT}`);
+console.log(`DB_HOST:           ${process.env.DB_HOST || "(not set)"}`);
+console.log(`DB_PORT:           ${process.env.DB_PORT || "(not set)"}`);
+console.log(`DB_NAME:           ${process.env.DB_NAME || "(not set)"}`);
+console.log(`DB_USER:           ${process.env.DB_USER || "(not set)"}`);
+console.log(`DB_PASSWORD:       ${process.env.DB_PASSWORD ? "***set***" : "(not set)"}`);
+console.log(`DB_SSL:            ${process.env.DB_SSL || "(not set)"}`);
+console.log(`DATABASE_URL:      ${process.env.DATABASE_URL ? "***set***" : "(not set)"}`);
+console.log(`CORS_ORIGINS:      ${process.env.CORS_ORIGINS || "(not set)"}`);
+console.log(`JWT_ACCESS_SECRET: ${process.env.JWT_ACCESS_SECRET ? "***set***" : "(not set)"}`);
+console.log("─".repeat(50));
+
 // ─── Middleware Stack ────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false })); // Disable CSP for dev — enable in prod
 
@@ -30,10 +47,19 @@ app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 // ─── Health Check ────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
-  res.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+  const db = require("./src/config/database");
+  db.checkConnection().then((ok) => {
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      db_connected: ok,
+      db_host: process.env.DB_HOST || "(not set)",
+      db_name: process.env.DB_NAME || "(not set)",
+      db_user: process.env.DB_USER || "(not set)",
+      db_ssl: process.env.DB_SSL || "(not set)",
+      has_database_url: !!process.env.DATABASE_URL,
+    });
   });
 });
 

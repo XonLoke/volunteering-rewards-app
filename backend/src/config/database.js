@@ -8,19 +8,36 @@
 
 const { Pool } = require("pg");
 
-const pool = new Pool({
-  host: process.env.DB_HOST || "localhost",
-  port: parseInt(process.env.DB_PORT, 10) || 5432,
-  database: process.env.DB_NAME || "volunteering_rewards",
-  user: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASSWORD || "",
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-  ssl: process.env.DB_SSL === "true"
-    ? { rejectUnauthorized: false }
-    : false,
-});
+// Support DATABASE_URL (standard PaaS env var) as an alternative to individual DB_* vars
+let poolConfig;
+if (process.env.DATABASE_URL) {
+  console.log("Using DATABASE_URL for database connection");
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    max: Math.min(parseInt(process.env.DB_POOL_MAX, 10) || 5, 10),
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    ssl: process.env.DB_SSL === "true" || process.env.DATABASE_URL.includes("sslmode=require")
+      ? { rejectUnauthorized: false }
+      : false,
+  };
+} else {
+  poolConfig = {
+    host: process.env.DB_HOST || "localhost",
+    port: parseInt(process.env.DB_PORT, 10) || 5432,
+    database: process.env.DB_NAME || "volunteering_rewards",
+    user: process.env.DB_USER || "postgres",
+    password: process.env.DB_PASSWORD || "",
+    max: Math.min(parseInt(process.env.DB_POOL_MAX, 10) || 5, 10),
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    ssl: process.env.DB_SSL === "true"
+      ? { rejectUnauthorized: false }
+      : false,
+  };
+}
+
+const pool = new Pool(poolConfig);
 
 // ─── Connection Verification ─────────────────────────────
 pool.on("connect", () => {

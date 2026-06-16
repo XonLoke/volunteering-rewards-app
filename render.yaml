@@ -19,26 +19,6 @@ services:
         value: production
       - key: PORT
         value: "3000"
-      - key: DB_HOST
-        fromDatabase:
-          name: volunteering-rewards-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: volunteering-rewards-db
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: volunteering-rewards-db
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: volunteering-rewards-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: volunteering-rewards-db
-          property: password
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -82,3 +62,7 @@ databases:
     databaseName: volunteering_rewards
     user: postgres
     postgresMajorVersion: 16
+    # Note: This Render-managed DB is NOT used in production.
+    # The web service uses a Neon PostgreSQL with env vars set manually in the Render dashboard.
+    # The `fromDatabase` references were removed from the web service envVars above to prevent
+    # Render from injecting a DATABASE_URL that conflicts with Neon's connection settings.
