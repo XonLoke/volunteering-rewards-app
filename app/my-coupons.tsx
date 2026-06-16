@@ -14,6 +14,7 @@ import { useState, useCallback } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet } from "./api";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
 
@@ -137,14 +138,9 @@ export default function MyCoupons() {
 
       await loadCurrentPoints();
 
-      const response = await fetch(`${BASE_URL}/my-coupons?user_id=${user.id}`);
-      const data = await response.json();
+      const data = await apiGet("/me/coupons");
 
-      if (!response.ok) {
-        throw new Error(data.message || data.error || "Failed to fetch coupons.");
-      }
-
-      const fetchedCoupons = data.coupons || [];
+      const fetchedCoupons = data.data || [];
 
       const sortedCoupons = fetchedCoupons.sort((a: Coupon, b: Coupon) => {
         const dateA = new Date(a.created_at).getTime();

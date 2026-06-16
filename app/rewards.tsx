@@ -14,6 +14,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet } from "./api";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
 
@@ -142,10 +143,9 @@ export default function Rewards() {
         setUserPoints(user.points || 0);
       }
 
-      const response = await fetch(`${BASE_URL}/coupons`);
-      const data = await response.json();
+      const data = await apiGet("/rewards");
 
-      setCoupons(data.coupons || []);
+      setCoupons(data.data || []);
     } catch (err) {
       console.error("Failed to fetch rewards:", err);
     } finally {

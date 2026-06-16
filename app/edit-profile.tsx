@@ -14,6 +14,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet, apiPut } from "./api";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
 
@@ -46,27 +47,23 @@ export default function EditProfile() {
         setPhone(user.phone || "");
 
         try {
-          const response = await fetch(`${BASE_URL}/profile?user_id=${user.id}`);
-          const data = await response.json();
+          const data = await apiGet("/auth/me");
+          const updatedUser = {
+            ...user,
+            ...data,
+          };
 
-          if (response.ok && data.user) {
-            const updatedUser = {
-              ...user,
-              ...data.user,
-            };
+          setName(updatedUser.name || "");
+          setEmail(updatedUser.email || "");
+          setPhone(updatedUser.phone || "");
 
-            setName(updatedUser.name || "");
-            setEmail(updatedUser.email || "");
-            setPhone(updatedUser.phone || "");
+          await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
 
-            await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
-
-            if (typeof updatedUser.points !== "undefined") {
-              await AsyncStorage.setItem(
-                "userPoints",
-                String(updatedUser.points)
-              );
-            }
+          if (typeof updatedUser.points !== "undefined") {
+            await AsyncStorage.setItem(
+              "userPoints",
+              String(updatedUser.points)
+            );
           }
         } catch (error) {
           console.log("Profile refresh skipped:", error);
@@ -115,32 +112,17 @@ export default function EditProfile() {
 
       setSaving(true);
 
-      const response = await fetch(`${BASE_URL}/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": String(user.id),
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          name: trimmedName,
-          email: trimmedEmail,
-          phone: trimmedPhone,
-        }),
+      const data = await apiPut("/auth/me", {
+        name: trimmedName,
+        email: trimmedEmail,
+        phone: trimmedPhone,
       });
 
-      const data = await response.json().catch(() => ({}));
-
-      console.log("EDIT PROFILE STATUS:", response.status);
       console.log("EDIT PROFILE DATA:", data);
-
-      if (!response.ok || data.success === false) {
-        throw new Error(data.message || "Failed to update profile.");
-      }
 
       const updatedUser = {
         ...user,
-        ...(data.user || {}),
+        ...(data || {}),
         name: trimmedName,
         email: trimmedEmail,
         phone: trimmedPhone,

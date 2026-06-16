@@ -13,6 +13,7 @@ import { useCallback, useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet } from "./api";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
 
@@ -101,10 +102,9 @@ export default function ScanHistory() {
       await AsyncStorage.removeItem("scanHistory");
 
       try {
-        const response = await fetch(`${BASE_URL}/scans?user_id=${user.id}`);
-        const data = await response.json();
+        const data = await apiGet("/scans");
 
-        if (response.ok && Array.isArray(data.scans) && data.scans.length > 0) {
+        if (Array.isArray(data.scans) && data.scans.length > 0) {
           const backendScans: Scan[] = data.scans.map((scan: Scan) => ({
             ...scan,
             source: "backend" as const,

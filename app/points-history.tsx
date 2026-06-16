@@ -13,6 +13,7 @@ import { useCallback, useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet } from "./api";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
 
@@ -116,12 +117,9 @@ export default function PointsHistory() {
       let backendHistory: HistoryItem[] = [];
 
       try {
-        const pointsRes = await fetch(
-          `${BASE_URL}/points-history?user_id=${user.id}`
-        );
-        const pointsData = await pointsRes.json();
+        const pointsData = await apiGet("/me/points");
 
-        if (pointsRes.ok && Array.isArray(pointsData.history)) {
+        if (Array.isArray(pointsData.history)) {
           backendHistory = pointsData.history.map((item: any) => ({
             id: `backend-${item.id}`,
             title:
@@ -145,10 +143,9 @@ export default function PointsHistory() {
 
       if (backendHistory.length === 0) {
         try {
-          const scansRes = await fetch(`${BASE_URL}/scans?user_id=${user.id}`);
-          const scansData = await scansRes.json();
+          const scansData = await apiGet("/scans");
 
-          if (scansRes.ok && Array.isArray(scansData.scans)) {
+          if (Array.isArray(scansData.scans)) {
             backendHistory = scansData.scans.map((scan: any) => ({
               id: `scan-${scan.id}`,
               title: scan.event_title || "Volunteer Event",

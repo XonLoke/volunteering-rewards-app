@@ -1,6 +1,7 @@
-# API Contracts — Volunteering Rewards App
+# API Contracts — Volunteering Rewards App (v2)
 
 > **Purpose:** Complete request/response contracts for every API endpoint across all 4 apps.
+> **Version:** 2 (19 May 2026) — Added missing register/organiser endpoint, wired events + rewards routes, added /stats endpoint.
 > **Status:** Frozen (do not modify without updating this document)
 > **Auth:** All endpoints except `/api/auth/*` require `Authorization: Bearer <token>` header.
 
@@ -59,7 +60,7 @@ Return:
 | 201 | Created |
 | 400 | Bad request / validation error |
 | 401 | Unauthenticated |
-| 403 | Forbidden (wrong role) |
+| 403 | Forbidden (wrong role / disabled account) |
 | 404 | Not found |
 | 409 | Conflict (e.g. already registered) |
 | 429 | Rate limited |
@@ -191,6 +192,34 @@ Rate limit: 10 req/min per IP
 ```
 
 **Errors:** `invalid_credentials`, `account_disabled`
+
+---
+
+### POST /api/auth/refresh
+
+Issue a new access token using a valid refresh token (rotation).
+
+```
+Role required: None
+```
+
+**Request:**
+```json
+{
+  "refreshToken": "jwt_token_string"
+}
+```
+
+**Response 200:**
+```json
+{
+  "accessToken": "jwt_token_string",
+  "refreshToken": "jwt_token_string",
+  "expires_at": "2026-05-16T09:41:00+08:00"
+}
+```
+
+**Errors:** `invalid_token`
 
 ---
 
@@ -1901,6 +1930,7 @@ For quick reference, here is every endpoint grouped by app:
 | POST | `/api/auth/register` | Register volunteer |
 | POST | `/api/auth/register/organiser` | Register organiser |
 | POST | `/api/auth/login` | Login (all roles) |
+| POST | `/api/auth/refresh` | Refresh access token |
 | GET | `/api/auth/me` | Get profile |
 | PUT | `/api/auth/me` | Update profile |
 

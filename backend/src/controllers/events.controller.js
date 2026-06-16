@@ -38,14 +38,15 @@ async function today(req, res, next) {
   try {
     const result = await pool.query(`
       SELECT e.id, e.title, e.description, e.location, e.event_date,
-        e.start_time, e.end_time, e.points_value, e.capacity, e.status,
+        e.event_date AS start_time, e.event_date AS end_time,
+        e.points_value, e.capacity, e.status,
         COALESCE(reg.count, 0)::int AS total_registered,
         COALESCE(att.count, 0)::int AS total_checked_in
       FROM events e
       LEFT JOIN (SELECT event_id, COUNT(*)::int AS count FROM event_registrations GROUP BY event_id) reg ON reg.event_id = e.id
       LEFT JOIN (SELECT event_id, COUNT(*)::int AS count FROM attendance_logs GROUP BY event_id) att ON att.event_id = e.id
-      WHERE e.event_date = CURRENT_DATE
-      ORDER BY e.start_time
+      WHERE e.event_date::date = CURRENT_DATE
+      ORDER BY e.event_date
     `);
     res.json({ data: result.rows });
   } catch (err) { next(err); }

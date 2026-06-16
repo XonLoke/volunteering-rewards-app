@@ -16,6 +16,7 @@ import { useState, useCallback } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet, apiDelete } from "./api";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
 const CANCELLED_BOOKINGS_KEY = "cancelledBookingIds";
@@ -277,14 +278,7 @@ export default function Home() {
   };
 
   const refreshEventsAndBookings = async (userId: number) => {
-    const eventsRes = await fetch(`${BASE_URL}/events?user_id=${userId}`);
-    const eventsData = await eventsRes.json();
-
-    if (!eventsRes.ok) {
-      throw new Error(
-        eventsData.message || eventsData.error || "Failed to refresh events."
-      );
-    }
+    const eventsData = await apiGet("/events");
 
     const cancelledIds = await getCancelledBookingIds();
 
@@ -346,31 +340,8 @@ export default function Home() {
 
       const user = JSON.parse(stored);
 
-      const response = await fetch(
-        `${BASE_URL}/events/${event.id}/register?user_id=${user.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": String(user.id),
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            userId: user.id,
-          }),
-        }
-      );
-
-      const data = await response.json().catch(() => ({}));
-
-      console.log("HOME DELETE STATUS:", response.status);
+      const data = await apiDelete(`/events/${event.id}/register`);
       console.log("HOME DELETE DATA:", data);
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || data.error || "Failed to cancel booking."
-        );
-      }
 
       await saveCancelledBookingId(Number(event.id));
       await removeBookingFromHome(Number(event.id), data.registrations);
@@ -433,17 +404,16 @@ export default function Home() {
       setUserPoints(Number(storedPoints ?? user.points ?? 0));
 
       try {
-        const profileRes = await fetch(`${BASE_URL}/profile?user_id=${user.id}`);
-        const profileData = await profileRes.json();
+        const profileData = await apiGet("/auth/me");
 
-        if (profileRes.ok && profileData.user) {
-          const freshPoints = Number(profileData.user.points ?? 0);
+        if (profileData) {
+          const freshPoints = Number(profileData.points ?? 0);
 
           setUserPoints(freshPoints);
 
           const updatedUser = {
             ...user,
-            ...profileData.user,
+            ...profileData,
           };
 
           setUserName(updatedUser.name || "Volunteer");
@@ -457,13 +427,10 @@ export default function Home() {
       }
 
       try {
-        const couponsRes = await fetch(
-          `${BASE_URL}/my-coupons?user_id=${user.id}`
-        );
-        const couponsData = await couponsRes.json();
+        const couponsData = await apiGet("/me/coupons");
 
-        if (couponsRes.ok) {
-          const active = (couponsData.coupons || []).filter(
+        if (couponsData && couponsData.data) {
+          const active = (couponsData.data || []).filter(
             (c: any) => c.status === "unused"
           ).length;
 
@@ -474,19 +441,14 @@ export default function Home() {
       }
 
       try {
-        const notifRes = await fetch(
-          `${BASE_URL}/notifications?user_id=${user.id}`
-        );
-        const notifData = await notifRes.json();
+        const notifData = await apiGet("/notifications");
 
-        if (notifRes.ok) {
-          const notifications = notifData.notifications || [];
+        const notifications = notifData.notifications || [];
 
-          const unread = notifications.filter((n: any) => !n.is_read).length;
-          setUnreadCount(unread);
+        const unread = notifications.filter((n: any) => !n.is_read).length;
+        setUnreadCount(unread);
 
-          setUpdates(notifications.slice(0, 3));
-        }
+        setUpdates(notifications.slice(0, 3));
       } catch (notifErr) {
         console.log("Notifications refresh skipped:", notifErr);
       }

@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet } from "./api";
 import { useCallback, useMemo, useState } from "react";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
@@ -71,28 +72,7 @@ export default function HallOfFame() {
       const user = JSON.parse(stored);
       setCurrentUserId(Number(user.id));
 
-      const response = await fetch(`${BASE_URL}/leaderboard?user_id=${user.id}`);
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        const message =
-          data.message || data.error || "Failed to fetch leaderboard.";
-
-        if (
-          response.status === 401 ||
-          response.status === 403 ||
-          response.status === 404 ||
-          message.toLowerCase().includes("user") ||
-          message.toLowerCase().includes("not found") ||
-          message.toLowerCase().includes("unauthorized") ||
-          message.toLowerCase().includes("invalid")
-        ) {
-          await handleSessionExpired();
-          return;
-        }
-
-        throw new Error(message);
-      }
+      const data = await apiGet("/leaderboard");
 
       setLeaderboard(data.leaderboard || []);
       setMyRank(data.my_rank || null);

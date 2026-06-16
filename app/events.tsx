@@ -14,6 +14,7 @@ import { useState, useCallback } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet, apiPost, apiDelete } from "./api";
 
 const BASE_URL = "http://192.168.72.201:3000/api";
 const CANCELLED_BOOKINGS_KEY = "cancelledBookingIds";
@@ -103,12 +104,7 @@ export default function Events() {
         return;
       }
 
-      const response = await fetch(`${BASE_URL}/events?user_id=${user.id}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || "Failed to fetch events.");
-      }
+      const data = await apiGet("/events");
 
       const cancelledIds = await getCancelledBookingIds();
 
@@ -204,41 +200,10 @@ export default function Events() {
     try {
       setBookingId(event.id);
 
-      const response = await fetch(`${BASE_URL}/events/${event.id}/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": String(user.id),
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          userId: user.id,
-        }),
-      });
+      const data = await apiPost(`/events/${event.id}/register`);
 
-      const data = await response.json().catch(() => ({}));
-
-      console.log("EVENTS BOOK STATUS:", response.status);
+      console.log("EVENTS BOOK STATUS: 201");
       console.log("EVENTS BOOK DATA:", data);
-
-      if (!response.ok) {
-        if (
-          data.message === "already_registered" ||
-          data.error === "already_registered"
-        ) {
-          Alert.alert("Already booked", "You have already booked this event.");
-          await removeCancelledBookingId(event.id);
-          await fetchEvents(false);
-          return;
-        }
-
-        if (data.message === "event_full" || data.error === "event_full") {
-          Alert.alert("Event full", "This event has reached its capacity.");
-          return;
-        }
-
-        throw new Error(data.message || data.error || "Failed to book event.");
-      }
 
       await removeCancelledBookingId(event.id);
 
@@ -289,31 +254,10 @@ export default function Events() {
     try {
       setBookingId(event.id);
 
-      const response = await fetch(
-        `${BASE_URL}/events/${event.id}/register?user_id=${user.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": String(user.id),
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            userId: user.id,
-          }),
-        }
-      );
+      const data = await apiDelete(`/events/${event.id}/register`);
 
-      const data = await response.json().catch(() => ({}));
-
-      console.log("EVENTS DELETE STATUS:", response.status);
+      console.log("EVENTS DELETE STATUS: 200");
       console.log("EVENTS DELETE DATA:", data);
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || data.error || "Failed to cancel booking."
-        );
-      }
 
       const updatedRegistrations =
         typeof data.registrations !== "undefined" &&

@@ -1,0 +1,84 @@
+# Render Deployment Configuration
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploy: push to GitHub → Render auto-deploys from main branch
+# Manual: render blueprint launch
+
+services:
+  # ─── Backend API ──────────────────────────────────────────
+  - type: web
+    name: volunteering-rewards-api
+    env: docker
+    repo: https://github.com/XonLoke/volunteering-rewards-app
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DB_HOST
+        fromDatabase:
+          name: volunteering-rewards-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: volunteering-rewards-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: volunteering-rewards-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: volunteering-rewards-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: volunteering-rewards-db
+          property: password
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGINS
+        value: https://volunteering-rewards-admin.onrender.com,https://volunteering-rewards-organiser.onrender.com,https://volunteering-rewards-merchant.onrender.com
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX
+        value: "100"
+      - key: MAX_FILE_SIZE
+        value: "1048576"
+
+  # ─── Admin Web Portal ─────────────────────────────────────
+  - type: web
+    name: volunteering-rewards-admin
+    env: static
+    repo: https://github.com/XonLoke/volunteering-rewards-app
+    branch: main
+    buildCommand: cd frontend/web_portals && npm ci && npm run build
+    staticPublishPath: frontend/web_portals/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: volunteering-rewards-api
+          type: web
+          property: host
+          value: /api
+
+databases:
+  - name: volunteering-rewards-db
+    plan: free
+    databaseName: volunteering_rewards
+    user: postgres
+    postgresMajorVersion: 16

@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet } from "./api";
 import QRCode from "react-native-qrcode-svg";
 
 import { useTheme } from "@/contexts/ThemeContext";
