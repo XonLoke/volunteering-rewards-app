@@ -1,16 +1,19 @@
 # ─── Build Stage ──────────────────────────────────────────
 FROM node:20-alpine AS builder
 
+# Install build tools needed for bcrypt native compilation
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /build
 
 # Copy package files and install ALL dependencies (dev included for migrations)
 COPY backend/package*.json ./
 RUN npm ci
 
-# Copy backend source
+# Copy backend source (node_modules excluded via .dockerignore)
 COPY backend/ .
 
-# Rebuild native modules for Alpine Linux (avoids Windows/Linux binary mismatch)
+# Force rebuild bcrypt for Linux Alpine (avoids Windows binary mismatch)
 RUN npm rebuild bcrypt --build-from-source
 
 # ─── Production Stage ─────────────────────────────────────
