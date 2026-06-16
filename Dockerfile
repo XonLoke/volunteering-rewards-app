@@ -10,6 +10,9 @@ RUN npm ci
 # Copy backend source
 COPY backend/ .
 
+# Rebuild native modules for Alpine Linux (avoids Windows/Linux binary mismatch)
+RUN npm rebuild bcrypt --build-from-source
+
 # ─── Production Stage ─────────────────────────────────────
 FROM node:20-alpine
 
