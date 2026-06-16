@@ -6,8 +6,5 @@
     "env": {
       "VITE_API_URL": "https://vol-rewards-api.onrender.com/api"
     }
-  },
-  "github": {
-    "silent": false
   }
 }
