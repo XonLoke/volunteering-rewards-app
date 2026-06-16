@@ -146,6 +146,74 @@ if (process.env.NODE_ENV === "production") {
   })();
 }
 
+// ─── Seed Data via HTTP (for Render without Shell) ────────
+const { hashPin } = require("./src/services/rewards.service");
+
+app.post("/api/debug/seed", async (_req, res) => {
+  try {
+    const { pool } = require("./src/config/database");
+    const bcrypt = require("bcrypt");
+    const { v4: uuidv4 } = require("uuid");
+
+    const hash = await bcrypt.hash("password123", 12);
+    const roles = [
+      ["volunteer", "Volunteer — browses events, earns points, redeems rewards"],
+      ["organiser", "Event Organizer — creates events, scans QR codes, manages attendance"],
+      ["admin", "System Admin — manages users, creates coupons, verifies PINs, audits"],
+      ["merchant", "Merchant Cashier — verifies PINs, redeems coupons"],
+    ];
+    let seeded = { roles: 0, users: 0, org: false, events: 0, coupons: 0 };
+    for (const [name, desc] of roles) {
+      const r = await pool.query("INSERT INTO roles (role_name, description) VALUES ($1, $2) ON CONFLICT (role_name) DO NOTHING", [name, desc]);
+      if (r.rowCount > 0) seeded.roles++;
+    }
+    const testUsers = [
+      {name: "Alice Volunteer", email: "alice@test.com", role: "volunteer", points: 500},
+      {name: "Bob Organizer", email: "bob@test.com", role: "organiser", points: 0},
+      {name: "Carol Admin", email: "carol@test.com", role: "admin", points: 0},
+      {name: "Cheryl Merchant", email: "cheryl@test.com", role: "merchant", points: 0},
+    ];
+    for (const u of testUsers) {
+      const roleRes = await pool.query("SELECT id FROM roles WHERE role_name = $1", [u.role]);
+      if (roleRes.rows.length > 0) {
+        const qr = uuidv4();
+        const r = await pool.query("INSERT INTO users (email, password_hash, name, role_id, points, volunteer_qr_code, status) VALUES ($1, $2, $3, $4, $5, $6, 'active') ON CONFLICT (email) DO NOTHING", [u.email, hash, u.name, roleRes.rows[0].id, u.points, qr]);
+        if (r.rowCount > 0) seeded.users++;
+      }
+    }
+    const orgRes = await pool.query("INSERT INTO organizations (org_name, org_type, uen, contact_person, contact_email, approval_status, status) VALUES ('Green Earth Society', 'Non-Profit', 'S80SS0011A', 'Bob Organizer', 'bob@test.com', 'approved', 'active') ON CONFLICT (org_name) DO NOTHING RETURNING id");
+    if (orgRes.rows.length > 0) { seeded.org = true; }
+    const orgRow = await pool.query("SELECT id FROM organizations LIMIT 1");
+    const bobRow = await pool.query("SELECT id FROM users WHERE email = 'bob@test.com' LIMIT 1");
+    if (orgRow.rows.length > 0 && bobRow.rows.length > 0) {
+      const events = [
+        ["Beach Cleanup @ East Coast", "Help clean up East Coast Park. Gloves and bags provided.", "East Coast Park", "2026-07-15 08:00:00+08", 50, 20, "Environment"],
+        ["Elderly Morning Walk", "Accompany seniors from Bright Hill Home for a morning walk.", "Bright Hill Home", "2026-07-20 09:00:00+08", 30, 15, "Elderly"],
+        ["Food Distribution @ Jalan Besar", "Pack and distribute meals to low-income families.", "Jalan Besar CC", "2026-07-25 10:00:00+08", 40, 25, "Community"],
+      ];
+      for (const [title, desc, loc, date, cap, pts, cat] of events) {
+        const r = await pool.query("INSERT INTO events (organization_id, organizer_id, title, description, location, event_date, capacity, points_value, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'upcoming') ON CONFLICT DO NOTHING", [orgRow.rows[0].id, bobRow.rows[0].id, title, desc, loc, date, cap, pts, cat]);
+        if (r.rowCount > 0) seeded.events++;
+      }
+    }
+    const carolRow = await pool.query("SELECT id FROM users WHERE email = 'carol@test.com' LIMIT 1");
+    if (carolRow.rows.length > 0) {
+      const coupons = [
+        ["$5 FairPrice Voucher", "Redeem for a $5 FairPrice grocery voucher.", 100, 50, "2026-12-31 23:59:59+08"],
+        ["Kopitiam Coffee & Toast Set", "A set of coffee and toast at any Kopitiam outlet.", 50, 100, "2026-10-31 23:59:59+08"],
+        ["$10 GrabFood Promo Code", "$10 off your next GrabFood order.", 200, 25, "2026-09-30 23:59:59+08"],
+      ];
+      for (const [title, desc, pts, qty, exp] of coupons) {
+        const r = await pool.query("INSERT INTO coupons (title, description, points_required, quantity, expiry_date, status, created_by) VALUES ($1, $2, $3, $4, $5, 'active', $6) ON CONFLICT DO NOTHING", [title, desc, pts, qty, exp, carolRow.rows[0].id]);
+        if (r.rowCount > 0) seeded.coupons++;
+      }
+    }
+    res.json({ message: "Seed complete", seeded });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Diagnostic: Check DB Schema & Tables ─────────────────
 app.get("/api/debug/db", async (_req, res) => {
   try {
