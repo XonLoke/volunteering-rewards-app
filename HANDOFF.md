@@ -1,6 +1,6 @@
-# Handoff: Fix Frontend "Failed to Fetch" Login Error
+# Handoff: Re-Seed Database, Verify Data, and Configure Portal URLs
 
-**Handoff ID:** HO-20260616-010
+**Handoff ID:** HO-20260616-011
 **Date:** 16 June 2026
 **From:** Cowork (Xon)
 **To:** Claude Desktop Code / Project
@@ -13,100 +13,132 @@
 
 ## Session Context
 
-The backend is fully deployed and working at `https://vol-rewards-api.onrender.com` (verified: health check 200, login returns JWT token).
+The frontend (Vercel) and backend (Render + Neon) are both deployed and login works. However:
 
-The frontend is deployed at `https://webportals-lovat.vercel.app` but login shows **"Failed to fetch"** even though:
+1. **Render is still running old code** — the updated `seed.js` (8 users, 3 merchants, coupon value_cents) is on GitHub but Render hasn't been redeployed
+2. **Merchants table is empty** — merchants exist in the `users` table (cheryl, diana, frank) but they have no records in the `merchants` table
+3. **No coupons have PIN codes** — PINs are not auto-generated. The `init_coupons.js` script needs to be run or coupons need PIN generation logic
+4. **The submit button text "Sign in" vs "Signing in..." typo** — minor but should be consistent
 
-- The backend API is running and returns valid tokens (tested via curl)
-- The latest JS build (`index-CUWb0Dlg.js`) contains the correct Render URL `vol-rewards-api.onrender.com`
-- The `api.js` hardcodes the production URL as default
-
-The "Failed to fetch" error in the browser suggests a **CORS issue** or a **network/fetch runtime error** — the API and frontend are on different domains.
+**All portal URLs work from the same Vercel domain:**
+- Admin: `https://webportals-lovat.vercel.app/admin/login` → carol@test.com
+- Organiser: `https://webportals-lovat.vercel.app/organiser` → bob@test.com
+- Merchant: `https://webportals-lovat.vercel.app/merchant/login` → cheryl@test.com
+- Scanner: `https://webportals-lovat.vercel.app/scan/events` → bob@test.com
 
 ---
 
 ## ✅ What's Already Done
 
-### Backend (Render)
-- API live at `https://vol-rewards-api.onrender.com`
-- All 23 migrations run, seed data loaded
-- Health check: ✅ 200 OK, `db_connected: true`
-- Login via curl: ✅ Returns JWT token for carol@test.com
-- `CORS_ORIGINS=*` in Render env vars
-
-### Frontend (Vercel)
-- Deployed at `https://webportals-lovat.vercel.app`
-- `api.js` defaults to `'https://vol-rewards-api.onrender.com/api'`
-- `vercel.json` has SPA rewrites configured
-- Vite build passes with correct API URL baked in
+- Frontend deployed at Vercel: `https://webportals-lovat.vercel.app`
+- Backend deployed at Render: `https://vol-rewards-api.onrender.com`
+- Database at Neon: working, tables created
+- Login works (CORS fixed)
+- `seed.js` updated with expanded data but NOT yet deployed
+- Test credentials removed from login page
 
 ---
 
-## 🎯 Task: Diagnose & Fix "Failed to Fetch"
+## 🎯 Task 1: Deploy Latest Code to Render
 
-### Step 1 — Open Browser DevTools
-1. Open Chrome DevTools (F12)
-2. Go to **Network** tab
-3. Try logging in as carol@test.com / password123
-4. Look at the failed network request:
-   - What URL is it trying to reach? (should be `https://vol-rewards-api.onrender.com/api/auth/login`)
-   - What is the exact error? (CORS? DNS? Timeout?)
-   - What does the browser Console tab show?
+### Step 1 — Trigger manual deploy
+- Go to Render dashboard: `https://dashboard.render.com`
+- Web Service: `vol-rewards-api`
+- Click **Manual Deploy → Deploy latest commit** (commit `188e70f` or latest)
 
-### Step 2 — If CORS Issue
-The backend has `CORS_ORIGINS=*` in Render env vars, but Render might not load it correctly. Check:
-- Can you call the API directly from a different browser tab?
-  `https://vol-rewards-api.onrender.com/api/health`
-- If CORS is the issue, update `backend/src/middleware/errorHandler.middleware.js` or the CORS config in `backend/index.js` to explicitly allow the Vercel domain.
+### Step 2 — Wait for Live status (~3-5 minutes)
 
-### Step 3 — If Mixed Content / HTTPS Issue
-- Vercel is HTTPS, but the API might have mixed content issues
-- Check if the API is accessible over HTTPS from the browser
-- Test: `curl -v https://vol-rewards-api.onrender.com/api/auth/login -X POST -H "Content-Type: application/json" -d '{"email":"carol@test.com","password":"password123"}'`
-
-### Step 4 — Build a local test first
+### Step 3 — Open Shell tab and re-seed
 ```bash
-cd D:\c3000c\volunteering-rewards-app\frontend\web_portals
-npm run build
-npm run preview
+node src/utils/seed.js
 ```
-Then test login at `http://localhost:4173/admin/login`. This isolates whether it's a build issue or a deployment issue.
 
-### Step 5 — If needed, create a minimal test
-Create a simple HTML page that calls the Render API directly to isolate the issue:
-```html
-<!DOCTYPE html>
-<html><body>
-<script>
-fetch('https://vol-rewards-api.onrender.com/api/auth/login', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/json'},
-  body: JSON.stringify({email:'carol@test.com',password:'password123'})
-}).then(r => r.text()).then(console.log).catch(console.error);
-</script>
-</body></html>
+### Step 4 — Verify the data
+```bash
+# Login as admin
+curl -X POST https://vol-rewards-api.onrender.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"carol@test.com","password":"password123"}'
+
+# Should return: Carol Admin (role: admin) with token
 ```
+
+---
+
+## 🎯 Task 2: Verify Post-Seed Data
+
+After re-seeding, check:
+
+| Check | Endpoint | Expected Result |
+|-------|----------|----------------|
+| Users count | `GET /api/admin/users` | 8 users (2 per role) |
+| Merchants | `GET /api/admin/merchants` | 3 merchants: FairPrice, Kopitiam, GrabFood |
+| Coupons | `GET /api/admin/coupons` | 3 coupons with `value_cents` and `merchant_name` |
+| Events | `GET /api/events` (as alice) | 3 events listed |
+| Sponsorship config | `GET /api/admin/sponsorship/configuration` | Returns `{direct:10, helped:4, upline:6}` |
+| Redemption | `GET /api/admin/redemptions` | Empty list (no one redeemed yet — expected) |
+
+### If data still shows only 4 users
+Investigate why the ON CONFLICT DO NOTHING clause is skipping inserts. The seed uses `ON CONFLICT (email) DO NOTHING` — if the 4 original users already exist, the new 4 will NOT be added. Fix: run a delete first:
+```sql
+DELETE FROM users WHERE email IN ('eve@test.com','johnny@test.com','cheryl@test.com','diana@test.com','frank@test.com');
+```
+Then re-run seed.
+
+Delete old merchants similarly:
+```sql
+DELETE FROM merchants;
+```
+Then re-run seed.
+
+---
+
+## 🎯 Task 3: Generate Coupon PINs
+
+### Problem
+The coupons exist in the `coupons` table but no PINs have been generated. The `user_coupons` table is empty. The "PINs" button shows "No pins available" because there are no user-assigned coupons with generated PINs.
+
+### Fix
+Run the init_coupons script in Render Shell:
+```bash
+node scripts/init_coupons.js
+```
+
+This should generate PIN codes for the coupons and assign them to the coupons table or user_coupons table.
 
 ### Acceptance Criteria
-- [ ] Login works at `https://webportals-lovat.vercel.app/admin/login`
-- [ ] Redirects to Admin Dashboard after login
-- [ ] No errors in browser Console or Network tabs
+- [ ] `GET /api/admin/coupons/:id/pins` returns PIN codes for each batch
+- [ ] The "PINs" button on the admin Coupons page shows PIN codes
+
+---
+
+## 🎯 Task 4: Verify Portal Routing
+
+The React app has route-based portals. Verify each works:
+
+| Route | Expected Behaviour |
+|-------|-------------------|
+| `https://webportals-lovat.vercel.app/admin/login` | Admin login → redirect to `/admin` |
+| `https://webportals-lovat.vercel.app/admin` | Admin Dashboard (after login) |
+| `https://webportals-lovat.vercel.app/organiser` | Organiser Dashboard (bob@test.com) |
+| `https://webportals-lovat.vercel.app/merchant/login` | Merchant login → PIN verify page |
+| `https://webportals-lovat.vercel.app/scan/events` | Scanner event selection → QR scanner |
+
+If routes don't show the correct portal, check `App.jsx` router configuration — each layout (AdminLayout, OrganiserLayout, ScanLayout, MerchantLayout) needs its own path prefix.
 
 ---
 
 ## Technical Context
 
-### Current api.js (lines 1-4)
+### Database Config
 ```javascript
-const API_BASE = import.meta.env.VITE_API_URL || 'https://vol-rewards-api.onrender.com/api';
-```
-
-### Render CORS Config (backend/index.js)
-```javascript
-const corsOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
-  : "*";
-app.use(cors({ origin: corsOrigins, credentials: true }));
+// backend/src/config/database.js
+host: process.env.DB_HOST
+port: parseInt(process.env.DB_PORT, 10) || 5432
+database: process.env.DB_NAME || "volunteering_rewards"
+user: process.env.DB_USER || "postgres"
+password: process.env.DB_PASSWORD || ""
+ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false
 ```
 
 ### Test Accounts
@@ -117,11 +149,10 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 | Merchant | cheryl@test.com | password123 |
 | Volunteer | alice@test.com | password123 |
 
-### Vercel URL
-`https://webportals-lovat.vercel.app`
-
-### Render API
-`https://vol-rewards-api.onrender.com`
+### Environment Variables (Render)
+- `DB_SSL=true` (Neon requires SSL)
+- `CORS_ORIGINS=*` 
+- `PIN_SECRET=volunteering-rewards-pin-secret-v1` (must match seed)
 
 ---
 
@@ -129,21 +160,19 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Backend API deployed | ✅ Done | Render + Neon, working |
-| Frontend deployed | ✅ Done | Vercel, app loads |
-| Login shows "Failed to fetch" | ✅ **Fixed** | CORS wildcard + credentials bug |
-| Diagnose exact error | ✅ Done | Render env `CORS_ORIGINS=*` with `credentials: true` is rejected by browsers — must reflect origin |
-| Fix applied | ✅ Done | Changed CORS config to `origin: true` (reflect request origin) when `CORS_ORIGINS` is unset or `*` |
-| Deployed | ✅ Done | Commit `59fd45b` pushed to main, auto-deployed to Render |
+| Deploy latest code to Render | ⬜ Pending | Manual Deploy → Deploy latest commit |
+| Re-seed database | ⬜ Pending | Render Shell: `node src/utils/seed.js` |
+| Generate coupon PINs | ⬜ Pending | Run `scripts/init_coupons.js` |
+| Verify merchants data | ⬜ Pending | Should show 3 merchants |
+| Verify portal routing | ⬜ Pending | Admin, Organiser, Merchant, Scanner |
+| Update HANDOFF.md | ⬜ Pending | When done |
 
 ---
 
 ## How to Use
 
 1. Read this HANDOFF.md in full
-2. Open browser DevTools on the Vercel URL to check the actual network error
-3. Fix the cause (likely CORS or URL mismatch)
-4. Commit and push the fix
-5. Verify login works end-to-end
-6. Update the Status Tracking table
-7. Say "Frontend fetch handoff complete" when done
+2. Start with Task 1 — Deploy latest code to Render
+3. Work through tasks in order
+4. Update the Status Tracking table
+5. Say "Database re-seed handoff complete" when ready to hand back to Cowork

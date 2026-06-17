@@ -148,8 +148,6 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // ─── Seed Data via HTTP (for Render without Shell) ────────
-const { hashPin } = require("./src/services/rewards.service");
-
 app.post("/api/debug/seed", async (_req, res) => {
   try {
     const { pool } = require("./src/config/database");
@@ -163,16 +161,22 @@ app.post("/api/debug/seed", async (_req, res) => {
       ["admin", "System Admin — manages users, creates coupons, verifies PINs, audits"],
       ["merchant", "Merchant Cashier — verifies PINs, redeems coupons"],
     ];
-    let seeded = { roles: 0, users: 0, org: false, events: 0, coupons: 0 };
+    let seeded = { roles: 0, users: 0, org: false, events: 0, merchants: 0, coupons: 0 };
     for (const [name, desc] of roles) {
       const r = await pool.query("INSERT INTO roles (role_name, description) VALUES ($1, $2) ON CONFLICT (role_name) DO NOTHING", [name, desc]);
       if (r.rowCount > 0) seeded.roles++;
     }
+
+    // Full 8 users (2 per role)
     const testUsers = [
       {name: "Alice Volunteer", email: "alice@test.com", role: "volunteer", points: 500},
+      {name: "Eve Volunteer", email: "eve@test.com", role: "volunteer", points: 300},
       {name: "Bob Organizer", email: "bob@test.com", role: "organiser", points: 0},
+      {name: "Johnny Organizer", email: "johnny@test.com", role: "organiser", points: 0},
       {name: "Carol Admin", email: "carol@test.com", role: "admin", points: 0},
       {name: "Cheryl Merchant", email: "cheryl@test.com", role: "merchant", points: 0},
+      {name: "Diana Merchant", email: "diana@test.com", role: "merchant", points: 0},
+      {name: "Frank Merchant", email: "frank@test.com", role: "merchant", points: 0},
     ];
     for (const u of testUsers) {
       const roleRes = await pool.query("SELECT id FROM roles WHERE role_name = $1", [u.role]);
@@ -182,34 +186,89 @@ app.post("/api/debug/seed", async (_req, res) => {
         if (r.rowCount > 0) seeded.users++;
       }
     }
+
+    // Organization
     const orgRes = await pool.query("INSERT INTO organizations (org_name, org_type, uen, contact_person, contact_email, approval_status, status) VALUES ('Green Earth Society', 'Non-Profit', 'S80SS0011A', 'Bob Organizer', 'bob@test.com', 'approved', 'active') ON CONFLICT DO NOTHING RETURNING id");
-    if (orgRes.rows.length > 0) { seeded.org = true; }
+    if (orgRes.rows.length > 0) seeded.org = true;
     const orgRow = await pool.query("SELECT id FROM organizations LIMIT 1");
+
+    // Events (3)
     const bobRow = await pool.query("SELECT id FROM users WHERE email = 'bob@test.com' LIMIT 1");
     if (orgRow.rows.length > 0 && bobRow.rows.length > 0) {
       const events = [
-        ["Beach Cleanup @ East Coast", "Help clean up East Coast Park. Gloves and bags provided.", "East Coast Park", "2026-07-15 08:00:00+08", 50, 20, "Environment"],
-        ["Elderly Morning Walk", "Accompany seniors from Bright Hill Home for a morning walk.", "Bright Hill Home", "2026-07-20 09:00:00+08", 30, 15, "Elderly"],
-        ["Food Distribution @ Jalan Besar", "Pack and distribute meals to low-income families.", "Jalan Besar CC", "2026-07-25 10:00:00+08", 40, 25, "Community"],
+        ["Beach Cleanup @ East Coast", "Help clean up East Coast Park. Gloves and bags provided.", "East Coast Park, Singapore", "2026-06-15 08:00:00+08", 50, 20, "Environment"],
+        ["Elderly Morning Walk", "Accompany seniors from Bright Hill Home for a morning walk.", "Bright Hill Home, Singapore", "2026-06-20 09:00:00+08", 30, 15, "Elderly"],
+        ["Food Distribution @ Jalan Besar", "Pack and distribute meals to low-income families in Jalan Besar.", "Jalan Besar Community Centre", "2026-06-25 10:00:00+08", 40, 25, "Community"],
       ];
       for (const [title, desc, loc, date, cap, pts, cat] of events) {
         const r = await pool.query("INSERT INTO events (organization_id, organizer_id, title, description, location, event_date, capacity, points_value, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'upcoming') ON CONFLICT DO NOTHING", [orgRow.rows[0].id, bobRow.rows[0].id, title, desc, loc, date, cap, pts, cat]);
         if (r.rowCount > 0) seeded.events++;
       }
     }
+
+    // Merchants (3, linked to merchant users)
+    const testMerchants = [
+      {name: "FairPrice Singapore", contact: "Cheryl", email: "cheryl@test.com", phone: "+65 8111 1111", address: "1 Tampines Central, Singapore"},
+      {name: "Kopitiam Pte Ltd", contact: "Diana", email: "diana@test.com", phone: "+65 8222 2222", address: "2 Jalan Besar, Singapore"},
+      {name: "GrabFood Asia", contact: "Frank", email: "frank@test.com", phone: "+65 8333 3333", address: "3 Marina Boulevard, Singapore"},
+    ];
+    for (const m of testMerchants) {
+      const userRow = await pool.query("SELECT id FROM users WHERE email = $1 LIMIT 1", [m.email]);
+      if (userRow.rows.length > 0) {
+        const r = await pool.query("INSERT INTO merchants (name, contact_person, contact_email, contact_phone, address, created_by) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING", [m.name, m.contact, m.email, m.phone, m.address, userRow.rows[0].id]);
+        if (r.rowCount > 0) seeded.merchants++;
+      }
+    }
+
+    // Coupons (3 with value_cents and merchant_name)
     const carolRow = await pool.query("SELECT id FROM users WHERE email = 'carol@test.com' LIMIT 1");
     if (carolRow.rows.length > 0) {
       const coupons = [
-        ["$5 FairPrice Voucher", "Redeem for a $5 FairPrice grocery voucher.", 100, 50, "2026-12-31 23:59:59+08"],
-        ["Kopitiam Coffee & Toast Set", "A set of coffee and toast at any Kopitiam outlet.", 50, 100, "2026-10-31 23:59:59+08"],
-        ["$10 GrabFood Promo Code", "$10 off your next GrabFood order.", 200, 25, "2026-09-30 23:59:59+08"],
+        {title: "$5 FairPrice Voucher", desc: "Redeem for a $5 FairPrice grocery voucher.", pts: 100, qty: 50, value: 500, merchant: "FairPrice Singapore", exp: "2026-12-31 23:59:59+08"},
+        {title: "Kopitiam Coffee & Toast Set", desc: "A set of coffee and toast at any Kopitiam outlet.", pts: 50, qty: 100, value: 400, merchant: "Kopitiam Pte Ltd", exp: "2026-10-31 23:59:59+08"},
+        {title: "$10 GrabFood Promo Code", desc: "$10 off your next GrabFood order (min. $20 spend).", pts: 200, qty: 25, value: 1000, merchant: "GrabFood Asia", exp: "2026-09-30 23:59:59+08"},
       ];
-      for (const [title, desc, pts, qty, exp] of coupons) {
-        const r = await pool.query("INSERT INTO coupons (title, description, points_required, quantity, expiry_date, status, created_by) VALUES ($1, $2, $3, $4, $5, 'active', $6) ON CONFLICT DO NOTHING", [title, desc, pts, qty, exp, carolRow.rows[0].id]);
+      for (const cp of coupons) {
+        const r = await pool.query("INSERT INTO coupons (title, description, points_required, quantity, value_cents, merchant_name, expiry_date, status, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8) ON CONFLICT DO NOTHING", [cp.title, cp.desc, cp.pts, cp.qty, cp.value, cp.merchant, cp.exp, carolRow.rows[0].id]);
         if (r.rowCount > 0) seeded.coupons++;
       }
     }
+
     res.json({ message: "Seed complete", seeded });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Seed Coupon PINs (for Render without Shell) ───────────
+const { hashPin } = require("./src/services/rewards.service");
+
+app.post("/api/debug/seed-coupon-pins", async (_req, res) => {
+  try {
+    const { pool } = require("./src/config/database");
+    const crypto = require("crypto");
+
+    // Delete old data
+    await pool.query("DELETE FROM user_coupons");
+    await pool.query("DELETE FROM redemption_logs");
+
+    const { rows: coupons } = await pool.query("SELECT id, title, quantity FROM coupons WHERE status = 'active' AND quantity > 0");
+    let totalPins = 0;
+
+    for (const cp of coupons) {
+      const qty = Math.min(cp.quantity, 20); // cap at 20 pins per coupon
+      for (let i = 0; i < qty; i++) {
+        const pin = String(100000 + crypto.randomInt(0, 900000));
+        const pinHash = hashPin(pin);
+        await pool.query(
+          "INSERT INTO user_coupons (coupon_id, pin_code, pin_hash, status, expiry_date) VALUES ($1, $2, $3, 'unused', '2026-12-31')",
+          [cp.id, pin, pinHash]
+        );
+        totalPins++;
+      }
+    }
+
+    res.json({ message: "Coupon PINs generated", coupons_processed: coupons.length, pins_generated: totalPins });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
