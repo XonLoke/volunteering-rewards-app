@@ -16,7 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiGet } from "./api";
 import { useCallback, useMemo, useState } from "react";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
 interface LeaderboardUser {
   id: number;

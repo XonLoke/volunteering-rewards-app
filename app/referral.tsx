@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 const COLORS = ["#8b5cf6", "#6366f1", "#10b981", "#f59e0b", "#ef4444"];
 
 async function apiAuthGet(path: string) {

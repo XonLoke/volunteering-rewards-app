@@ -16,7 +16,7 @@ import { useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
 export default function Login() {
   const router = useRouter();
@@ -54,6 +54,12 @@ export default function Login() {
 
       if (!data.token || !data.user) {
         throw new Error("Invalid login response from server.");
+      }
+
+      // Check role — only volunteers can access this app
+      const role = (data.user.role || "").toLowerCase();
+      if (role !== "volunteer") {
+        throw new Error("Access denied. This app is for volunteers only.");
       }
 
       // Save token for backend requests

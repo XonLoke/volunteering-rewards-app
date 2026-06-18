@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiGet, apiDelete } from "./api";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 const CANCELLED_BOOKINGS_KEY = "cancelledBookingIds";
 
 const CARD_IMAGE_HEIGHT = 120;

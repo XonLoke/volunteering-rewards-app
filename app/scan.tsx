@@ -58,7 +58,7 @@ interface AttendanceResult {
 
 const QR_PREFIX = "VR_VOLUNTEER:";
 
-const API_BASE_URL = "http://192.168.72.201:3000/api";
+const API_BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
 const POLLING_INTERVAL_MS = 2500;
 

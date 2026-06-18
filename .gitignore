@@ -29,3 +29,17 @@ frontend/mobile_UI/
 frontend/web_UI/
 frontend/web_portal/
 .vercel
+dist/
+.expo/
+*.log
+build_*.bat
+build_*.txt
+build_*.js
+build_*.json
+parse_*.js
+fetch_*.js
+download_*.js
+log_url_*.json
+gradle_*.txt
+all_errors.txt
+build_page.html
