@@ -3,7 +3,7 @@
 **Handoff ID:** HO-20260619-005
 **Date:** 19 June 2026
 **From:** Cowork (Xon)
-**To:** Claude Desktop Code / Project
+**To:** Future Self / Claude
 **Project:** Volunteering Rewards App (C3000C)
 **Location:** `D:\c3000c\volunteering-rewards-app`
 **Repo:** https://github.com/XonLoke/volunteering-rewards-app
@@ -11,125 +11,130 @@
 
 ---
 
-## Session Context
+## Session Context (Original)
 
-The backend API login works correctly (verified: `POST /api/auth/login` with carol@test.com returns a valid JWT token). However, the frontend at `https://webportals-lovat.vercel.app/admin/login` shows "Invalid email or password."
-
-The root cause is that **pending code changes were never committed to GitHub** and therefore **Vercel never deployed them**. The `api.js` file on the live Vercel site still has the old localhost URL instead of the Render API URL.
+Backend API login worked correctly (`POST /api/auth/login` with carol@test.com returned a valid JWT), but the frontend at `https://webportals-lovat.vercel.app/admin/login` showed "Invalid email or password." The root cause: pending code changes had never been committed to GitHub, so Vercel never deployed them — `api.js` was still calling localhost instead of the Render API URL.
 
 ---
 
-## ✅ What's Working
+## Completed Work
 
-- **Backend API** — ✅ Live at `https://vol-rewards-api.onrender.com`
-- **API Login** — ✅ Returns JWT for carol@test.com (verified via curl)
-- **API Health** — ✅ 200 OK, db_connected: true
-- **Neon Database** — ✅ Seeded with 8 users
-- **Frontend loads** — ✅ Page renders at Vercel
+### Task 1 — Commit All Pending Changes to GitHub
 
-## ❌ What's Not Working
+**What was done:**
+- Cleaned ~40 stale `.git/*.lock` files that had accumulated from previous crashes
+- Staged all pending changes with `git add -A`
+- Committed 22 files: `e6e4a0a`
+- Pushed to `main` on GitHub
 
-- **Frontend login** — ❌ "Invalid email or password" at `https://webportals-lovat.vercel.app/admin/login`
-- **Root cause:** `api.js` changes not deployed to Vercel — frontend still calling localhost instead of Render API
-
----
-
-## 🎯 Task 1: Commit All Pending Changes
-
-There are uncommitted changes in the working directory. Run:
-
-```bash
-cd D:\c3000c\volunteering-rewards-app
-
-# Stage code changes
-git add app/login.tsx app/api.ts app.json
-git add frontend/web_portals/src/pages/admin/Login.jsx
-git add frontend/web_portals/vercel.json
-git add .github/workflows/build-apk.yml
-
-# Stage new documentation
-git add docs/
-
-# Commit and push
-git commit -m "fix: commit pending changes — login fix, api URL, role guard, new docs"
-git push origin main
-```
-
-**Files to commit:**
-
+**Key files committed:**
 | File | What Changed |
 |------|-------------|
-| `frontend/web_portals/src/services/api.js` | **KEY FIX** — hardcoded `https://vol-rewards-api.onrender.com/api` instead of localhost |
+| `frontend/web_portals/src/services/api.js` | API_BASE set to `https://vol-rewards-api.onrender.com/api` |
 | `frontend/web_portals/vercel.json` | Build env with VITE_API_URL |
-| `frontend/web_portals/src/pages/admin/Login.jsx` | Removed test credentials box |
-| `app/login.tsx` | Added volunteer role guard |
+| `frontend/web_portals/src/pages/admin/Login.jsx` | Role guard + removed test credentials box |
+| `app/login.tsx` | Volunteer role guard added |
 | `app/api.ts` | BASE_URL updated to Render |
 | `app.json` | Removed broken expo-build-properties plugin |
 | `.github/workflows/build-apk.yml` | APK build workflow |
-| `docs/` (7 new files) | Status reports, deployment docs, access points |
+| `docs/` | Multiple status reports, deployment docs, access points |
+
+**Problems encountered & solved:**
+- **Problem:** `git add` failed with `index.lock: File exists` — stale lock files from earlier crashed git sessions
+  - **Solution:** Deleted all stale `.git/HEAD.lock.*` and `.git/index.lock.*` files (40+ files accumulated over weeks)
+- **Problem:** VM filesystem had permission issues deleting the `dist/` directory
+  - **Solution:** Used native Windows CMD/PowerShell for all git and build operations instead of the Linux VM bash
+
+**Commit references:**
+- `e6e4a0a` — Main commit (22 files)
+- `234ff76` — HANDOFF status update
+
+### Task 2 — Vercel Auto-Deploy
+
+Since the web_portals project on Vercel is linked to the GitHub repo, pushing to `main` should trigger an automatic redeploy. The Vercel dashboard at `https://vercel.com/xonlokes-projects/web_portals` will show the deployment status.
+
+**Problem encountered & solved:**
+- **Problem:** Previous `git push` command timed out at 60s in the CLI tool
+  - **Solution:** Started a fresh standalone PowerShell process with a longer timeout — the push had actually already completed (confirmed by `Everything up-to-date` on second attempt)
+
+### Task 3 — Volunteer PWA Rebuild & Redeploy
+
+**What was done:**
+- Cleared old `dist/` directory
+- Ran `npx expo export --platform web` — built successfully (875 modules, 45 assets, 2 JS bundles)
+- Deployed to Vercel with `npx vercel deploy dist --prod` — successful
+
+**New PWA URL:** `https://dist-orpin-nine-46.vercel.app/`
+(also aliased to `https://dist-6uqs5h8si-xonlokes-projects.vercel.app`)
+
+**Build details:**
+- Metro bundler: 477ms
+- Web bundles: entry.js (1.91 MB), Calendar.js (15.3 kB)
+- 45 asset files (images, fonts, icons)
+- Vercel build completed in 61ms
+
+**Problem encountered & solved:**
+- **Problem:** User ran commands from `C:\Users\Lenovo>` instead of the project directory, causing:
+  - `ConfigError: package.json not found` (wrong working directory)
+  - `Could not find "~\dist"` (wrong working directory)
+- **Solution:** Commands need `cd /d D:\c3000c\volunteering-rewards-app` to switch drives in CMD, or use `Set-Location` in PowerShell
 
 ---
 
-## 🎯 Task 2: Verify Vercel Auto-Deploy
+## Current Status
 
-After pushing to GitHub:
-1. Go to `https://vercel.com/xonlokes-projects/web_portals`
-2. Check that a new deployment is triggered
-3. Wait for it to complete (~2 minutes)
-
-### Verify the fix
-1. Open `https://webportals-lovat.vercel.app/admin/login`
-2. Login as `carol@test.com` / `password123`
-3. Should redirect to Admin Dashboard
-
-Also verify all other portals:
-
-| Portal | URL | Login | Expected |
-|--------|-----|-------|----------|
-| Admin | `https://webportals-lovat.vercel.app/admin/login` | carol@test.com | ✅ Admin Dashboard |
-| Organiser | `https://webportals-lovat.vercel.app/organiser` | bob@test.com | ✅ Organiser Dashboard |
-| Merchant | `https://webportals-lovat.vercel.app/merchant/login` | cheryl@test.com | ✅ PIN Verify page |
-| Scanner | `https://webportals-lovat.vercel.app/scan` | bob@test.com | ✅ Event Select page |
+| Item | Status | Details |
+|------|--------|---------|
+| Backend API | ✅ Working | `https://vol-rewards-api.onrender.com` — login, health, DB all OK |
+| GitHub repo | ✅ Up to date | 2 new commits on `main` |
+| Web Portals (Vercel) | ⏳ Should auto-deploy | Push triggered; check Vercel dashboard |
+| Volunteer PWA (Vercel) | ✅ Rebuilt & deployed | `https://dist-orpin-nine-46.vercel.app/` |
+| Admin login | ⏳ Unverified | Wait for Vercel deploy to complete |
+| All 4 portals | ⏳ Unverified | Test after Vercel deploy completes |
 
 ---
 
-## 🎯 Task 3: Rebuild & Redeploy Volunteer PWA
+## Verification Steps (after Vercel deploys)
 
-If Task 1 and 2 succeed, also rebuild the volunteer PWA:
+1. **Admin Portal:** `https://webportals-lovat.vercel.app/admin/login` — carol@test.com / password123 → should redirect to Admin Dashboard
+2. **Organiser Portal:** `https://webportals-lovat.vercel.app/organiser` — bob@test.com → Organiser Dashboard
+3. **Merchant Portal:** `https://webportals-lovat.vercel.app/merchant/login` — cheryl@test.com → PIN Verify page
+4. **Scanner Portal:** `https://webportals-lovat.vercel.app/scan` — bob@test.com → Event Select page
+5. **Volunteer PWA:** `https://dist-orpin-nine-46.vercel.app/` — alice@test.com → Home ✅, carol@test.com → "Volunteers only" ❌
 
-```bash
+---
+
+## Commands Reference
+
+### Rebuild Volunteer PWA (if needed again)
+```powershell
 cd D:\c3000c\volunteering-rewards-app
 rd /s /q dist
 npx expo export --platform web
 npx vercel deploy dist --prod
 ```
 
-Then verify:
-- `https://dist-orpin-nine-46.vercel.app/` — login with alice@test.com → ✅
-- `https://dist-orpin-nine-46.vercel.app/` — login with carol@test.com → ❌ "Volunteers only"
-
----
-
-## Acceptance Criteria
-
-- [ ] Code committed and pushed to GitHub
-- [ ] Vercel auto-deploy triggered
-- [ ] Admin login works at `https://webportals-lovat.vercel.app/admin/login`
-- [ ] All 4 portal logins verified
-- [ ] Volunteer PWA rebuilt (if time permits)
-
----
-
-## Technical Context
-
-### API Login (verified working)
-```bash
-curl -X POST https://vol-rewards-api.onrender.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"carol@test.com","password":"password123"}'
+### Force Vercel Redeploy (if auto-deploy doesn't trigger)
+Push an empty commit:
+```powershell
+cd D:\c3000c\volunteering-rewards-app
+git commit --allow-empty -m "chore: trigger vercel redeploy"
+git push origin main
 ```
 
-### Test Accounts
+---
+
+## Key Lessons for Next Time
+
+1. **Always use `cd /d` in CMD** to switch between drives (C: → D:)
+2. **Use PowerShell instead of CMD** on Windows — `Set-Location` handles drive switching automatically, and `&&` chaining works
+3. **Stale git lock files** accumulate from crashed sessions — `rm -f .git/HEAD.lock.* .git/index.lock.*` fixes `index.lock: File exists` errors
+4. **Vercel auto-deploy** is linked to GitHub pushes on `main` — no manual deploy needed for web_portals
+
+---
+
+## Test Accounts
+
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | carol@test.com | password123 |
@@ -137,20 +142,12 @@ curl -X POST https://vol-rewards-api.onrender.com/api/auth/login \
 | Merchant | cheryl@test.com | password123 |
 | Volunteer | alice@test.com | password123 |
 
-### Frontend API Config
-```javascript
-// frontend/web_portals/src/services/api.js (line 1)
-const API_BASE = import.meta.env.VITE_API_URL || 'https://vol-rewards-api.onrender.com/api';
-```
-
 ---
 
-## Status Tracking
+## Acceptance Criteria
 
-| Task | Status | Notes |
-|------|--------|-------|
-| Commit code + docs to GitHub | ✅ Done | Commit `e6e4a0a` pushed to main |
-| Verify Vercel auto-deploy | ⏳ Vercel should auto-deploy | Check Vercel dashboard |
-| Test all portal logins | ⏳ Pending | 4 portals to verify |
-| Rebuild volunteer PWA | ⏳ Pending | If time permits |
-| Update HANDOFF.md | ✅ Done | |
+- [x] Code committed and pushed to GitHub (commits `e6e4a0a`, `234ff76`)
+- [x] Vercel auto-deploy triggered (GitHub push completed)
+- [ ] Admin login works at `https://webportals-lovat.vercel.app/admin/login`
+- [ ] All 4 portal logins verified
+- [x] Volunteer PWA rebuilt and redeployed at `https://dist-orpin-nine-46.vercel.app/`
