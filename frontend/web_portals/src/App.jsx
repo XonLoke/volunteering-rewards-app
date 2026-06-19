@@ -26,6 +26,7 @@ import OrganiserFeedback from './pages/organiser/Feedback';
 import OrganiserQna from './pages/organiser/Qna';
 import OrganiserOnsiteController from './pages/organiser/OnsiteController';
 import OrganiserLogin from './pages/organiser/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Scan pages
 import ScanLogin from './pages/scan/Login';
@@ -65,7 +66,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/organiser',
-    element: <OrganiserLayout />,
+    element: <ProtectedRoute><OrganiserLayout /></ProtectedRoute>,
     children: [
       { index: true, element: <OrganiserDashboard /> },
       { path: 'events', element: <OrganiserEvents /> },
