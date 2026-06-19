@@ -1,0 +1,14 @@
+- generic [ref=e67]:
+  - generic [ref=e68]: Welcome Back
+  - generic [ref=e69]: Sign in to continue
+  - generic [ref=e70]:
+    - generic [ref=e71]: Email address
+    - textbox "user@example.com" [ref=e72]
+  - generic [ref=e73]:
+    - generic [ref=e74]: Password
+    - textbox "Enter your password" [ref=e75]
+  - generic [ref=e77] [cursor=pointer]: Forgot Password?
+  - generic [ref=e79] [cursor=pointer]: LOGIN
+  - generic [ref=e80]:
+    - generic [ref=e81]: Don't have an account?
+    - generic [ref=e83] [cursor=pointer]: Sign Up

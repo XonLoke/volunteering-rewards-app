@@ -1,0 +1,517 @@
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - button:
+                  - img
+                - generic:
+                  - button:
+                    - generic:
+                      - generic:
+                        - img
+                  - button:
+                    - img
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                    - paragraph: Xonloke
+                  - generic:
+                    - img
+              - generic:
+                - button:
+                  - generic:
+                    - figure:
+                      - generic:
+                        - generic: V
+                        - img
+                    - paragraph: vol-app
+                  - generic:
+                    - img
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: /accounts/xonloke
+                        - generic:
+                          - img
+                          - paragraph: Account
+                  - generic:
+                    - generic:
+                      - paragraph: Project
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app
+                          - generic:
+                            - img
+                            - paragraph: Overview
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/insights
+                          - generic:
+                            - img
+                            - paragraph: Insights
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/usage
+                          - generic:
+                            - img
+                            - paragraph: Usage
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/observe
+                          - generic:
+                            - img
+                            - paragraph: Observe
+                          - generic:
+                            - generic:
+                              - generic: New
+                    - generic:
+                      - paragraph: Develop
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/workflows
+                          - generic:
+                            - img
+                            - paragraph: Workflows
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/development-builds
+                          - generic:
+                            - img
+                            - paragraph: Development builds
+                    - generic:
+                      - paragraph: Deploy
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/builds
+                          - generic:
+                            - img
+                            - paragraph: Builds
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/submissions
+                          - generic:
+                            - img
+                            - paragraph: Submissions
+                      - generic:
+                        - button:
+                          - generic:
+                            - img
+                            - paragraph: Over-the-air updates
+                          - img
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/hosting
+                          - generic:
+                            - img
+                            - paragraph: Hosting
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/push-notifications
+                          - generic:
+                            - img
+                            - paragraph: Push notifications
+                    - generic:
+                      - paragraph: Entities
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/fingerprints
+                          - generic:
+                            - paragraph: Fingerprints
+                    - generic:
+                      - paragraph: Project settings
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/settings
+                          - generic:
+                            - paragraph: General
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/credentials
+                          - generic:
+                            - paragraph: Credentials
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/environment-variables
+                          - generic:
+                            - paragraph: Environment variables
+                      - generic:
+                        - link:
+                          - /url: /accounts/xonloke/projects/vol-app/github
+                          - generic:
+                            - paragraph: GitHub
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                    - paragraph: xonloke
+                  - generic:
+                    - img
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - link:
+                  - /url: /accounts/xonloke/projects/vol-app/builds
+                  - generic:
+                    - img
+                    - paragraph: Builds
+                - img
+                - generic:
+                  - paragraph: "09147766"
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                    - generic:
+                      - generic: Copy error as prompt
+                - generic:
+                  - button:
+                    - img
+                    - generic:
+                      - generic: Compare
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                          - heading [level=3]: Android Play Store build
+                        - paragraph: "7393ecd · feat: add debug seed + init-coupon PIN endpoints for remote deployment Adds /api/debug/seed (expanded 8 users, 3 merchants, coupons with value_cents/merchant_name) and /api/debug/seed-coupon-pins endpoints so seeding and PIN generation can be triggered remotely on Render without Shell access. Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>"
+                    - generic:
+                      - generic:
+                        - button:
+                          - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - paragraph: Profile
+                      - button:
+                        - img
+                    - generic:
+                      - paragraph: Environment
+                    - generic:
+                      - paragraph: SDK version
+                    - generic:
+                      - paragraph: Version
+                    - generic:
+                      - paragraph: Fingerprint
+                    - generic:
+                      - paragraph: Commit
+                    - generic:
+                      - paragraph: Created by
+                    - generic:
+                      - paragraph: preview
+                    - link:
+                      - /url: /accounts/xonloke/projects/vol-app/environment-variables?environment=production
+                      - generic:
+                        - paragraph: production
+                    - generic:
+                      - paragraph: 54.0.0
+                    - generic:
+                      - paragraph:
+                        - button: 1.0.0 (1)
+                    - link:
+                      - /url: /accounts/xonloke/projects/vol-app/fingerprints/f030b59b28b19af78f9f4ec08877b944f8d6d5fa
+                      - generic:
+                        - img
+                        - paragraph:
+                          - code: f030b59
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - code: 7393ecd*
+                        - generic:
+                          - button:
+                            - img
+                    - generic:
+                      - generic:
+                        - img
+                        - generic:
+                          - generic:
+                            - paragraph: xonloke
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                          - heading [level=4]: Build artifact
+                    - generic:
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - paragraph: Status
+                    - generic:
+                      - paragraph: Start time
+                    - generic:
+                      - paragraph: Wait time
+                    - generic:
+                      - paragraph: Queue time
+                      - button:
+                        - img
+                    - generic:
+                      - paragraph: Build time
+                    - generic:
+                      - paragraph: Total time
+                    - generic:
+                      - paragraph: Availability
+                      - button:
+                        - img
+                    - generic:
+                      - generic:
+                        - img
+                      - paragraph: Errored
+                    - generic:
+                      - generic:
+                        - generic:
+                          - time: Jun 18, 2026 9:58 AM
+                    - generic:
+                      - paragraph: 2m 4s
+                    - generic:
+                      - paragraph: 4s
+                    - generic:
+                      - paragraph: 9m 11s
+                    - generic:
+                      - paragraph: 11m 20s
+                    - generic:
+                      - paragraph: 29 days
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                          - heading [level=4]: Logs
+                    - generic:
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Waiting to start
+                      - generic:
+                        - paragraph: 2m 8s
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Spin up build environment
+                      - generic:
+                        - paragraph: 8ms
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Prepare project
+                      - generic:
+                        - paragraph: 1s
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Read eas.json
+                      - generic:
+                        - paragraph: 2ms
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Read package.json
+                      - generic:
+                        - paragraph: 2ms
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Install dependencies
+                      - generic:
+                        - paragraph: 14s
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Read app config
+                      - generic:
+                        - paragraph: 329ms
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Run expo doctor
+                        - generic:
+                          - button:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: "1"
+                      - generic:
+                        - paragraph: 3s
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Prebuild
+                      - generic:
+                        - paragraph: 5s
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Restore cache
+                      - generic:
+                        - paragraph: 3s
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Prepare credentials
+                      - generic:
+                        - paragraph: 6ms
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Bundle JavaScript
+                      - generic:
+                        - paragraph: 20s
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Run gradlew
+                      - generic:
+                        - paragraph: 8m 17s
+                        - button:
+                          - img
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Fail job
+                      - generic:
+                        - paragraph: 0ms
+                        - button:
+                          - img
+                    - generic:
+                      - generic:
+                        - generic: "1"
+                        - code: "Build failed: Gradle build failed with unknown error. See logs for the \"Run gradlew\" phase for more information."
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Skip the CLI next time
+                      - generic: Set up a Workflow to build, submit, and update on every push to vol-app.
+                    - link:
+                      - /url: /accounts/xonloke/projects/vol-app/workflows
+                      - generic:
+                        - generic: Create a Workflow
+                      - img
+                  - button:
+                    - img
+  - alert
+  - dialog "Hand off to your AI assistant" [ref=e680]:
+    - paragraph [ref=e681]
+    - generic [ref=e682]:
+      - generic [ref=e683]:
+        - generic [ref=e684]:
+          - heading "Hand off to your AI assistant" [level=2] [ref=e685]
+          - paragraph [ref=e686]: Copy the prompt below and paste it into Claude Code, Cursor, or another AI agent with shell access to your project.
+        - button [active] [ref=e687] [cursor=pointer]:
+          - img [ref=e688]
+      - generic [ref=e694]: "Fix the build failure for @xonloke/vol-app: <build id=\"09147766-5839-46c5-bc18-942e5f569db3\" platform=\"ANDROID\"> <project fullName=\"@xonloke/vol-app\"/> <profile>preview</profile> <buildMode>BUILD</buildMode> <distribution>STORE</distribution> <environment>production</environment> <appVersion>1.0.0</appVersion> <appBuildVersion>1</appBuildVersion> <sdkVersion>54.0.0</sdkVersion> <fingerprint>f030b59b28b19af78f9f4ec08877b944f8d6d5fa</fingerprint> <git commit=\"7393ecd6b5775e2e111f76368e8dfc579c83ea93\" message=\"feat: add debug seed + init-coupon PIN endpoints for remote deployment Adds /api/debug/seed (expanded 8 users, 3 merchants, coupons with value_cents/merchant_name) and /api/debug/seed-coupon-pins endpoints so seeding and PIN generation can be triggered remotely on Render without Shell access. Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\"/> <cliVersion>20.2.0</cliVersion> </build> <instructions> Investigate the build failure and propose a fix. Run `npx eas-cli@latest build:view 09147766-5839-46c5-bc18-942e5f569db3 --json` from your project directory for full build metadata, including log file URLs. </instructions>"
+      - generic [ref=e695]:
+        - button "Close" [ref=e696] [cursor=pointer]:
+          - generic [ref=e698]: Close
+        - button "Copy command" [ref=e699] [cursor=pointer]:
+          - img [ref=e700]
+          - generic [ref=e704]: Copy command
