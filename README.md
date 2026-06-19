@@ -57,7 +57,7 @@ npm run dev
 | Portal | URL | Login |
 |--------|-----|-------|
 | **Admin** | `https://webportals-lovat.vercel.app/admin/login` | carol@test.com |
-| **Organiser** | `https://webportals-lovat.vercel.app/organiser` | bob@test.com |
+| **Organiser** | `https://webportals-lovat.vercel.app/organiser/login` | bob@test.com |
 | **Merchant** | `https://webportals-lovat.vercel.app/merchant` | cheryl@test.com |
 | **Scanner PWA** | `https://webportals-lovat.vercel.app/scan` | bob@test.com |
 
