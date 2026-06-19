@@ -25,6 +25,7 @@ import OrganiserRoster from './pages/organiser/Roster';
 import OrganiserFeedback from './pages/organiser/Feedback';
 import OrganiserQna from './pages/organiser/Qna';
 import OrganiserOnsiteController from './pages/organiser/OnsiteController';
+import OrganiserLogin from './pages/organiser/Login';
 
 // Scan pages
 import ScanLogin from './pages/scan/Login';
@@ -57,6 +58,10 @@ const router = createBrowserRouter([
       { path: 'qr-codes', element: <AdminQrCodes /> },
       { path: 'merchants', element: <AdminMerchants /> },
     ],
+  },
+  {
+    path: '/organiser/login',
+    element: <OrganiserLogin />,
   },
   {
     path: '/organiser',
