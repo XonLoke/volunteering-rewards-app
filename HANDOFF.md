@@ -74,9 +74,19 @@ Now visiting `/organiser` without being logged in will redirect to `/organiser/l
 
 ## Acceptance Criteria
 
-- [ ] `/organiser` redirects to `/organiser/login` when not authenticated
-- [ ] bob@test.com can log in and access `/organiser`
-- [ ] Changes committed and pushed
+- [x] `/organiser` redirects to `/organiser/login` when not authenticated
+- [x] bob@test.com can log in and access `/organiser`
+- [x] Changes committed and pushed
+
+---
+
+## Status Tracking
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Create ProtectedRoute component | ✅ Done | Token check in localStorage, redirects to /organiser/login |
+| Wrap `/organiser` route with ProtectedRoute | ✅ Done | In App.jsx |
+| Commit and push | ✅ Done | `a7b3333` — pushed to GitHub |
 
 ---
 
