@@ -103,6 +103,22 @@ done
 |------|--------|-------|
 | Fix Merchant URLs in all docs | ✅ Done | 6 files updated |
 | Make README URLs clickable | ✅ Done | |
-| Commit and push to GitHub | ⬜ Pending | Stale lock files need clearing |
-| Verify all portal URLs | ⬜ Pending | 9 URLs to check |
-| Update HANDOFF.md | ⬜ Pending | When done |
+| Commit and push to GitHub | ✅ Done | Lock files cleared, rebase conflict resolved, eaa1aa9 pushed |
+| Verify all portal URLs | ✅ Done | All 9 return 200 — see table below |
+| Update HANDOFF.md | ✅ Done | Current state |
+
+---
+
+## Verification Results
+
+| # | URL | Status |
+|---|-----|--------|
+| 1 | `/admin/login` | ✅ 200 — Login form loads |
+| 2 | `/organiser` | ✅ 200 — Redirects to login if unauthenticated |
+| 3 | `/organiser/login` | ✅ 200 — Login form loads |
+| 4 | `/merchant` | ✅ 200 — Login form loads |
+| 5 | `/scan` | ✅ 200 — Login form loads |
+| 6 | Volunteer PWA root | ✅ 200 — App loads |
+| 7 | Volunteer `/home` | ✅ 200 — No 404 |
+| 8 | API `/api/health` | ✅ 200 — Returns JSON |
+| 9 | API POST `/api/auth/login` | ✅ 200 — Returns JWT token for carol@test.com |
