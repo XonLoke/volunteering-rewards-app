@@ -56,16 +56,16 @@ npm run dev
 
 | Portal | URL | Login |
 |--------|-----|-------|
-| **Admin** | `https://webportals-lovat.vercel.app/admin/login` | carol@test.com |
-| **Organiser** | `https://webportals-lovat.vercel.app/organiser/login` | bob@test.com |
-| **Merchant** | `https://webportals-lovat.vercel.app/merchant` | cheryl@test.com |
-| **Scanner PWA** | `https://webportals-lovat.vercel.app/scan` | bob@test.com |
+| **Admin** | [webportals-lovat.vercel.app/admin/login](https://webportals-lovat.vercel.app/admin/login) | carol@test.com |
+| **Organiser** | [webportals-lovat.vercel.app/organiser/login](https://webportals-lovat.vercel.app/organiser/login) | bob@test.com |
+| **Merchant** | [webportals-lovat.vercel.app/merchant](https://webportals-lovat.vercel.app/merchant) | cheryl@test.com |
+| **Scanner PWA** | [webportals-lovat.vercel.app/scan](https://webportals-lovat.vercel.app/scan) | bob@test.com |
 
 ### Volunteer App (PWA)
 
 | App | URL | Login |
 |-----|-----|-------|
-| **Volunteer PWA** | `https://dist-orpin-nine-46.vercel.app` | alice@test.com |
+| **Volunteer PWA** | [dist-orpin-nine-46.vercel.app](https://dist-orpin-nine-46.vercel.app) | alice@test.com |
 
 Installable on phone home screen via browser "Add to Home Screen" prompt.
 
@@ -73,8 +73,8 @@ Installable on phone home screen via browser "Add to Home Screen" prompt.
 
 | Endpoint | URL |
 |----------|-----|
-| **API Base** | `https://vol-rewards-api.onrender.com/api` |
-| **Health Check** | `https://vol-rewards-api.onrender.com/api/health` |
+| **API Base** | [vol-rewards-api.onrender.com/api](https://vol-rewards-api.onrender.com/api) |
+| **Health Check** | [vol-rewards-api.onrender.com/api/health](https://vol-rewards-api.onrender.com/api/health) |
 
 ---
 
