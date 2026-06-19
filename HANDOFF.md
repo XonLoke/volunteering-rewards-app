@@ -149,8 +149,8 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://vol-rewards-api.onrend
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Commit code + docs to GitHub | ⬜ Pending | Multiple uncommitted files |
-| Verify Vercel auto-deploy | ⬜ Pending | Should trigger on git push |
-| Test all portal logins | ⬜ Pending | 4 portals to verify |
-| Rebuild volunteer PWA | ⬜ Pending | If time permits |
-| Update HANDOFF.md | ⬜ Pending | When done |
+| Commit code + docs to GitHub | ✅ Done | Commit `e6e4a0a` pushed to main |
+| Verify Vercel auto-deploy | ⏳ Vercel should auto-deploy | Check Vercel dashboard |
+| Test all portal logins | ⏳ Pending | 4 portals to verify |
+| Rebuild volunteer PWA | ⏳ Pending | If time permits |
+| Update HANDOFF.md | ✅ Done | |
