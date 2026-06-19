@@ -423,7 +423,7 @@ All web portals are accessible through the same Vercel deployment. The volunteer
 | **Admin Portal** | `https://webportals-lovat.vercel.app/admin/login` | carol@test.com / password123 |
 | **Admin Dashboard** | `https://webportals-lovat.vercel.app/admin` | (after login) |
 | **Organiser Portal** | `https://webportals-lovat.vercel.app/organiser` | bob@test.com / password123 |
-| **Merchant Login** | `https://webportals-lovat.vercel.app/merchant/login` | cheryl@test.com / password123 |
+| **Merchant Login** | `https://webportals-lovat.vercel.app/merchant` | cheryl@test.com / password123 |
 | **Merchant PIN Verify** | `https://webportals-lovat.vercel.app/merchant` | (after login) |
 | **Scanner PWA** | `https://webportals-lovat.vercel.app/scan` | bob@test.com / password123 |
 | **Scanner Event Select** | `https://webportals-lovat.vercel.app/scan/events` | (after organiser login) |

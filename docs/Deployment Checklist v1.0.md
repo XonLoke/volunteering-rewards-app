@@ -201,7 +201,7 @@ Run this **twice** to generate `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`.
 - [ ] Login as `carol@test.com` / `password123`
 - [ ] Verify Admin Dashboard loads
 - [ ] Visit `https://webportals-lovat.vercel.app/organiser` — login as `bob@test.com`
-- [ ] Visit `https://webportals-lovat.vercel.app/merchant/login` — login as `cheryl@test.com`
+- [ ] Visit `https://webportals-lovat.vercel.app/merchant` — login as `cheryl@test.com`
 - [ ] Visit `https://webportals-lovat.vercel.app/scan` — login as `bob@test.com`
 
 ---
@@ -417,7 +417,7 @@ All services use GitHub OAuth for login — you can sign up with one click.
 | API Health | `https://vol-rewards-api.onrender.com/api/health` | Health check |
 | Admin Portal | `https://webportals-lovat.vercel.app/admin/login` | System admin |
 | Organiser Portal | `https://webportals-lovat.vercel.app/organiser` | Event organisers |
-| Merchant Portal | `https://webportals-lovat.vercel.app/merchant/login` | Cashier PIN verification |
+| Merchant Portal | `https://webportals-lovat.vercel.app/merchant` | Cashier PIN verification |
 | Scanner PWA | `https://webportals-lovat.vercel.app/scan` | QR attendance scanning |
 | Neon Database | `https://console.neon.tech` | Database management |
 | Expo Builds | `https://expo.dev/accounts/xonloke/projects/vol-app/builds` | APK build status |

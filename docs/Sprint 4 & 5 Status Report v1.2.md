@@ -1,7 +1,7 @@
 # Sprint 4 & 5 Status Report
 
-**Version:** 1.0  
-**Date:** 18 June 2026  
+**Version:** 1.2  
+**Date:** 19 June 2026  
 **Project:** Volunteering Rewards App (C3000C)  
 **Sprint 4:** 15 Jun – 29 Jun 2026 — Comprehensive Testing + Additional Features  
 **Sprint 5:** 29 Jun – 6 Jul 2026 — Deployment & Delivery  
@@ -18,7 +18,7 @@ A volunteering rewards platform where volunteers earn points by attending events
 | **Backend API** | Node.js / Express / PostgreSQL 16 | ✅ Deployed at Render + Neon |
 | **Database** | Neon PostgreSQL (serverless, no expiry) | ✅ 23 migrations, seeded with test data |
 | **Admin Portal** | React + Vite (PWA) | ✅ Deployed at Vercel |
-| **Volunteer App** | Expo / React Native | 🔄 Converting to web PWA (APK blocked) |
+| **Volunteer App** | Expo / React Native (web PWA) | ✅ Deployed at Vercel |
 | **Organiser App** | PWA (installable via browser) | ✅ Built into Vercel portal |
 | **Cashier App** | PWA (installable via browser) | ✅ Built into Vercel portal |
 
@@ -49,7 +49,11 @@ A volunteering rewards platform where volunteers earn points by attending events
 | CORS fix — frontend-backend connection resolved | 5 | ✅ Complete | 16 Jun |
 | Frontend deployment — Vercel (`webportals-lovat.vercel.app`) | 5 | ✅ Complete | 16 Jun |
 | Deployment architecture report (`docs/Deployment Architecture Report v1.0.md`) | 5 | ✅ Complete | 16 Jun |
-| Volunteer app deployment — building web PWA (APK blocked by Expo bug) | 5 | 🔄 In progress | 18 Jun |
+| Volunteer PWA — deployed at `https://dist-orpin-nine-46.vercel.app` | 5 | ✅ Complete | 19 Jun |
+| README updated with architecture, URLs, test accounts | 5 | ✅ Complete | 19 Jun |
+| v1.0.0 release tagged and published on GitHub | 5 | ✅ Complete | 19 Jun |
+| Organiser login page — created at `/organiser/login` with green-themed UI, role-gated to organisers | 5 | ✅ Complete | 19 Jun |
+| Organiser data sharing — verified Admin and Organiser see same 6 events from shared database | 5 | ✅ Complete | 19 Jun |
 
 ### Vivian — Security Testing & Mobile Verification
 
@@ -120,7 +124,10 @@ A volunteering rewards platform where volunteers earn points by attending events
 | Docker build pipeline | Xon | ✅ Complete | bcrypt + Neon SSL + CORS |
 | Security audit | Xon/Vivian | ✅ Complete | Security Audit Report v1.0.md |
 | Final E2E test pass | Xon | ✅ Complete | E2E Test Results v1.0.md |
-| Volunteer mobile app | Xon | 🔄 In progress | Converting to web PWA (APK blocked by Expo AGP 8.11 bug) |
+| Volunteer PWA deployment | Xon | ✅ Complete | `https://dist-orpin-nine-46.vercel.app` — with PWA manifest + service worker |
+| Volunteer App APK (originally planned) | Xon | ❌ Blocked | 5 EAS Build attempts failed — Expo SDK 54 / AGP 8.11 Gradle bug. Switched to web PWA as working alternative. |
+| README update | Xon | ✅ Complete | Added architecture, deployment URLs, test accounts |
+| v1.0.0 release tag | Xon | ✅ Complete | Tagged and published on GitHub |
 | Project report | Nurain | ⬜ Pending | Resources ready (test results, architecture doc, feature docs) |
 | Presentation slides | Nurain | ⬜ Pending | |
 | User manual | Nurain | ⬜ Pending | |
@@ -155,7 +162,7 @@ A volunteering rewards platform where volunteers earn points by attending events
 | Organiser Portal | `https://webportals-lovat.vercel.app/organiser` | ✅ Live |
 | Merchant Portal | `https://webportals-lovat.vercel.app/merchant` | ✅ Live |
 | Scanner PWA | `https://webportals-lovat.vercel.app/scan` | ✅ Live |
-| Volunteer PWA | 🔄 Building — will be new Vercel project | 🔄 In progress |
+| Volunteer PWA | `https://dist-orpin-nine-46.vercel.app` | ✅ Live |
 
 ### Deployment Costs
 
@@ -185,9 +192,11 @@ A volunteering rewards platform where volunteers earn points by attending events
 2. **All 4 additional features (F1-F4)** built and integrated by Xon alone
 3. **Full deployment pipeline** — backend (Render + Neon) + frontend (Vercel) — zero cost
 4. **5 failed EAS Build attempts** documented — known Expo SDK 54 / AGP 8.11 bug
-5. **Volunteer PWA alternative** in progress to replace blocked APK
-6. **4 critical bugs** found and fixed during regression testing
-7. **Existing team tasks** (Vivian, Grace, Nurain) pending — concentrated on Xon due to resource constraints
+5. **Volunteer PWA deployed** at `https://dist-orpin-nine-46.vercel.app` with PWA manifest, service worker, and installability — replaces blocked APK
+6. **README updated** with full architecture, deployment URLs, test accounts, and quick-start guide
+7. **v1.0.0 release tagged** and published on GitHub
+8. **4 critical bugs** found and fixed during regression testing
+9. **Existing team tasks** (Vivian, Grace, Nurain) pending — concentrated on Xon due to resource constraints
 
 ---
 
@@ -228,7 +237,8 @@ A volunteering rewards platform where volunteers earn points by attending events
 | Backend API (deployment, database, testing) | 8 tasks | 8 | 0 |
 | Frontend (web portals, deployment, features) | 6 tasks | 6 | 0 |
 | Additional Features (F1-F4) | 4 features | 4 | 0 |
-| Mobile App (Expo APK → PWA alternative) | 1 task | 1 | 🔄 In progress |
+| Mobile App (Expo APK → PWA alternative) | 1 task | 1 | ✅ Deployed |
+| Documentation (README, release tag) | 2 tasks | 2 | ✅ Complete |
 | Security & Performance Testing | 2 types | 2 | 0 |
 | Manual Testing (Integration, System, UAT) | 3 types | 0 | 3 (team pending) |
 | Documentation (report, slides, manual) | 3 tasks | 0 | 3 (Nurain pending) |
@@ -249,13 +259,12 @@ A volunteering rewards platform where volunteers earn points by attending events
 
 | Priority | Item | Owner | Target |
 |----------|------|-------|--------|
-| 🔴 HIGH | Build volunteer web PWA and deploy to Vercel | Xon | 20 Jun |
+| ✅ COMPLETE | Volunteer PWA deployed + README + v1.0.0 tag | Xon | 19 Jun |
 | 🟡 MEDIUM | Integration tests (34) | Grace | 25 Jun |
 | 🟡 MEDIUM | System tests (6) | Whole team | 27 Jun |
 | 🟡 MEDIUM | UAT tests (8) | Whole team | 28 Jun |
 | 🟡 MEDIUM | Project report with test results appendix | Nurain | 28 Jun |
 | 🟢 LOW | Presentation slides | Nurain | 2 Jul |
 | 🟢 LOW | User manual | Nurain | 2 Jul |
-| 🟢 LOW | Tag v1.0.0 release | Xon | 4 Jul |
 | 🔴 HIGH | Dry-run presentation | All | 4 Jul |
 | 🔴 HIGH | **Final Delivery** | **All** | **6 Jul** |

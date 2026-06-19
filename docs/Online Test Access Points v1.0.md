@@ -39,7 +39,7 @@ Anyone with the URL can open `https://dist-orpin-nine-46.vercel.app/home` on the
 |------|-----|
 | Admin Login | `https://webportals-lovat.vercel.app/admin/login` |
 | Organiser | `https://webportals-lovat.vercel.app/organiser` |
-| Merchant Login | `https://webportals-lovat.vercel.app/merchant/login` |
+| Merchant | `https://webportals-lovat.vercel.app/merchant` |
 | Scanner | `https://webportals-lovat.vercel.app/scan` |
 | API Health | `https://vol-rewards-api.onrender.com/api/health` |
 | Build Status | `https://expo.dev/accounts/xonloke/projects/vol-app/builds/09147766-5839-46c5-bc18-942e5f569db3` |

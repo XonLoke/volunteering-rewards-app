@@ -1,6 +1,6 @@
-# Handoff: Add Auth Redirect to Organiser Portal
+# Handoff: Fix Merchant URLs in README & Docs — Commit and Verify
 
-**Handoff ID:** HO-20260619-008
+**Handoff ID:** HO-20260619-009
 **Date:** 19 June 2026
 **From:** Cowork (Xon)
 **To:** Claude Desktop Code / Project
@@ -13,70 +13,87 @@
 
 ## Session Context
 
-The Organiser login page was created at `/organiser/login`, but visiting `/organiser` directly still shows the Dashboard without requiring authentication. The OrganiserLayout has no auth guard.
-
-**The fix:** Add a simple auth check to the `/organiser` route in `App.jsx` that redirects to `/organiser/login` if no token is found in `localStorage`.
+Multiple documentation files incorrectly listed the Merchant portal URL as `https://webportals-lovat.vercel.app/merchant/login` when the actual route is `https://webportals-lovat.vercel.app/merchant`. The README URLs have already been made clickable. The git repo has stale lock files and needs a force push.
 
 ---
 
 ## ✅ What's Already Done
 
-- Organiser login page exists at `/organiser/login` — green-themed, role-gated to 'organiser'
-- Route added to App.jsx before the `/organiser` layout
+- README.md — URLs made clickable, Merchant URL corrected ✅
+- `docs/Deployment Architecture Report v1.1.md` — Merchant URL fixed ✅
+- `docs/Deployment Checklist v1.0.md` — Merchant URL fixed ✅
+- `docs/Online Test Access Points v1.0.md` — Merchant URL fixed ✅
+- `docs/Sprint 4 & 5 Status Report v1.0.md` — Merchant URL fixed ✅
+- `docs/Sprint 4 & 5 Status Report v1.2.md` — Merchant URL fixed ✅
 
 ---
 
-## 🎯 Task: Add Auth Redirect to `/organiser` Route
+## 🎯 Task 1: Commit and Push to GitHub
 
-### Fix 1: Create a ProtectedRoute wrapper
+The git repo has stale lock files. Run these commands in order:
 
-Create `frontend/web_portals/src/components/ProtectedRoute.jsx`:
+```powershell
+cd D:\c3000c\volunteering-rewards-app
 
-```jsx
-import { Navigate } from 'react-router-dom';
+# Clear stale lock files
+del .git\HEAD.lock
+del .git\index.lock
 
-export default function ProtectedRoute({ children }) {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    return <Navigate to="/organiser/login" replace />;
-  }
-  return children;
-}
+# Stage and commit
+git add README.md docs/ -A
+git commit -m "docs: fix merchant URLs, make README URLs clickable"
+
+# Pull remote changes first
+git pull --rebase origin main
+
+# Push
+git push origin main
 ```
 
-### Fix 2: Wrap the Organiser layout with it
+---
 
-In `frontend/web_portals/src/App.jsx`, wrap the `/organiser` route children:
+## 🎯 Task 2: Verify All Portal URLs
 
-```javascript
-import ProtectedRoute from './components/ProtectedRoute';
+After the push, verify each portal URL works by loading it in a browser or via curl:
 
-// In the router config:
-{
-  path: '/organiser',
-  element: (
-    <ProtectedRoute>
-      <OrganiserLayout />
-    </ProtectedRoute>
-  ),
-  children: [ ... ],
-},
+| Portal | URL to Verify | Expected Result |
+|--------|--------------|-----------------|
+| Admin Login | `https://webportals-lovat.vercel.app/admin/login` | ✅ Login form loads |
+| Organiser | `https://webportals-lovat.vercel.app/organiser` | ✅ Redirects to login if not authenticated |
+| Organiser Login | `https://webportals-lovat.vercel.app/organiser/login` | ✅ Login form loads |
+| Merchant | `https://webportals-lovat.vercel.app/merchant` | ✅ Login form loads (NOT /merchant/login) |
+| Scanner | `https://webportals-lovat.vercel.app/scan` | ✅ Login form loads |
+| Volunteer PWA | `https://dist-orpin-nine-46.vercel.app` | ✅ App loads |
+| Volunteer Home | `https://dist-orpin-nine-46.vercel.app/home` | ✅ App loads (no 404) |
+| API Health | `https://vol-rewards-api.onrender.com/api/health` | ✅ Returns 200 JSON |
+| API Login | `POST https://vol-rewards-api.onrender.com/api/auth/login` with carol@test.com | ✅ Returns JWT |
+
+Run verification from the VM:
+
+```bash
+# Quick curl check for each URL
+for url in \
+  "https://webportals-lovat.vercel.app/admin/login" \
+  "https://webportals-lovat.vercel.app/organiser" \
+  "https://webportals-lovat.vercel.app/organiser/login" \
+  "https://webportals-lovat.vercel.app/merchant" \
+  "https://webportals-lovat.vercel.app/scan" \
+  "https://dist-orpin-nine-46.vercel.app" \
+  "https://vol-rewards-api.onrender.com/api/health"
+do
+  status=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+  echo "$status $url"
+done
 ```
-
-Now visiting `/organiser` without being logged in will redirect to `/organiser/login`.
-
-### Verify
-- Open `https://webportals-lovat.vercel.app/organiser` in an incognito window (no token) → should redirect to `/organiser/login`
-- Login as bob@test.com / password123 → should redirect to `/organiser`
-- Login as carol@test.com → should show "organiser users only" error
 
 ---
 
 ## Acceptance Criteria
 
-- [x] `/organiser` redirects to `/organiser/login` when not authenticated
-- [x] bob@test.com can log in and access `/organiser`
-- [x] Changes committed and pushed
+- [ ] All changes committed and pushed to GitHub
+- [ ] No stale git lock files
+- [ ] Merchant URL loads at `/merchant` (not `/merchant/login`)
+- [ ] All 9 portal URLs verified working
 
 ---
 
@@ -84,17 +101,8 @@ Now visiting `/organiser` without being logged in will redirect to `/organiser/l
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Create ProtectedRoute component | ✅ Done | Token check in localStorage, redirects to /organiser/login |
-| Wrap `/organiser` route with ProtectedRoute | ✅ Done | In App.jsx |
-| Commit and push | ✅ Done | `a7b3333` — pushed to GitHub |
-
----
-
-## Commit Instructions
-```bash
-cd D:\c3000c\volunteering-rewards-app
-git add frontend/web_portals/src/components/ProtectedRoute.jsx
-git add frontend/web_portals/src/App.jsx
-git commit -m "fix: add auth redirect to organiser portal"
-git push origin main
-```
+| Fix Merchant URLs in all docs | ✅ Done | 6 files updated |
+| Make README URLs clickable | ✅ Done | |
+| Commit and push to GitHub | ⬜ Pending | Stale lock files need clearing |
+| Verify all portal URLs | ⬜ Pending | 9 URLs to check |
+| Update HANDOFF.md | ⬜ Pending | When done |
