@@ -43,3 +43,6 @@ log_url_*.json
 gradle_*.txt
 all_errors.txt
 build_page.html
+
+# ─── Working documents (not committed to GitHub) ─────────
+HANDOFF.md
