@@ -46,17 +46,17 @@ export default function EventEdit() {
       setError(null);
       try {
         const res = await apiGet(`/organiser/events/${id}`);
-        const ev = res;
+        const ev = res.data || res;
         setForm({
           title: ev.title || '',
           description: ev.description || '',
           category: ev.category || '',
-          date: ev.date ? ev.date.split('T')[0] : '',
+          date: ev.event_date ? ev.event_date.split('T')[0] : '',
           start_time: ev.start_time || '',
           end_time: ev.end_time || '',
           location: ev.location || '',
-          points_awarded: ev.points_awarded != null ? String(ev.points_awarded) : '',
-          spots_total: ev.spots_total != null ? String(ev.spots_total) : '',
+          points_awarded: ev.points_value != null ? String(ev.points_value) : '',
+          spots_total: ev.capacity != null ? String(ev.capacity) : '',
           what_to_bring: ev.what_to_bring || '',
           image_url: ev.image_url || '',
         });

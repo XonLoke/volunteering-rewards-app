@@ -108,9 +108,9 @@ async function getFeedback(organiserId, eventId) {
      FROM event_feedback fb
      JOIN events evt ON evt.id = fb.event_id
      JOIN users usr ON usr.id = fb.user_id
-     WHERE evt.organizer_id = $1 AND ($2 IS NULL OR fb.event_id = $2)
+     WHERE evt.organizer_id = $1 AND fb.event_id = $2
      ORDER BY fb.created_at DESC`,
-    [organiserId, eventId || null]
+    [organiserId, eventId]
   );
   return { data: rows };
 }
