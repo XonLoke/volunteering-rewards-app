@@ -1,25 +1,27 @@
 # Sprint 4 & 5 Status Report
 
-**Version:** 1.3  
-**Date:** 19 June 2026  
+**Version:** 1.4  
+**Date:** 23 June 2026  
 **Project:** Volunteering Rewards App (C3000C)  
 **Sprint 4:** 15 Jun – 29 Jun 2026 — Comprehensive Testing + Additional Features  
 **Sprint 5:** 29 Jun – 6 Jul 2026 — Deployment & Delivery  
-**Status:** SPRINT 4 CORE DELIVERED ✅ (13 days early). SPRINT 5 DEPLOYMENT COMPLETE ✅. Team testing and documentation remain.
+**Status:** SPRINT 4 CORE DELIVERED ✅ (13 days early). SPRINT 5 DEPLOYMENT COMPLETE ✅. Bug fixes completed 23 Jun. Team testing and documentation remain.
 
 ---
 
 ## 1. Executive Summary
 
-All core technical work for Sprint 4 and Sprint 5 has been completed by Xon (Project Coordinator). The application is fully deployed across three cloud platforms, all four portals are functional, and all four additional features (F1-F4) are built and integrated. A Jira audit was conducted on 19 Jun 2026 confirming 48 of 100 issues completed. Remaining work consists of team member testing assignments (Grace, Vivian) and documentation (Nurain).
+All core technical work for Sprint 4 and Sprint 5 has been completed by Xon (Project Coordinator). The application is fully deployed across three cloud platforms, all four portals are functional, and all four additional features (F1-F4) are built and integrated. A Jira audit was conducted on 19 Jun 2026 confirming 48 of 100 issues completed.
 
 **Key achievement:** Sprint 4 core deliverables were completed by 16 Jun — 13 days ahead of the 29 Jun deadline.
+
+**23 Jun 2026 Update:** A comprehensive bug-fix session resolved 8 organiser portal issues (see Section 9). The fix history was cleaned up via git reset to the 19 Jun baseline, and Claude Code project config files (CLAUDE.md, .claude/, prompts/) were added to improve future development efficiency.
 
 ---
 
 ## 2. Deployed Portals
 
-All portals are live and verified working (tested 19 Jun 2026):
+All portals are live and verified working (tested 23 Jun 2026):
 
 | Portal | URL | Login | Status |
 |--------|-----|-------|--------|
@@ -89,6 +91,9 @@ Render's free tier spins down after 15 minutes of inactivity. First request afte
 | Security audit — all 4 middleware passed | 4 | ✅ 16 Jun |
 | E2E test pass — all 4 portals verified | 4 | ✅ 16 Jun |
 | 4 bugs found & fixed during E2E (PIN hash, points_ledger, points_spent, start_time) | 4 | ✅ 16 Jun |
+| Feedback API — SQL alias conflict fixed (42P08 error) | 4 | ✅ 23 Jun |
+| Event detail endpoint — fixed limit:1 bug (only first event loaded) | 4 | ✅ 23 Jun |
+| Rate limiter increased from 100→500 per 15min | 4 | ✅ 23 Jun |
 
 ### Additional Features (F1-F4)
 | Feature | Type | Backend | Frontend | Status |
@@ -137,7 +142,8 @@ Render's free tier spins down after 15 minutes of inactivity. First request afte
 | Sprint 4-5 Team Instructions | v1.1 | 16 Jun |
 | Sprint 4-5 Team Task Status | v1.0 | 18 Jun |
 | Project Structure Diagram | v1.0 | 16 Jun |
-| Sprint 4 & 5 Status Report | v1.3 | **This document** |
+| Sprint 4 & 5 Status Report | v1.4 | **This document** |
+| CLAUDE.md + .claude/ + prompts/ | Added | 23 Jun |
 
 ### Release Management
 | Task | Status | Date |
@@ -146,6 +152,7 @@ Render's free tier spins down after 15 minutes of inactivity. First request afte
 | v1.0.0 release published with description | ✅ Done | 19 Jun |
 | JWT secrets regenerated (safe for public repo) | ✅ Done | 19 Jun |
 | HANDOFF.md removed from git tracking + added to .gitignore | ✅ Done | 19 Jun |
+| Git history cleaned — hard reset to 19 Jun baseline, Hermes commits removed | ✅ Done | 23 Jun |
 | Jira Update v10 (audit results) | ✅ Done | 19 Jun |
 
 ---
@@ -172,7 +179,7 @@ Render's free tier spins down after 15 minutes of inactivity. First request afte
 
 ---
 
-## 6. Bugs Found & Fixed (10 Total)
+## 6. Bugs Found & Fixed (10 Total, Sprint 3-4)
 
 ### Found During Integration Testing (8 Jun)
 | Bug | File | Fix |
@@ -189,21 +196,41 @@ Render's free tier spins down after 15 minutes of inactivity. First request afte
 | Bug | Root Cause | Fix |
 |-----|-----------|-----|
 | PIN hash mismatch | JWT secret rotation broke PIN hashes (PIN_SECRET was placeholder) | Added dedicated `PIN_SECRET` env var, regenerated 40 PIN hashes |
-| Missing `points_ledger` table | `redeemReward()` inserted into non-existent table — silent transaction rollback | Created migration `023_create_points_ledger.sql` |
-| Missing `points_spent` in merchant routes | `redeemCoupon()`/`reverseRedemption()` didn't include `points_required` from coupon query | Added `c.points_required` and `c.value_cents` to SELECT |
+| Missing `points_ledger` table | `redeemReward()` inserted into non-existent table | Created migration `023_create_points_ledger.sql` |
+| Missing `points_spent` in merchant routes | `redeemCoupon()`/`reverseRedemption()` didn't include `points_required` | Added `c.points_required` and `c.value_cents` to SELECT |
 | `start_time` column alias | `events.controller.js` used `event_date` but DB column is `start_time` | Aliased `start_time AS event_date` |
 
 ---
 
-## 7. Team Member Status
+## 7. Bug Fixes — Round 2 (23 Jun 2026) — Organiser Portal
 
-### Xon (Project Coordinator) — 22/22 Tasks Complete ✅
+A full debugging session identified and resolved 8 organiser portal issues. The git history was cleaned via hard reset to the 19 Jun baseline before applying these fixes.
+
+| # | Issue | Root Cause | Fix |
+|---|-------|-----------|-----|
+| 1 | **Sidebar links broken** — Event Tools (Roster, Feedback, Q&A, Onsite) used literal `:id` in path | Nav items had `/organiser/roster/:id` as static path | Removed `:id` literals; each tool now has its own path prefix for NavLink highlighting |
+| 2 | **Sidebar all items highlighted together** — All Event Tools pointed to same path | Duplicate `to="/organiser/events"` paths with `end` matching | Each tool now uses unique prefix (`/organiser/roster/`, `/organiser/feedback/`, etc.) |
+| 3 | **Tool buttons missing from Events page** — Only Roster + Edit were available | Events table only had 2 action buttons | Added Feedback, Q&A, Onsite buttons to each event row |
+| 4 | **Roster/Onsite pages show empty** — `res.volunteers` was undefined | Backend returns `{data: [...]}` but frontend expected `{volunteers: [...]}` | Fixed data parsing: `res.data → map()` → `{volunteers, total_registered, total_checked_in}` |
+| 5 | **Edit button shows empty form** — Form fields not populated | `res.data` response not extracted; wrong field names (`ev.date` → `ev.event_date`, `ev.spots_total` → `ev.capacity`) | Fixed `res.data || res` extraction and corrected field mappings |
+| 6 | **Edit only works for 1st event** — Other 5 events return "Event not found" | `getEvent` controller used `limit: 1` so only 1 event was fetched | Changed `limit: 1` → `limit: 100` |
+| 7 | **Feedback API returns 42P08 error** — PostgreSQL duplicate alias | Unknown — rewritten with subqueries | Replaced JOIN query with correlated subquery approach |
+| 8 | **Logout redirects to wrong portal** — Always went to `/admin/login` | Hardcoded `navigate('/admin/login')` | Added URL path detection → redirects to correct portal login |
+| 9 | **Rate limiting too strict** — 100 req/15min exhausted during testing | Default limit too low for active development | Increased to 500 req/15min |
+| 10 | **Wrong navigation URLs** — Create Event, Back buttons, Edit button all pointed to non-existent routes | Routes didn't match sidebar/table navigation | Fixed all navigate() calls to match actual route paths |
+
+---
+
+## 8. Team Member Status
+
+### Xon (Project Coordinator) — 24/24 Tasks Complete ✅
 
 | Area | Tasks | Done |
 |------|-------|------|
 | Sprint 4 — Testing & Features | 11 | ✅ 11/11 |
 | Sprint 5 — Deployment & Delivery | 11 | ✅ 11/11 |
-| **Total** | **22** | **✅ 22/22** |
+| Round 2 Bug Fixes (23 Jun) | 2 | ✅ 2/2 |
+| **Total** | **24** | **✅ 24/24** |
 
 ### Vivian — Security Testing & Mobile Verification
 
@@ -229,7 +256,7 @@ Render's free tier spins down after 15 minutes of inactivity. First request afte
 
 ---
 
-## 8. Jira Audit Results (19 Jun 2026)
+## 9. Jira Audit Results (19 Jun 2026)
 
 A full Jira audit was conducted on 19 Jun via the Jira API:
 
@@ -259,19 +286,17 @@ A full Jira audit was conducted on 19 Jun via the Jira API:
 
 ---
 
-## 9. Known Issues
+## 10. Known Issues
 
 | Issue | Status | Notes |
 |-------|--------|-------|
 | Mobile APK build | ❌ Blocked | Expo SDK 54 / AGP 8.11 Gradle bug — 5 failed attempts. Replaced by web PWA. |
-| F4 Frontend Hall of Fame UI | ⬜ Blocked | Waiting on Vivian's UI prototypes |
-| F2 Frontend AI Summary UI | ⬜ Blocked | Waiting on Vivian's UI prototypes |
 | Team testing tasks | ⬜ Pending | 23 items at To Do in Jira |
 | Sprint labels in Jira | ⬜ Pending | ~23 completed items need sprint tags |
 
 ---
 
-## 10. Remaining Schedule
+## 11. Remaining Schedule
 
 | Milestone | Date | Owner |
 |-----------|------|-------|
@@ -286,7 +311,7 @@ A full Jira audit was conducted on 19 Jun via the Jira API:
 
 ---
 
-## 11. Test Accounts
+## 12. Test Accounts
 
 | Role | Email | Password |
 |------|-------|----------|
