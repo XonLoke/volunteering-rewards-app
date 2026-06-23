@@ -159,7 +159,7 @@ export default function Feedback() {
           <div className="page-actions">
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => navigate(`/organiser/events/${id}`)}
+              onClick={() => navigate(`/organiser/events`)}
             >
               Back to Event
             </button>

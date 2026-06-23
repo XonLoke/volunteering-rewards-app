@@ -119,7 +119,7 @@ export default function EventEdit() {
       };
       await apiPut(`/organiser/events/${id}`, payload);
       toast('Event updated successfully!', 'success');
-      navigate(`/organiser/events/${id}`);
+      navigate('/organiser/events');
     } catch (err) {
       toast(err.message || 'Failed to update event', 'error');
     } finally {
@@ -337,7 +337,7 @@ export default function EventEdit() {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => navigate(`/organiser/events/${id}`)}
+                  onClick={() => navigate('/organiser/events')}
                 >
                   Cancel
                 </button>

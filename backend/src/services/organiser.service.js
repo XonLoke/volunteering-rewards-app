@@ -104,12 +104,12 @@ async function getRoster(organiserId, eventId) {
 
 async function getFeedback(organiserId, eventId) {
   const { rows } = await pool.query(
-    `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name AS volunteer_name, e.title AS event_title
-     FROM event_feedback ef
-     JOIN events e ON e.id = ef.event_id
-     JOIN users u ON u.id = ef.user_id
-     WHERE e.organizer_id = $1 AND ($2 IS NULL OR ef.event_id = $2)
-     ORDER BY ef.created_at DESC`,
+    `SELECT fb.id, fb.rating, fb.comment, fb.created_at, usr.name AS volunteer_name, evt.title AS event_title
+     FROM event_feedback fb
+     JOIN events evt ON evt.id = fb.event_id
+     JOIN users usr ON usr.id = fb.user_id
+     WHERE evt.organizer_id = $1 AND ($2 IS NULL OR fb.event_id = $2)
+     ORDER BY fb.created_at DESC`,
     [organiserId, eventId || null]
   );
   return { data: rows };

@@ -6,10 +6,25 @@ export default function Topbar({ title, onMenuToggle }) {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Detect which portal we're on from the URL
+  const path = window.location.pathname;
+  let loginPath = '/admin/login';
+  let userLabel = 'Admin';
+  if (path.startsWith('/organiser')) {
+    loginPath = '/organiser/login';
+    userLabel = 'Organiser';
+  } else if (path.startsWith('/merchant')) {
+    loginPath = '/merchant/login';
+    userLabel = 'Merchant';
+  } else if (path.startsWith('/scan')) {
+    loginPath = '/scan/login';
+    userLabel = 'Scanner';
+  }
+
   const handleLogout = () => {
     apiLogout();
     toast('Logged out successfully', 'info');
-    navigate('/admin/login');
+    navigate(loginPath);
   };
 
   return (
@@ -22,8 +37,8 @@ export default function Topbar({ title, onMenuToggle }) {
       <h1 className="topbar-title">{title}</h1>
       <div className="topbar-right">
         <div className="topbar-user">
-          <div className="topbar-avatar">A</div>
-          <span>Admin</span>
+          <div className="topbar-avatar">{userLabel[0]}</div>
+          <span>{userLabel}</span>
         </div>
         <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
           Logout

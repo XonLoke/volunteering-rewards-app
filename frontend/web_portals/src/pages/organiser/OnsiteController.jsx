@@ -64,7 +64,22 @@ export default function OnsiteController() {
     setError(null);
     try {
       const res = await apiGet(`/organiser/events/${id}/roster`);
-      setRoster(res);
+      // Backend returns { data: [{id, name, email, status, check_in_time}, ...] }
+      const volunteers = (res.data || []).map((v) => ({
+        user_id: v.id,
+        name: v.name,
+        email: v.email,
+        phone: '--',
+        registered_at: null,
+        is_checked_in: v.status === 'checked_in' || v.check_in_time !== null,
+        checked_in_at: v.check_in_time || null,
+      }));
+      setRoster({
+        volunteers,
+        total_registered: volunteers.length,
+        total_checked_in: volunteers.filter((v) => v.is_checked_in).length,
+        event_title: res.event_title || '',
+      });
     } catch (err) {
       setError(err.message || 'Failed to load event data');
     } finally {
@@ -159,7 +174,7 @@ export default function OnsiteController() {
           <div className="page-actions">
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => navigate(`/organiser/events/${id}`)}
+              onClick={() => navigate(`/organiser/events`)}
             >
               Back to Event
             </button>

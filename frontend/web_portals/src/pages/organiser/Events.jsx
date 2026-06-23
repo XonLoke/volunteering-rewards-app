@@ -92,7 +92,7 @@ export default function Events() {
           <div className="page-actions">
             <button
               className="btn btn-primary"
-              onClick={() => navigate('/organiser/events/create')}
+              onClick={() => navigate('/organiser/event-create')}
             >
               + Create Event
             </button>
@@ -185,16 +185,34 @@ export default function Events() {
                       <td>{row.checked_in_count ?? 0}</td>
                       <td>{getStatusBadge(row.status)}</td>
                       <td>
-                        <div style={{ display: 'flex', gap: 4 }}>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                           <button
                             className="btn btn-secondary btn-sm"
-                            onClick={() => navigate(`/organiser/events/${row.id}/roster`)}
+                            onClick={() => navigate(`/organiser/roster/${row.id}`)}
                           >
                             Roster
                           </button>
                           <button
                             className="btn btn-secondary btn-sm"
-                            onClick={() => navigate(`/organiser/events/${row.id}/edit`)}
+                            onClick={() => navigate(`/organiser/feedback/${row.id}`)}
+                          >
+                            Feedback
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => navigate(`/organiser/qna/${row.id}`)}
+                          >
+                            Q&A
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => navigate(`/organiser/onsite-controller/${row.id}`)}
+                          >
+                            Onsite
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => navigate(`/organiser/event-edit/${row.id}`)}
                           >
                             Edit
                           </button>
