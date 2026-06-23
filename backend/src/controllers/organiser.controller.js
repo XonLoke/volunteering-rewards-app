@@ -27,7 +27,7 @@ async function createEvent(req, res, next) {
 
 async function getEvent(req, res, next) {
   try {
-    const result = await organiserService.getMyEvents(req.user.id, { page: 1, limit: 1 });
+    const result = await organiserService.getMyEvents(req.user.id, { page: 1, limit: 100 });
     const event = result.data.find(e => e.id == req.params.id);
     if (!event) return next(require("../middleware/errorHandler.middleware").createError(404, "not_found", "Event not found."));
     res.json({ data: event });
