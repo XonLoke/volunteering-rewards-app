@@ -20,10 +20,10 @@ const NAV_ITEMS = [
   {
     section: 'Event Tools',
     children: [
-      { label: 'Roster', path: '/organiser/events', icon: 'R', exact: true },
-      { label: 'Feedback', path: '/organiser/events', icon: 'F', exact: true },
-      { label: 'Q&A', path: '/organiser/events', icon: 'Q', exact: true },
-      { label: 'Onsite Controller', path: '/organiser/events', icon: 'O', exact: true },
+      { label: 'Roster', path: '/organiser/roster/', icon: 'R' },
+      { label: 'Feedback', path: '/organiser/feedback/', icon: 'F' },
+      { label: 'Q&A', path: '/organiser/qna/', icon: 'Q' },
+      { label: 'Onsite Controller', path: '/organiser/onsite-controller/', icon: 'O' },
     ],
   },
 ];

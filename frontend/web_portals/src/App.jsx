@@ -70,12 +70,17 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <OrganiserDashboard /> },
       { path: 'events', element: <OrganiserEvents /> },
+      { path: 'events/:id', element: <Navigate to="/organiser/events" replace /> },
       { path: 'event-create', element: <OrganiserEventCreate /> },
       { path: 'event-edit/:id', element: <OrganiserEventEdit /> },
       { path: 'roster/:id', element: <OrganiserRoster /> },
+      { path: 'roster', element: <Navigate to="/organiser/events" replace /> },
       { path: 'feedback/:id', element: <OrganiserFeedback /> },
+      { path: 'feedback', element: <Navigate to="/organiser/events" replace /> },
       { path: 'qna/:id', element: <OrganiserQna /> },
+      { path: 'qna', element: <Navigate to="/organiser/events" replace /> },
       { path: 'onsite-controller/:id', element: <OrganiserOnsiteController /> },
+      { path: 'onsite-controller', element: <Navigate to="/organiser/events" replace /> },
     ],
   },
   {
