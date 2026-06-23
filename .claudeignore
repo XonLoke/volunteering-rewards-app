@@ -1,0 +1,54 @@
+# ─── Dependencies (too many files, no search value) ─
+node_modules/
+backend/node_modules/
+frontend/*/node_modules/
+
+# ─── Build output ─
+dist/
+build/
+.expo/
+.android/
+.ios/
+*.apk
+*.aab
+
+# ─── Secrets ─
+.env
+.env.*
+**/.env
+HANDOFF.md
+
+# ─── Build logs & artifacts (large, transient) ─
+build_*.txt
+build_*.bat
+build_*.js
+build_*.json
+build_*.html
+eas_build_log.txt
+gradle_*.txt
+parse_*.js
+fetch_*.js
+download_*.js
+log_url_*.json
+all_errors.txt
+pwa_console_errors.log
+
+# ─── Git ─
+.git/
+
+# ─── Playwright test recordings ─
+.playwright-mcp/
+page-*.yml
+
+# ─── Large project files (kanban dumps, Jira exports) ─
+kan_*.json
+
+# ─── OS artifacts ─
+Thumbs.db
+.DS_Store
+*.bak
+
+# ─── Old prototype files (not production code) ─
+frontend/mobile_UI/
+frontend/web_UI/
+frontend/web_portal/

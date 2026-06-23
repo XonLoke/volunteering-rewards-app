@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(psql *)",
+      "Bash(pg_isready *)",
+      "Bash(powershell.exe *)",
+      "Bash(npx kill-port *)",
+      "Bash(node -e *)",
+      "Bash(node -r dotenv/config index.js)",
+      "Bash(node /d/c3000c/volunteering-rewards-app/backend/scripts/*)",
+      "Bash(PIN_SECRET=* node index.js)",
+      "Bash(taskkill *)",
+      "Bash(sed *)",
+      "Bash(eas *)",
+      "Bash(rm -rf *)",
+      "Bash(cmd.exe *)",
+      "Bash(ls *)",
+      "Bash(which *)",
+      "Bash(json_pp *)",
+      "Read(//c/**)",
+      "Read(//usr/**)",
+      "WebFetch(domain:expo.dev)",
+      "WebFetch(domain:render.com)"
+    ]
+  }
+}

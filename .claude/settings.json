@@ -1,0 +1,23 @@
+{
+  "project": {
+    "name": "volunteering-rewards-app",
+    "description": "C3000C Capstone — Multi-platform volunteering rewards system"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(curl *)",
+      "Bash(docker compose *)",
+      "Bash(powershell.exe -Command *)",
+      "Bash(npm test)",
+      "Bash(npm run migrate)",
+      "Bash(npm run seed)"
+    ]
+  },
+  "hooks": {
+    "preToolUse": {
+      "Bash(npm test *)": {
+        "description": "Run tests before declaring a task complete"
+      }
+    }
+  }
+}
