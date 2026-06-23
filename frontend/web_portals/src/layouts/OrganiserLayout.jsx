@@ -17,6 +17,15 @@ const NAV_ITEMS = [
       { label: 'Create Event', path: '/organiser/event-create', icon: '+' },
     ],
   },
+  {
+    section: 'Event Tools',
+    children: [
+      { label: 'Roster', path: '/organiser/events', icon: 'R', exact: true },
+      { label: 'Feedback', path: '/organiser/events', icon: 'F', exact: true },
+      { label: 'Q&A', path: '/organiser/events', icon: 'Q', exact: true },
+      { label: 'Onsite Controller', path: '/organiser/events', icon: 'O', exact: true },
+    ],
+  },
 ];
 
 export default function OrganiserLayout() {
