@@ -11,7 +11,7 @@ const rateLimit = require("express-rate-limit");
 // ─── Global rate limit (INF-06) ──────────────────────────
 const global = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000, // 15 min
-  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
+  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: "rate_limited", message: "Too many requests. Please try again later." } },

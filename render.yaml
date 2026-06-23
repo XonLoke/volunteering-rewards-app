@@ -32,7 +32,7 @@ services:
       - key: RATE_LIMIT_WINDOW_MS
         value: "900000"
       - key: RATE_LIMIT_MAX
-        value: "100"
+        value: "500"
       - key: MAX_FILE_SIZE
         value: "1048576"
 
