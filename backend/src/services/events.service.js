@@ -207,7 +207,7 @@ const getRecommendations = async (userId, limit = 5) => {
       e.id, e.title, e.description, e.location, e.event_date,
       e.capacity, e.points_value, e.category, e.status,
       COALESCE(reg.count, 0)::int AS registrations,
-      COALESCE(${caseWhen} ELSE 0 END)::int AS relevance_score
+      COALESCE(CASE ${caseWhen} ELSE 0 END)::int AS relevance_score
     FROM events e
     LEFT JOIN (
       SELECT event_id, COUNT(*)::int AS count
