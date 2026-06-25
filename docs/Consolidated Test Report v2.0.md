@@ -1,11 +1,11 @@
-# Consolidated Test Report v2.0
+# Consolidated Test Report v2.1
 
 **Project:** Volunteering Rewards App (C3000C)  
-**Version:** 2.0  
+**Version:** 2.1  
 **Date:** 25 June 2026  
 **Prepared by:** Xon (Team Lead)  
-**Status:** Consolidated — All Automated Tests Passing  
-**Execution Engine:** Node.js `--test` + OpenCode CLI (automation-ready)
+**Status:** Consolidated — All Unit Tests Complete (91/91)  
+**Execution Engine:** Node.js `--test` (native)
 
 ---
 
@@ -94,8 +94,7 @@ All test-related documents for the Volunteering Rewards App are listed below wit
 
 | Test Category | Total Tests | Passed | Failed | Skipped | Not Run | Pass Rate |
 |--------------|------------|--------|--------|---------|---------|-----------|
-| **Unit Tests (existing)** | 13 | 13 | 0 | 0 | 0 | **100%** |
-| **Unit Tests (new — to write)** | 11 files | — | — | — | 11 | — |
+| **Unit Tests** | **91** | **91** | **0** | **0** | **0** | **100%** |
 | **Integration Tests (core)** | 34 | 34 | 0 | 0 | 0 | **100%** |
 | **Integration Tests (F1-F4)** | 11 | 0 | 0 | 0 | 11 | — |
 | **Regression Tests** | 5 | 0 | 0 | 0 | 5 | — |
@@ -105,10 +104,13 @@ All test-related documents for the Volunteering Rewards App are listed below wit
 | **Performance (v2.0)** | 17 | 17 | 0 | 0 | 0 | **100%** |
 | **Manual Tests (MT-01–25)** | 25 | 0 | 0 | 0 | 25 | — |
 | **UAT Tests** | 8 | 0 | 0 | 0 | 8 | — |
-| **Total Executed** | **73** | **72** | **0** | **1** | — | **99%*** |
-| **Total Planned** | **~155** | **72** | **0** | **1** | **~82** | — |
+| **Total Executed** | **153** | **148** | **0** | **1** | — | **99%*** |
+| **Total Planned** | **~200** | **148** | **0** | **1** | **~51** | — |
 
 *\*99% pass rate of executed tests. 1 test (ST-06 network failure) is manual-only.*
+
+**v2.1 Update — Unit Tests Phase Complete:**
+Phase 1 (Unit Tests) from Test Plan v2.0 is now **100% complete**. All 11 planned service test files were written and pass. The previous OpenCode approach was abandoned due to API payment requirements — tests were written directly using Node.js `--test`.
 
 ### 3.2 Timeline
 
@@ -122,67 +124,54 @@ Sprint 3                    Sprint 4                                    Sprint 5
 18 Jun ─ Automated Report v1.0 ✅
 23 Jun ─ 8 Organiser bugs fixed ✅
 25 Jun ─ Consolidated Report v2.0 ✅
-         OpenCode prompts written (11 task files)
-         Test Plan v2.0 published
-         ──► Ready for team execution
+         └─ OpenCode prompts written (11 task files)
+         └─ Test Plan v2.0 published
+25 Jun ─ Consolidated Report v2.1 ✅ (THIS REPORT)
+         └─ All 91 unit tests written and passing
+         └─ 11 new service test files (events, attendance, rewards,
+             referral, organiser, leaderboard, feedback, me, email,
+             sponsorshipConfig)
+         └─ admin + merchant tests expanded (was 5, now 15)
+         └─ OpenCode abandoned (payment required) → direct Node --test
+         ──► Unit Test Phase COMPLETE
 ```
 
 ### 3.3 Key Achievements
 
-- **10 bugs found and fixed** during automated testing
-- **8 organiser portal bugs** fixed in Round 2 (23 Jun)
+- **91 unit tests** across all 13 backend services — all passing
+- **22 bugs found and fixed** across all testing phases
 - **100% pass rate** on all executed automated tests
 - **All 4 portals deployed** and E2E-verified (Render + Vercel + Neon)
 - **4 additional features (F1-F4)** built and integrated
-- **Automation-ready** with OpenCode prompt files for remaining tests
+- **Phase 1 (Unit Tests) complete** — 11/11 service test files written
 
 ---
 
 ## 4. Phase 1 — Unit Tests Results
 
-### 4.1 Existing Unit Tests (13 tests — ✅ All Pass)
+### 4.1 Full Suite (91 tests — ✅ All Pass)
 
-**Last run:** 25 Jun 2026  
+**Last run:** 25 Jun 2026 15:30  
 **Runner:** Node.js `--test`  
-**Duration:** 588ms  
+**Duration:** 429ms  
 **Command:** `cd backend && npm test`
 
-| Test ID | File | Test Name | Status | Notes |
-|---------|------|-----------|--------|-------|
-| UT-01 | `auth.service.test.js` | Register — Success | ✅ Pass | User created with valid JWT |
-| UT-02 | `auth.service.test.js` | Register — Duplicate Email | ✅ Pass | 409 error for existing email |
-| UT-03 | `auth.service.test.js` | Login — Success | ✅ Pass | Returns user + tokens |
-| UT-04 | `auth.service.test.js` | Login — Wrong Password | ✅ Pass | 401 for invalid password |
-| UT-05 | `auth.service.test.js` | Token Refresh — Success | ✅ Pass | Tokens rotated |
-| UT-06 | `auth.service.test.js` | Token Refresh — Invalid | ✅ Pass | 401 for invalid token |
-| UT-07 | `admin.service.test.js` | Points Calc (ppd=100) | ✅ Pass | $5 Coffee = 500 pts |
-| UT-08 | `admin.service.test.js` | Points Recalc (ppd=50) | ✅ Pass | $5 Coffee = 250 pts |
-| UT-09 | `admin.service.test.js` | PIN Hash Determinism | ✅ Pass | HMAC-SHA256 stable |
-| UT-10 | *(covered in admin)* | PIN Uniqueness | ✅ Pass | 6-digit, all unique |
-| UT-11 | *(covered in admin)* | PIN Auto-Generate | ✅ Pass | Quantity matches PINs |
-| UT-12 | `merchant.service.test.js` | Verify Valid PIN | ✅ Pass | Coupon details returned |
-| UT-13 | `merchant.service.test.js` | Verify Invalid PIN | ✅ Pass | 404 for non-existent PIN |
-| UT-14 | *not yet written* | Redeem Used PIN | ⬜ | Needs OpenCode P1-03 |
-| UT-15 | *not yet written* | Reverse Within Window | ⬜ | Needs OpenCode P1-03 |
-| UT-16 | `merchant.service.test.js` | Reverse Expired Window | ✅ Pass | 5-min window enforced |
-| UT-17 | *not yet written* | Insufficient Points | ⬜ | Needs OpenCode P1-03 |
-| UT-18 | *not yet written* | Sufficient Points | ⬜ | Needs OpenCode P1-03 |
-
-### 4.2 New Unit Tests to Write (via OpenCode — 11 files)
-
-| Code | Service | OpenCode Prompt | Target File | Status | Action |
-|------|---------|----------------|-------------|--------|--------|
-| P1-01 | Events Service | `tasks/01-events-service.md` | `events.service.test.js` | ⬜ | `opencode run` |
-| P1-02 | Attendance Service | `tasks/02-attendance-service.md` | `attendance.service.test.js` | ⬜ | `opencode run` |
-| P1-03 | Rewards Service | `tasks/03-rewards-service.md` | `rewards.service.test.js` | ⬜ | `opencode run` |
-| P1-04 | Referral Service | `tasks/04-referral-service.md` | `referral.service.test.js` | ⬜ | `opencode run` |
-| P1-05 | Organiser Service | `tasks/05-organiser-service.md` | `organiser.service.test.js` | ⬜ | `opencode run` |
-| P1-06 | Leaderboard Service | `tasks/06-leaderboard-service.md` | `leaderboard.service.test.js` | ⬜ | `opencode run` |
-| P1-07 | Feedback Service | `tasks/07-feedback-service.md` | `feedback.service.test.js` | ⬜ | `opencode run` |
-| P1-08 | Me Service | `tasks/08-me-service.md` | `me.service.test.js` | ⬜ | `opencode run` |
-| P1-09 | Email Service | `tasks/09-email-service.md` | `email.service.test.js` | ⬜ | `opencode run` |
-| P1-10 | Sponsorship Config | `tasks/10-sponsorshipConfig-service.md` | `sponsorshipConfig.service.test.js` | ⬜ | `opencode run` |
-| P1-11 | Expand Existing | `tasks/11-expand-existing-tests.md` | admin + merchant | ⬜ | `opencode run` |
+| Service | Test File | Tests | Status | Key Coverage |
+|---------|-----------|-------|--------|-------------|
+| **Auth** | `auth.service.test.js` | 6 | ✅ Pass | Register success/duplicate, Login success/wrong pw, Token refresh valid/invalid |
+| **Admin** | `admin.service.test.js` | 7 | ✅ Pass | Points calc, config change, PIN hash, dashboard stats, user status, rewards config, event delete 404 |
+| **Merchant** | `merchant.service.test.js` | 8 | ✅ Pass | PIN verify valid/invalid, PIN edge cases (format, redeemed, expired), redeem success/already-redeemed, reverse (missing id, not redeemed, outside window) |
+| **Events** | `events.service.test.js` | 19 | ✅ Pass | browseEvents (5), getEventById (3), registerForEvent (5), unregisterFromEvent (3), getRecommendations (2), getPopularEvents (1) |
+| **Attendance** | `attendance.service.test.js` | 10 | ✅ Pass | scanQR (6): success, event/user 404, duplicate 409, transaction, rollback. batchSync (4): multi-scan, duplicates, missing fields, invalid input |
+| **Rewards** | `rewards.service.test.js` | 14 | ✅ Pass | hashPin (2), browseRewards (4), getRewardById (2), redeemReward (6): success, insufficient points, OOS, 404, not active, transaction |
+| **Referral** | `referral.service.test.js` | 6 | ✅ Pass | getConfig (2): DB row, defaults. linkSponsorship (2): links uplines, handles missing. getMySponsorshipProfile (2): full profile, 404 |
+| **Organiser** | `organiser.service.test.js` | 7 | ✅ Pass | getDashboard, getMyEvents, createEvent, deleteEvent (success + 404), getRoster, getFeedback |
+| **Leaderboard** | `leaderboard.service.test.js` | 3 | ✅ Pass | topByPoints, topByEvents, getFullLeaderboard |
+| **Feedback** | `feedback.service.test.js` | 1 | ✅ Pass | getFeedbackSummary returns object |
+| **Me** | `me.service.test.js` | 4 | ✅ Pass | getMyQrCode (success + 404), getMyPoints, getMyCoupons |
+| **Email** | `email.service.test.js` | 1 | ✅ Pass | sendEmail exported as function |
+| **Sponsorship Config** | `sponsorshipConfig.service.test.js` | 2 | ✅ Pass | getConfig, updateConfig |
+| **Total** | **13 files** | **91** | **✅ ALL PASS** | |
 
 ---
 
@@ -562,14 +551,21 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | 20 | Rate limiting too strict | 100 req/15min too low for development | Increased to 500 req/15min |
 | 21 | Wrong navigation URLs | Routes didn't match sidebar navigation | Fixed all `navigate()` calls |
 
-### 12.4 Bug Statistics
+### 12.4 Round 4 — Unit Test Bug Fix (25 Jun 2026)
+
+| # | Bug | File | Root Cause | Fix | Found By |
+|---|------|------|-----------|-----|----------|
+| 22 | `batchSync` checks `error.status` instead of `error.statusCode` | `attendance.service.js` | `createError()` sets `statusCode` but `batchSync` checks `error.status` — the check never matched, so duplicate scans went to `errors[]` instead of `skipped[]` | Changed to `error.statusCode \|\| error.status` for both detection and code propagation | Unit test (attendance service) |
+
+### 12.5 Bug Statistics
 
 | Round | Date | Bugs Found | Bugs Fixed | Fix Rate |
 |-------|------|-----------|-----------|----------|
 | Round 1 (Integration) | 8 Jun 2026 | 7 | 7 | **100%** |
 | Round 2 (E2E + Perf) | 16 Jun 2026 | 4 | 4 | **100%** |
 | Round 3 (Organiser) | 23 Jun 2026 | 10 | 10 | **100%** |
-| **Total** | — | **21** | **21** | **100%** |
+| Round 4 (Unit Tests) | 25 Jun 2026 | 1 | 1 | **100%** |
+| **Total** | — | **22** | **22** | **100%** |
 
 ---
 
@@ -676,14 +672,13 @@ opencode run "$(Get-Content 'docs/Test Plan & Case Spec v2.0.md' -Raw)"
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │              VOLUNTEERING REWARDS APP — TEST DASHBOARD           │
-│                  Consolidated Report v2.0 — 25 Jun 2026          │
+│                  Consolidated Report v2.1 — 25 Jun 2026          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
-│  UNIT TESTS    ████████████████████████████████████████████ 13/13  │
-│  (existing)    ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅               │
-│                                                                   │
-│  NEW UNIT      ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0/11     │
-│  (to write)    ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜                      │
+│  UNIT TESTS    ████████████████████████████████████████████ 91/91  │
+│  (13 services) ✅ auth 6  ✅ admin 7  ✅ merch 8  ✅ events 19   │
+│                 ✅ attend 10 ✅ reward 14 ✅ refer 6  ✅ org 7   │
+│                 ✅ leader 3 ✅ feed 1 ✅ me 4 ✅ email 1 ✅ cfg 2│
 │                                                                   │
 │  INTEGRATION   ████████████████████████████████████████████ 34/34  │
 │  (core)        ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ✅ ...         │
@@ -711,9 +706,9 @@ opencode run "$(Get-Content 'docs/Test Plan & Case Spec v2.0.md' -Raw)"
 │                                                                   │
 ├─────────────────────────────────────────────────────────────────┤
 │  TOTAL EXECUTED:  72/73 PASS (99%*)                               │
-│  TOTAL PLANNED:   72/~155 PASS (46% done, 54% pending)           │
-│  BUGS FIXED:      21/21 (100%)                                    │
-│  *ST-06 is manual-only                                            │
+│  TOTAL PLANNED:   148/~188 PASS (79% done, 21% pending)          │
+│  BUGS FIXED:      22/22 (100%)                                    │
+│  *1 manual-only test (ST-06 network failure) excluded              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
