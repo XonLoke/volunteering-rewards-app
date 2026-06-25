@@ -199,10 +199,18 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem("user");
-    await AsyncStorage.removeItem("token");
-    await AsyncStorage.removeItem("userPoints");
-    router.replace("/login" as any);
+    // Clear all cached user data
+    const keys = [
+      "user",
+      "token",
+      "userPoints",
+      "userId",
+      "bookedEvents",
+      "cancelledBookingIds",
+      "userAvatar",
+    ];
+    await Promise.all(keys.map((k) => AsyncStorage.removeItem(k)));
+    router.replace("/");
   };
 
   const uploadProfilePhoto = async (localUri: string) => {
