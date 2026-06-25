@@ -185,17 +185,17 @@ export default function Profile() {
   };
 
   const confirmLogout = () => {
-    Alert.alert("Log out?", "You will need to log in again to continue.", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Log Out",
-        style: "destructive",
-        onPress: handleLogout,
-      },
-    ]);
+    // Use window.confirm on web (PWA) since Alert.alert buttons don't work in RN Web
+    if (typeof window !== "undefined" && "confirm" in window) {
+      if (window.confirm("Log out?\nYou will need to log in again to continue.")) {
+        handleLogout();
+      }
+    } else {
+      Alert.alert("Log out?", "You will need to log in again to continue.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Log Out", style: "destructive", onPress: handleLogout },
+      ]);
+    }
   };
 
   const handleLogout = async () => {
