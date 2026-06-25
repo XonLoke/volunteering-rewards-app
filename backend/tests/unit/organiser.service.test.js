@@ -1,0 +1,63 @@
+﻿const { describe, it, mock } = require("node:test");
+const assert = require("node:assert");
+const { pool } = require("../../src/config/database");
+const organiserService = require("../../src/services/organiser.service");
+
+function mq(returns) { let i=0; return mock.method(pool,"query",() => i<returns.length?returns[i++]:{rows:[]}); }
+
+describe("getDashboard", () => {
+  it("should return stats and upcoming events", async () => {
+    mq([
+      { rows: [{ total_events: 5, total_volunteers: 20, upcoming_events: 3, average_feedback: 4.2 }] },
+      { rows: [{ id: 1, title: "Event 1", volunteers: 10 }] },
+    ]);
+    const d = await organiserService.getDashboard(1);
+    assert.equal(d.stats.total_events, 5);
+    assert.equal(d.upcoming.length, 1);
+  });
+});
+
+describe("getMyEvents", () => {
+  it("should return paginated events", async () => {
+    mq([{ rows: [{ count: 10 }] }, { rows: [{ id: 1, title: "Event" }] }]);
+    const r = await organiserService.getMyEvents(1);
+    assert.equal(r.total, 10);
+  });
+});
+
+describe("createEvent", () => {
+  it("should create and return event", async () => {
+    mq([{ rows: [{ id: 1, title: "New Event" }] }]);
+    const r = await organiserService.createEvent(1, { title: "New Event", description: "Test", location: "Loc", event_date: "2026-07-01", capacity: 50, points_value: 20, category: "environment" });
+    assert.equal(r.title, "New Event");
+  });
+});
+
+describe("deleteEvent", () => {
+  it("should delete and return event id", async () => {
+    mq([{ rows: [{ id: 1 }] }]);
+    const r = await organiserService.deleteEvent(1, 1);
+    assert.equal(r.id, 1);
+  });
+  it("should throw 404 if not found or not owner", async () => {
+    mq([{ rows: [] }]);
+    try { await organiserService.deleteEvent(1, 999); assert.fail(); }
+    catch (err) { assert.equal(err.statusCode || err.status, 404); }
+  });
+});
+
+describe("getRoster", () => {
+  it("should return volunteer list", async () => {
+    mq([{ rows: [{ id: 1, name: "Alice", status: "registered" }] }]);
+    const r = await organiserService.getRoster(1, 1);
+    assert.equal(r.data.length, 1);
+  });
+});
+
+describe("getFeedback", () => {
+  it("should return feedback list", async () => {
+    mq([{ rows: [{ id: 1, rating: 5 }] }]);
+    const r = await organiserService.getFeedback(1, 1);
+    assert.equal(r.data.length, 1);
+  });
+});
