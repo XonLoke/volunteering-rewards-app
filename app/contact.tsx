@@ -16,6 +16,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { authFetch } from "./api";
+
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 const SUPPORT_EMAIL = "volunteerrewardsapp@gmail.com";
@@ -68,7 +70,7 @@ export default function Contact() {
         return;
       }
 
-      const res = await fetch(`${BASE_URL}/contact`, {
+      const res = await authFetch(`${BASE_URL}/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

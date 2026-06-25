@@ -14,7 +14,10 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback, useRef, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiGet } from "./api";
+import { authFetch } from "./api";
+
+
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
 interface Notification {
   id: number;
@@ -66,7 +69,14 @@ export default function Notifications() {
       const user = JSON.parse(stored);
       setUserId(user.id);
 
-      const data = await apiGet("/notifications");
+      const response = await authFetch(`${BASE_URL}/notifications`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data.message || data.error || "Failed to fetch notifications."
+        );
+      }
 
       setNotifications(data.notifications || []);
     } catch (err: any) {
@@ -109,7 +119,18 @@ export default function Notifications() {
     try {
       setMarkingAll(true);
 
-      const data = await apiGet("/notifications/read-all");
+const response = await authFetch(
+        `${BASE_URL}/notifications/read-all`,
+        {
+          method: "PATCH",
+        }
+      );
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to mark all read.");
+      }
 
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch (err: any) {
@@ -132,7 +153,15 @@ export default function Notifications() {
     );
 
     try {
-      await apiGet("/notifications/" + id + "/read");
+      const response = await authFetch(`${BASE_URL}/notifications/${id}/read`, {
+        method: "PATCH",
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to mark read.");
+      }
     } catch (err) {
       console.error("Failed to mark read:", err);
 

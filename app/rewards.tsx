@@ -14,7 +14,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiGet } from "./api";
+import { authFetch } from "./api";
+
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
@@ -143,9 +144,10 @@ export default function Rewards() {
         setUserPoints(user.points || 0);
       }
 
-      const data = await apiGet("/rewards");
+      const response = await authFetch(`${BASE_URL}/coupons`);
+      const data = await response.json();
 
-      setCoupons(data.data || []);
+      setCoupons(data.coupons || []);
     } catch (err) {
       console.error("Failed to fetch rewards:", err);
     } finally {

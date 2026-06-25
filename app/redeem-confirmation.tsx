@@ -13,7 +13,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiPost } from "./api";
+import { authFetch } from "./api";
+
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
@@ -76,9 +77,20 @@ export default function RedeemConfirmation() {
 
       const user = JSON.parse(storedUser);
 
-      const data = await apiPost(`/rewards/${coupon.couponId}/redeem`);
+      const response = await authFetch(`${BASE_URL}/redeem`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          coupon_id: coupon.couponId,
+        }),
+      });
 
-      if (!data.success) {
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
         Alert.alert(
           "Redemption failed",
           data.error || data.message || "Please try again."

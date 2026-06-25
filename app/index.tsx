@@ -16,20 +16,13 @@ function StarIcon({ color }: { color: string }) {
   return (
     <Svg width={54} height={54} viewBox="0 0 24 24" fill="none">
       <Path
-        d="M12 20.94c-1.2-.8-7-5-7-9.94a7 7 0 0 1 14 0c0 4.94-5.8 9.14-7 9.94z"
+        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
         stroke={color}
         strokeWidth={1.8}
         strokeLinecap="round"
         strokeLinejoin="round"
+        fill="none"
       />
-      <Path
-        d="M12 11l-1.5 2h3L12 16"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Circle cx={12} cy={8.5} r={1.5} fill={color} />
     </Svg>
   );
 }
@@ -114,6 +107,7 @@ export default function Index() {
       end={{ x: 0.85, y: 1 }}
       style={styles.container}
     >
+      {/* Glow blobs */}
       <View
         style={[
           styles.glowOne,
@@ -124,7 +118,6 @@ export default function Index() {
           },
         ]}
       />
-
       <View
         style={[
           styles.glowTwo,
@@ -135,7 +128,6 @@ export default function Index() {
           },
         ]}
       />
-
       <View
         style={[
           styles.glowThree,
@@ -147,6 +139,7 @@ export default function Index() {
         ]}
       />
 
+      {/* Brand row */}
       <View style={styles.brandRow}>
         <View style={styles.brandIconBox}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
@@ -160,10 +153,10 @@ export default function Index() {
             <Circle cx={12} cy={10.5} r={2} stroke="#fff" strokeWidth={2.2} />
           </Svg>
         </View>
-
         <Text style={styles.brandName}>VolunteerRewards</Text>
       </View>
 
+      {/* Centre content */}
       <View style={styles.centre}>
         <View style={styles.iconShadow}>
           <View style={styles.iconCard}>
@@ -173,7 +166,6 @@ export default function Index() {
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
-
             <StarIcon color="#fff" />
           </View>
         </View>
@@ -194,6 +186,7 @@ export default function Index() {
         </Text>
       </View>
 
+      {/* Bottom section */}
       <View style={styles.bottom}>
         <View style={styles.featureCard}>
           <MiniFeature
@@ -202,18 +195,14 @@ export default function Index() {
             textColor="#fff"
             secondaryColor="rgba(255,255,255,0.68)"
           />
-
           <View style={styles.statDivider} />
-
           <MiniFeature
             value="Earn"
             label="Points"
             textColor="#fff"
             secondaryColor="rgba(255,255,255,0.68)"
           />
-
           <View style={styles.statDivider} />
-
           <MiniFeature
             value="Redeem"
             label="Rewards"
@@ -242,14 +231,12 @@ export default function Index() {
           <View style={styles.secondaryIconBox}>
             <UserPlusIcon color="#fff" />
           </View>
-
           <View style={styles.secondaryTextBox}>
             <Text style={styles.secondaryTitle}>Create an account</Text>
             <Text style={styles.secondarySubtitle}>
               New volunteer? Sign up to start earning points.
             </Text>
           </View>
-
           <ArrowIcon color="rgba(255,255,255,0.82)" />
         </TouchableOpacity>
       </View>
@@ -323,6 +310,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1,
+    paddingVertical: 20,
   },
 
   iconShadow: {

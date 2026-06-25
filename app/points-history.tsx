@@ -13,7 +13,8 @@ import { useCallback, useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiGet } from "./api";
+import { authFetch } from "./api";
+
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
@@ -117,9 +118,12 @@ export default function PointsHistory() {
       let backendHistory: HistoryItem[] = [];
 
       try {
-        const pointsData = await apiGet("/me/points");
+const response = await authFetch(
+          `${BASE_URL}/points-history`
+        );
+        const pointsData = await pointsRes.json();
 
-        if (Array.isArray(pointsData.history)) {
+        if (pointsRes.ok && Array.isArray(pointsData.history)) {
           backendHistory = pointsData.history.map((item: any) => ({
             id: `backend-${item.id}`,
             title:
@@ -143,9 +147,10 @@ export default function PointsHistory() {
 
       if (backendHistory.length === 0) {
         try {
-          const scansData = await apiGet("/scans");
+          const scansRes = await authFetch(`${BASE_URL}/scans`);
+          const scansData = await scansRes.json();
 
-          if (Array.isArray(scansData.scans)) {
+          if (scansRes.ok && Array.isArray(scansData.scans)) {
             backendHistory = scansData.scans.map((scan: any) => ({
               id: `scan-${scan.id}`,
               title: scan.event_title || "Volunteer Event",

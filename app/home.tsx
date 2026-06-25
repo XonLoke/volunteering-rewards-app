@@ -16,7 +16,7 @@ import { useState, useCallback } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiGet, apiDelete } from "./api";
+import { authFetch } from "./api";
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 const CANCELLED_BOOKINGS_KEY = "cancelledBookingIds";
@@ -278,7 +278,14 @@ export default function Home() {
   };
 
   const refreshEventsAndBookings = async (userId: number) => {
-    const eventsData = await apiGet("/events");
+    const eventsRes = await authFetch(`${BASE_URL}/events`);
+    const eventsData = await eventsRes.json();
+
+    if (!eventsRes.ok) {
+      throw new Error(
+        eventsData.message || eventsData.error || "Failed to refresh events."
+      );
+    }
 
     const cancelledIds = await getCancelledBookingIds();
 
@@ -340,8 +347,30 @@ export default function Home() {
 
       const user = JSON.parse(stored);
 
-      const data = await apiDelete(`/events/${event.id}/register`);
+      const response = await authFetch(
+        `${BASE_URL}/events/${event.id}/register`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            userId: user.id,
+          }),
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      console.log("HOME DELETE STATUS:", response.status);
       console.log("HOME DELETE DATA:", data);
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || data.error || "Failed to cancel booking."
+        );
+      }
 
       await saveCancelledBookingId(Number(event.id));
       await removeBookingFromHome(Number(event.id), data.registrations);
@@ -404,16 +433,17 @@ export default function Home() {
       setUserPoints(Number(storedPoints ?? user.points ?? 0));
 
       try {
-        const profileData = await apiGet("/auth/me");
+        const profileRes = await authFetch(`${BASE_URL}/profile`);
+        const profileData = await profileRes.json();
 
-        if (profileData) {
-          const freshPoints = Number(profileData.points ?? 0);
+        if (profileRes.ok && profileData.user) {
+          const freshPoints = Number(profileData.user.points ?? 0);
 
           setUserPoints(freshPoints);
 
           const updatedUser = {
             ...user,
-            ...profileData,
+            ...profileData.user,
           };
 
           setUserName(updatedUser.name || "Volunteer");
@@ -427,10 +457,13 @@ export default function Home() {
       }
 
       try {
-        const couponsData = await apiGet("/me/coupons");
+        const response = await authFetch(
+          `${BASE_URL}/my-coupons`
+        );
+        const couponsData = await couponsRes.json();
 
-        if (couponsData && couponsData.data) {
-          const active = (couponsData.data || []).filter(
+        if (couponsRes.ok) {
+          const active = (couponsData.coupons || []).filter(
             (c: any) => c.status === "unused"
           ).length;
 
@@ -441,14 +474,19 @@ export default function Home() {
       }
 
       try {
-        const notifData = await apiGet("/notifications");
+        const response = await authFetch(
+          `${BASE_URL}/notifications`
+        );
+        const notifData = await notifRes.json();
 
-        const notifications = notifData.notifications || [];
+        if (notifRes.ok) {
+          const notifications = notifData.notifications || [];
 
-        const unread = notifications.filter((n: any) => !n.is_read).length;
-        setUnreadCount(unread);
+          const unread = notifications.filter((n: any) => !n.is_read).length;
+          setUnreadCount(unread);
 
-        setUpdates(notifications.slice(0, 3));
+          setUpdates(notifications.slice(0, 3));
+        }
       } catch (notifErr) {
         console.log("Notifications refresh skipped:", notifErr);
       }

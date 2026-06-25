@@ -12,7 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiGet } from "./api";
+import { authFetch } from "./api";
 import QRCode from "react-native-qrcode-svg";
 
 import { useTheme } from "@/contexts/ThemeContext";
@@ -115,7 +115,7 @@ export default function Scan() {
       try {
         const after = encodeURIComponent(qrOpenedAtRef.current);
 
-        const response = await fetch(
+const response = await authFetch(
           `${API_BASE_URL}/attendance/volunteer/${user.id}/latest?after=${after}`,
         );
 

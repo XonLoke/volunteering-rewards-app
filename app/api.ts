@@ -103,6 +103,30 @@ export async function apiDelete<T = any>(
 }
 
 /**
+ * Authenticated fetch wrapper — attaches JWT Bearer token automatically.
+ * Use this in any file that needs to call the API with authentication.
+ */
+export async function authFetch(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const token = await getToken();
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return fetch(url, { ...options, headers });
+}
+
+/**
  * Upload FormData (e.g. avatar image).
  * The caller builds the FormData — this just attaches the token header.
  */

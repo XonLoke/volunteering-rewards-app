@@ -14,7 +14,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiGet, apiPut } from "./api";
+import { authFetch } from "./api";
+
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
@@ -47,23 +48,27 @@ export default function EditProfile() {
         setPhone(user.phone || "");
 
         try {
-          const data = await apiGet("/auth/me");
-          const updatedUser = {
-            ...user,
-            ...data,
-          };
+          const response = await authFetch(`${BASE_URL}/profile`);
+          const data = await response.json();
 
-          setName(updatedUser.name || "");
-          setEmail(updatedUser.email || "");
-          setPhone(updatedUser.phone || "");
+          if (response.ok && data.user) {
+            const updatedUser = {
+              ...user,
+              ...data.user,
+            };
 
-          await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+            setName(updatedUser.name || "");
+            setEmail(updatedUser.email || "");
+            setPhone(updatedUser.phone || "");
 
-          if (typeof updatedUser.points !== "undefined") {
-            await AsyncStorage.setItem(
-              "userPoints",
-              String(updatedUser.points)
-            );
+            await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+
+            if (typeof updatedUser.points !== "undefined") {
+              await AsyncStorage.setItem(
+                "userPoints",
+                String(updatedUser.points)
+              );
+            }
           }
         } catch (error) {
           console.log("Profile refresh skipped:", error);
@@ -112,17 +117,31 @@ export default function EditProfile() {
 
       setSaving(true);
 
-      const data = await apiPut("/auth/me", {
-        name: trimmedName,
-        email: trimmedEmail,
-        phone: trimmedPhone,
+      const response = await authFetch(`${BASE_URL}/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          name: trimmedName,
+          email: trimmedEmail,
+          phone: trimmedPhone,
+        }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
+      console.log("EDIT PROFILE STATUS:", response.status);
       console.log("EDIT PROFILE DATA:", data);
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || "Failed to update profile.");
+      }
 
       const updatedUser = {
         ...user,
-        ...(data || {}),
+        ...(data.user || {}),
         name: trimmedName,
         email: trimmedEmail,
         phone: trimmedPhone,

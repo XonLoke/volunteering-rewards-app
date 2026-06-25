@@ -15,6 +15,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { authFetch } from "./api";
+
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 const accent = "#22d3a5";
@@ -51,7 +53,7 @@ export default function Settings() {
         return;
       }
 
-      const res = await fetch(`${BASE_URL}/settings`, {
+      const res = await authFetch(`${BASE_URL}/settings`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -114,7 +116,7 @@ export default function Settings() {
       return;
     }
 
-    const res = await fetch(`${BASE_URL}/settings`, {
+    const res = await authFetch(`${BASE_URL}/settings`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -218,7 +220,7 @@ export default function Settings() {
         return;
       }
 
-      const res = await fetch(`${BASE_URL}/auth/change-password`, {
+      const res = await authFetch(`${BASE_URL}/auth/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -264,7 +266,7 @@ export default function Settings() {
               const token = await getToken();
 
               if (token) {
-                await fetch(`${BASE_URL}/users/me`, {
+                await authFetch(`${BASE_URL}/users/me`, {
                   method: "DELETE",
                   headers: {
                     Authorization: `Bearer ${token}`,

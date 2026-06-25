@@ -16,7 +16,8 @@ import * as ImagePicker from "expo-image-picker";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiGet, apiPost, apiUpload } from "./api";
+import { authFetch } from "./api";
+
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
@@ -120,12 +121,15 @@ export default function Profile() {
       setAvatarUri(parsedUser.avatar_url || null);
 
       try {
-        const profileData = await apiGet("/auth/me");
+        const response = await authFetch(
+          `${BASE_URL}/profile`
+        );
+        const profileData = await profileRes.json();
 
-        if (profileData) {
+        if (profileRes.ok && profileData.user) {
           const updatedUser = {
             ...parsedUser,
-            ...profileData,
+            ...profileData.user,
           };
 
           setUser(updatedUser);
@@ -142,15 +146,25 @@ export default function Profile() {
       }
 
       try {
-        const scansData = await apiGet("/scans");
-        setScansCount((scansData.scans || []).length);
+        const scansRes = await authFetch(`${BASE_URL}/scans`);
+        const scansData = await scansRes.json();
+
+        if (scansRes.ok) {
+          setScansCount((scansData.scans || []).length);
+        }
       } catch (scanErr) {
         console.log("Scans count skipped:", scanErr);
       }
 
       try {
-        const couponsData = await apiGet("/me/coupons");
-        setCouponsCount((couponsData.data || []).length);
+        const response = await authFetch(
+          `${BASE_URL}/my-coupons`
+        );
+        const couponsData = await couponsRes.json();
+
+        if (couponsRes.ok) {
+          setCouponsCount((couponsData.coupons || []).length);
+        }
       } catch (couponErr) {
         console.log("Coupons count skipped:", couponErr);
       }
@@ -211,7 +225,16 @@ export default function Profile() {
         type: "image/jpeg",
       } as any);
 
-      const data = await apiUpload("/profile/avatar", formData);
+      const response = await authFetch(`${BASE_URL}/profile/avatar`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to upload profile picture.");
+      }
 
       const updatedUser = {
         ...currentUser,

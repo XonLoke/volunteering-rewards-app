@@ -13,7 +13,7 @@ import { useCallback, useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiGet } from "./api";
+import { authFetch } from "./api";
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
@@ -102,9 +102,10 @@ export default function ScanHistory() {
       await AsyncStorage.removeItem("scanHistory");
 
       try {
-        const data = await apiGet("/scans");
+        const response = await authFetch(`${BASE_URL}/scans`);
+        const data = await response.json();
 
-        if (Array.isArray(data.scans) && data.scans.length > 0) {
+        if (response.ok && Array.isArray(data.scans) && data.scans.length > 0) {
           const backendScans: Scan[] = data.scans.map((scan: Scan) => ({
             ...scan,
             source: "backend" as const,

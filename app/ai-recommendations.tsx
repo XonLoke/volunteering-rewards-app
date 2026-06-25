@@ -13,7 +13,8 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiGet } from "./api";
+import { authFetch } from "./api";
+
 import { useCallback, useMemo, useState } from "react";
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
@@ -69,7 +70,14 @@ export default function AIRecommendations() {
 
       const user = JSON.parse(stored);
 
-      const data = await apiGet(`/events/recommended`);
+      const response = await authFetch(`${BASE_URL}/recommendations/${user.id}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || data.error || "Failed to fetch recommendations."
+        );
+      }
 
       setEvents(data.recommendations || []);
       setCategories(data.preferred_categories || []);
