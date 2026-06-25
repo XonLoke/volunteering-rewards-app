@@ -62,20 +62,22 @@
 
 ---
 
-## Phase 3: Integration Tests (Future)
+## Phase 3: Integration & E2E Tests (Completed via Claude CLI)
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 16 | Write integration tests for auth flow | ⬜ | Register → login → refresh → logout |
-| 17 | Write integration tests for event lifecycle | ⬜ | Create → browse → register → attend |
+| 16 | F1-F4 integration tests (IT-35–45) | ✅ | All 11 passing |
+| 17 | Regression tests (REG-01–05) | ✅ | All 5 passing |
+| 18 | System/E2E tests (ST-01–05) | ✅ | 17/17 checks passing |
+| 19 | Security tests (SEC-01–12) | ✅ | 9/9 passing (3 rate-limit skipped) |
 
 ---
 
 ## Progress
 
-- **Total tasks:** 17
-- **Pending:** 4 (CI coverage, CI test DB, integration tests)
-- **Completed:** 13 (all 12 unit test tasks + CI workflow)
+- **Total tasks:** 19
+- **Pending:** 2 (CI coverage, CI test DB)
+- **Completed:** 17 (all unit + integration + e2e + security + CI workflow)
 - **In progress:** 0
 
 ---
