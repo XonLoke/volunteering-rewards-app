@@ -112,6 +112,19 @@ All test-related documents for the Volunteering Rewards App are listed below wit
 **v2.1 Update — Unit Tests Phase Complete:**
 Phase 1 (Unit Tests) from Test Plan v2.0 is now **100% complete**. All 11 planned service test files were written and pass. The previous OpenCode approach was abandoned due to API payment requirements — tests were written directly using Node.js `--test`.
 
+**Phase Breakdown by Execution Tool:**
+
+| Phase | Description | Tests | When | Executed By |
+|-------|-------------|-------|------|-------------|
+| **1a** | Original unit tests (auth, admin, merchant) | 11 | Sprint 3 | Claude Desktop |
+| **1b** | New unit tests (events, attendance, rewards, referral, organiser, leaderboard, feedback, me, email, sponsorshipConfig) + expanded admin/merchant | 80 | 25 Jun 2026 | **Claude CLI (this session)** |
+| **2** | Integration tests (34 API endpoint tests) | 34 | Sprint 3 | Claude Desktop |
+| **3** | Regression tests | 5 | ⬜ Pending | — |
+| **4** | System / E2E tests | 5 scripts | ⬜ Pending | — |
+| **5** | Security tests (automated) | 12 | ⬜ Pending | — |
+| **6** | Performance tests | 17 | Sprint 4 | Claude Desktop |
+| **7** | User Acceptance Tests | 8 | ⬜ Pending (manual) | — |
+
 ### 3.2 Timeline
 
 ```
