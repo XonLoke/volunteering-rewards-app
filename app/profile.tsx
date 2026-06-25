@@ -124,9 +124,9 @@ export default function Profile() {
         const response = await authFetch(
           `${BASE_URL}/profile`
         );
-        const profileData = await profileRes.json();
+        const profileData = await response.json();
 
-        if (profileRes.ok && profileData.user) {
+        if (response.ok && profileData.user) {
           const updatedUser = {
             ...parsedUser,
             ...profileData.user,
@@ -160,9 +160,9 @@ export default function Profile() {
         const response = await authFetch(
           `${BASE_URL}/my-coupons`
         );
-        const couponsData = await couponsRes.json();
+        const couponsData = await response.json();
 
-        if (couponsRes.ok) {
+        if (response.ok) {
           setCouponsCount((couponsData.coupons || []).length);
         }
       } catch (couponErr) {
@@ -210,7 +210,12 @@ export default function Profile() {
       "userAvatar",
     ];
     await Promise.all(keys.map((k) => AsyncStorage.removeItem(k)));
-    router.replace("/");
+    // Force full page reload to reset app state (works in PWA/web)
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    } else {
+      router.replace("/");
+    }
   };
 
   const uploadProfilePhoto = async (localUri: string) => {

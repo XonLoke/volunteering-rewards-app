@@ -460,9 +460,9 @@ export default function Home() {
         const response = await authFetch(
           `${BASE_URL}/my-coupons`
         );
-        const couponsData = await couponsRes.json();
+        const couponsData = await response.json();
 
-        if (couponsRes.ok) {
+        if (response.ok) {
           const active = (couponsData.coupons || []).filter(
             (c: any) => c.status === "unused"
           ).length;
@@ -477,9 +477,9 @@ export default function Home() {
         const response = await authFetch(
           `${BASE_URL}/notifications`
         );
-        const notifData = await notifRes.json();
+        const notifData = await response.json();
 
-        if (notifRes.ok) {
+        if (response.ok) {
           const notifications = notifData.notifications || [];
 
           const unread = notifications.filter((n: any) => !n.is_read).length;

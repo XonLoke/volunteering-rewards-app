@@ -121,9 +121,9 @@ export default function PointsHistory() {
 const response = await authFetch(
           `${BASE_URL}/points-history`
         );
-        const pointsData = await pointsRes.json();
+        const pointsData = await response.json();
 
-        if (pointsRes.ok && Array.isArray(pointsData.history)) {
+        if (response.ok && Array.isArray(pointsData.history)) {
           backendHistory = pointsData.history.map((item: any) => ({
             id: `backend-${item.id}`,
             title:
