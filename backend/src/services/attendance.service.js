@@ -102,12 +102,12 @@ const batchSync = async (scans = []) => {
         const record = await awardPointsForEvent(client, eventId, volunteerId);
         results.success.push({ eventId, volunteerId, awardedPoints: record.awardedPoints, attendanceId: record.attendance.id });
       } catch (error) {
-        if (error.status === 409 && error.message === "already_scanned") {
+        if ((error.statusCode === 409 || error.status === 409) && error.code === "already_scanned") {
           results.skipped.push({ eventId, volunteerId, reason: "already_scanned" });
           continue;
         }
 
-        results.errors.push({ eventId, volunteerId, code: error.status || 500, message: error.message || "sync_error" });
+        results.errors.push({ eventId, volunteerId, code: error.code || error.statusCode || error.status || 500, message: error.message || error.code || "sync_error" });
       }
     }
 
