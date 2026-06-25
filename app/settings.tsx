@@ -278,9 +278,8 @@ export default function Settings() {
               await AsyncStorage.removeItem("token");
               await AsyncStorage.removeItem("settings");
 
-              Alert.alert("Account Deleted", "Your account has been removed.", [
-                { text: "OK", onPress: () => router.replace("/" as any) },
-              ]);
+              Alert.alert("Account Deleted", "Your account has been removed.");
+              router.replace("/" as any);
             } catch (err) {
               Alert.alert("Error", "Failed to delete account.");
             }

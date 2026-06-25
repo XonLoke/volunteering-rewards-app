@@ -16,7 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { authFetch } from "./api";
+import { authFetch, actionSheet, confirmAndAct } from "./api";
 
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
@@ -185,17 +185,7 @@ export default function Profile() {
   };
 
   const confirmLogout = () => {
-    // Use window.confirm on web (PWA) since Alert.alert buttons don't work in RN Web
-    if (typeof window !== "undefined" && "confirm" in window) {
-      if (window.confirm("Log out?\nYou will need to log in again to continue.")) {
-        handleLogout();
-      }
-    } else {
-      Alert.alert("Log out?", "You will need to log in again to continue.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Log Out", style: "destructive", onPress: handleLogout },
-      ]);
-    }
+    confirmAndAct("Log out?", "You will need to log in again to continue.", handleLogout);
   };
 
   const handleLogout = async () => {
@@ -267,9 +257,9 @@ export default function Profile() {
   };
 
   const handleChangePhoto = async () => {
-    Alert.alert("Profile Photo", "Choose how to update your photo", [
+    actionSheet("Profile Photo", "Choose how to update your photo", [
       {
-        text: "Take Photo",
+        label: "Take Photo",
         onPress: async () => {
           const { granted } = await ImagePicker.requestCameraPermissionsAsync();
 
@@ -290,7 +280,7 @@ export default function Profile() {
         },
       },
       {
-        text: "Choose from Library",
+        label: "Choose from Library",
         onPress: async () => {
           const { granted } =
             await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -314,10 +304,6 @@ export default function Profile() {
             await uploadProfilePhoto(result.assets[0].uri);
           }
         },
-      },
-      {
-        text: "Cancel",
-        style: "cancel",
       },
     ]);
   };

@@ -149,12 +149,8 @@ export default function EditProfile() {
 
       await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
 
-      Alert.alert("Saved", "Profile updated successfully.", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
+      Alert.alert("Saved", "Profile updated successfully.");
+      router.back();
     } catch (error: any) {
       console.error("Edit profile error:", error);
       Alert.alert("Error", error.message || "Failed to update profile.");

@@ -158,3 +158,52 @@ export async function apiUpload<T = any>(
 
   return data as T;
 }
+
+// ─── Cross-platform dialog helpers (PWA-safe) ────────────────────
+
+import { Alert, Platform } from "react-native";
+
+const isWeb = Platform.OS === "web";
+
+/**
+ * Confirmation dialog — works on both web (window.confirm) and native (Alert).
+ */
+export function confirmAndAct(
+  title: string,
+  message: string,
+  onConfirm: () => void
+): void {
+  if (isWeb && typeof window !== "undefined") {
+    if (window.confirm(`${title}\n${message}`)) onConfirm();
+  } else {
+    Alert.alert(title, message, [
+      { text: "Cancel", style: "cancel" as const },
+      { text: "OK", onPress: onConfirm },
+    ]);
+  }
+}
+
+/**
+ * Action sheet with multiple options — works in PWA using prompt() fallback.
+ */
+export function actionSheet(
+  title: string,
+  message: string,
+  options: { label: string; onPress: () => void }[]
+): void {
+  if (isWeb && typeof window !== "undefined") {
+    const lines = options.map((o, i) => `${i + 1}. ${o.label}`).join("\n");
+    const choice = prompt(
+      `${title}\n${message}\n\n${lines}\n\nEnter 1-${options.length}:`
+    );
+    if (choice) {
+      const idx = parseInt(choice, 10) - 1;
+      if (idx >= 0 && idx < options.length) options[idx].onPress();
+    }
+  } else {
+    Alert.alert(title, message, [
+      ...options.map((o) => ({ text: o.label, onPress: o.onPress })),
+      { text: "Cancel", style: "cancel" as const },
+    ]);
+  }
+}

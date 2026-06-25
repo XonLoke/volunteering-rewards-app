@@ -14,7 +14,7 @@ import { useState, useCallback } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { authFetch } from "./api";
+import { authFetch, confirmAndAct, actionSheet } from "./api";
 
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
@@ -357,20 +357,10 @@ export default function Events() {
   };
 
   const handleCancelEvent = async (event: Event) => {
-    Alert.alert(
+    confirmAndAct(
       "Cancel booking?",
       `Remove "${event.title}" from your bookings?`,
-      [
-        {
-          text: "Keep",
-          style: "cancel",
-        },
-        {
-          text: "Cancel Booking",
-          style: "destructive",
-          onPress: () => cancelBookingNow(event),
-        },
-      ]
+      () => cancelBookingNow(event)
     );
   };
 
@@ -379,19 +369,14 @@ export default function Events() {
       bookedIds.includes(Number(event.id)) || Boolean(event.registered);
 
     if (isBooked) {
-      Alert.alert("Booking Options", "What would you like to do?", [
+      actionSheet("Booking Options", "What would you like to do?", [
         {
-          text: "View Booking",
+          label: "View Booking",
           onPress: () => goToEventBookedPage(event),
         },
         {
-          text: "Cancel Booking",
-          style: "destructive",
+          label: "Cancel Booking",
           onPress: () => handleCancelEvent(event),
-        },
-        {
-          text: "Close",
-          style: "cancel",
         },
       ]);
 

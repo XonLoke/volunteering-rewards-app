@@ -16,7 +16,7 @@ import { useState, useCallback } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { authFetch } from "./api";
+import { authFetch, confirmAndAct } from "./api";
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 const CANCELLED_BOOKINGS_KEY = "cancelledBookingIds";
@@ -388,20 +388,10 @@ export default function Home() {
   };
 
   const confirmCancelBooking = (event: FeaturedEvent) => {
-    Alert.alert(
+    confirmAndAct(
       "Cancel booking?",
       `Remove "${event.title}" from your bookings?`,
-      [
-        {
-          text: "Keep",
-          style: "cancel",
-        },
-        {
-          text: "Cancel Booking",
-          style: "destructive",
-          onPress: () => cancelBooking(event),
-        },
-      ]
+      () => cancelBooking(event)
     );
   };
 
