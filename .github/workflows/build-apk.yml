@@ -39,20 +39,25 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install root dependencies (for expo-modules-core@3.x with plugin)
+      - name: Install root dependencies (expo SDK 54 → expo-modules-core@3.x)
         working-directory: .
-        run: npm install 2>&1 | tail -5
+        run: |
+          for i in 1 2 3; do
+            npm install --no-audit --no-fund 2>&1 && echo "Root deps installed" && break
+            if [ $i -eq 3 ]; then echo "All 3 retries failed"; exit 1; fi
+            echo "Retry $i failed, waiting 10s..." && sleep 10
+          done
 
       - name: Install mobile_app dependencies
         working-directory: frontend/mobile_app
-        run: npm install
+        run: npm install --no-audit --no-fund
 
       - name: Copy expo-module-gradle-plugin from root to mobile_app
         run: |
           cp -r ../../node_modules/expo-modules-core/expo-module-gradle-plugin node_modules/expo-modules-core/
           echo 'rootProject.name = "expo-module-gradle-plugin"' > node_modules/expo-modules-core/expo-module-gradle-plugin/settings.gradle.kts
-          echo "Plugin copied. Contents:"
-          ls node_modules/expo-modules-core/expo-module-gradle-plugin/
+          echo "Plugin copied. Version:"
+          node -e "console.log(require('node_modules/expo-modules-core/package.json').version)"
 
       - name: Prebuild (generate native project)
         run: npx expo prebuild --platform android --no-install
