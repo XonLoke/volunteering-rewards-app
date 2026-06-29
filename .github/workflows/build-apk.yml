@@ -80,8 +80,11 @@ jobs:
 
           # 5. Fix release component in ExpoModulesCorePlugin.gradle
           #    Use findByName to guard against missing component in AGP 8.x
-          sed -i "s|from components.getByName('release')|def releaseComp = components.findByName(\"release\"); if (releaseComp != null) { from releaseComp }|" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle 2>/dev/null || \
-          sed -i "s|from components.release|def releaseComp = components.findByName(\"release\"); if (releaseComp != null) { from releaseComp }|" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+          if grep -q "components.getByName" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle; then
+            sed -i "s|from components.getByName('release')|def releaseComp = components.findByName(\"release\"); if (releaseComp != null) { from releaseComp }|" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+          else
+            sed -i "s|from components.release|def releaseComp = components.findByName(\"release\"); if (releaseComp != null) { from releaseComp }|" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+          fi
 
           # 6. Remove Kotlin version from expo-module-gradle-plugin (use classpath version)
           sed -i 's/kotlin("jvm") version "[^"]*"/kotlin("jvm")/' node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts
