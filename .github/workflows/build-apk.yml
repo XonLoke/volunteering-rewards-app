@@ -39,7 +39,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install root dependencies (expo SDK 54 → expo-modules-core@3.x)
+      - name: Install root dependencies (expo SDK 54 → latest plugin versions)
         working-directory: .
         run: |
           for i in 1 2 3; do
@@ -52,37 +52,43 @@ jobs:
         working-directory: frontend/mobile_app
         run: npm install --no-audit --no-fund
 
-      - name: Copy expo-module-gradle-plugin from root to mobile_app
+      - name: Copy Gradle plugins from root (newer versions include them)
         run: |
+          # Copy expo-module-gradle-plugin (from expo-modules-core@3.x)
           cp -r ../../node_modules/expo-modules-core/expo-module-gradle-plugin node_modules/expo-modules-core/
           echo 'rootProject.name = "expo-module-gradle-plugin"' > node_modules/expo-modules-core/expo-module-gradle-plugin/settings.gradle.kts
-          echo "Plugin copied."
-          ls node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts 2>/dev/null && echo "Plugin verified ✓"
+
+          # Copy expo-gradle-plugin (from expo-modules-autolinking root version)
+          mkdir -p node_modules/expo-modules-autolinking/android
+          cp -r ../../node_modules/expo-modules-autolinking/android/expo-gradle-plugin node_modules/expo-modules-autolinking/android/
+
+          echo "Plugins copied ✓"
 
       - name: Prebuild (generate native project)
         run: npx expo prebuild --platform android --no-install
 
-      - name: Patch Gradle config for AGP compatibility
+      - name: Patch Gradle config for compatibility
         run: |
-          # Pin AGP to 8.6.0 (compatible with RN 0.76 + expo-modules-core)
+          # 1. Pin AGP to 8.6.0 (matches RN 0.76 requirement)
           sed -i "s/classpath('com.android.tools.build:gradle')/classpath('com.android.tools.build:gradle:8.6.0')/" android/build.gradle
 
-          # Add google() repos to pluginManagement
+          # 2. Add android.disableAutomaticComponentCreation to gradle.properties
+          #    Fixes "SoftwareComponent with name 'release' not found" in AGP 8.x
+          echo "android.disableAutomaticComponentCreation=true" >> android/gradle.properties
+
+          # 3. Add plugin repositories to pluginManagement
           sed -i "s|pluginManagement {|pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }|" android/settings.gradle
 
-          # Add expo-module-gradle-plugin as included build after the RN plugin line
-          sed -i "s|includeBuild(new File(\[\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|includeBuild(new File(new File([\"node\", \"--print\", \"require.resolve('expo-modules-core/package.json', { paths: [require.resolve('expo/package.json')] })\"].execute(null, rootDir).text.trim()).getParentFile(), \"expo-module-gradle-plugin\"))\n    includeBuild(new File([\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|" android/settings.gradle
+          # 4. Add includeBuild for expo-gradle-plugin (from expo-modules-autolinking)
+          sed -i "s|includeBuild(new File(\[\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|includeBuild(new File(new File([\"node\", \"--print\", \"require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })\"].execute(null, rootDir).text.trim()).getParentFile(), \"android/expo-gradle-plugin\"))\n    includeBuild(new File([\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|" android/settings.gradle
 
-          # Fix 1: Remove Kotlin version from plugin (use classpath version instead)
+          # 5. Remove Kotlin version from expo-module-gradle-plugin (use classpath version)
           sed -i 's/kotlin("jvm") version "[^"]*"/kotlin("jvm")/' node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts
 
-          # Fix 2: Guard release component lookup in ExpoModulesCorePlugin.gradle
-          sed -i "s/from components.getByName('release')/try { from components.getByName(\"release\") } catch (Exception ig) { from components.getByName(\"debug\") }/" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
-
           echo "=== Patches applied ==="
-          grep "com.android.tools.build" android/build.gradle
-          grep "kotlin" node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts | head -3
-          grep "components.getByName" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+          echo "AGP:" && grep "com.android.tools.build" android/build.gradle
+          echo "disableAutomaticComponentCreation:" && grep "disableAutomaticComponentCreation" android/gradle.properties
+          echo "Kotlin:" && grep "kotlin(\"jvm\")" node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts
 
       - name: Build APK
         run: |
