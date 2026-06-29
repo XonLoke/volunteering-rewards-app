@@ -102,6 +102,13 @@ jobs:
             echo "settings.gradle.kts already exists ✓"
           fi
 
+      - name: Create splash screen placeholder (referenced by expo-splash-screen)
+        run: |
+          mkdir -p android/app/src/main/res/drawable
+          # 1x1 transparent PNG as base64
+          echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > android/app/src/main/res/drawable/splashscreen_logo.png
+          echo "✅ Splash screen placeholder created"
+
       - name: Build APK
         run: |
           cd android
