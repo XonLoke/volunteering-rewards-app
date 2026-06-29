@@ -206,7 +206,36 @@ jobs:
           ./gradlew --version
 
       # ----------------------------------------------------------------
-      # STEP 11: Cache Gradle build outputs
+      # STEP 11: Patch expo-module-gradle-plugin (missing settings.gradle.kts)
+      # The expo-modules-core@3.x plugin ships without a settings.gradle.kts
+      # in its expo-module-gradle-plugin/ directory. Without it, Gradle
+      # can't resolve the included build's plugin dependencies (Kotlin JVM).
+      # See: docs/to_be_debug_for_APK_Build.md (v2)
+      #
+      # The sibling expo-gradle-plugin HAS this file and works — we mirror it.
+      # ----------------------------------------------------------------
+      - name: 🔧 Patch expo-module-gradle-plugin settings
+        working-directory: ${{ env.MOBILE_APP_DIR }}
+        run: |
+          PLUGIN_DIR="node_modules/expo-modules-core/expo-module-gradle-plugin"
+          if [ ! -f "$PLUGIN_DIR/settings.gradle.kts" ]; then
+            echo 'pluginManagement {' > "$PLUGIN_DIR/settings.gradle.kts"
+            echo '  repositories {' >> "$PLUGIN_DIR/settings.gradle.kts"
+            echo '    mavenCentral()' >> "$PLUGIN_DIR/settings.gradle.kts"
+            echo '    google()' >> "$PLUGIN_DIR/settings.gradle.kts"
+            echo '    gradlePluginPortal()' >> "$PLUGIN_DIR/settings.gradle.kts"
+            echo '  }' >> "$PLUGIN_DIR/settings.gradle.kts"
+            echo '}' >> "$PLUGIN_DIR/settings.gradle.kts"
+            echo '' >> "$PLUGIN_DIR/settings.gradle.kts"
+            echo 'rootProject.name = "expo-module-gradle-plugin"' >> "$PLUGIN_DIR/settings.gradle.kts"
+            echo "✅ Created $PLUGIN_DIR/settings.gradle.kts with plugin repos"
+          else
+            echo "✅ settings.gradle.kts already exists"
+          fi
+          cat "$PLUGIN_DIR/settings.gradle.kts"
+
+      # ----------------------------------------------------------------
+      # STEP 12: Cache Gradle build outputs
       # Significantly speeds up subsequent builds.
       # ----------------------------------------------------------------
       - name: 💾 Cache Gradle build outputs
@@ -221,7 +250,7 @@ jobs:
             gradle-${{ runner.os }}-
 
       # ----------------------------------------------------------------
-      # STEP 12: Build the APK
+      # STEP 13: Build the APK
       # assembleDebug — unsigned debug APK (no keystore required)
       # assembleRelease — would require signing config
       #
@@ -241,7 +270,7 @@ jobs:
           echo "✅ Gradle build complete"
 
       # ----------------------------------------------------------------
-      # STEP 13: Locate the built APK
+      # STEP 14: Locate the built APK
       # Expo/RN projects output APKs to app/build/outputs/apk/debug/
       # ----------------------------------------------------------------
       - name: 📍 Locate built APK
@@ -259,7 +288,7 @@ jobs:
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
 
       # ----------------------------------------------------------------
-      # STEP 14: Upload APK as a workflow artifact
+      # STEP 15: Upload APK as a workflow artifact
       # Download from: Actions tab → click the workflow run → Artifacts section
       # Retained for 30 days by default.
       # ----------------------------------------------------------------
@@ -272,7 +301,7 @@ jobs:
           if-no-files-found: error
 
       # ----------------------------------------------------------------
-      # STEP 15: Print build summary
+      # STEP 16: Print build summary
       # ----------------------------------------------------------------
       - name: 📊 Build Summary
         if: success()
@@ -289,7 +318,7 @@ jobs:
           echo "============================================"
 
       # ----------------------------------------------------------------
-      # STEP 16: On failure — dump useful diagnostics
+      # STEP 17: On failure — dump useful diagnostics
       # Prints Gradle properties, node_modules state, and env info
       # to help with debugging without having to re-run the workflow.
       # ----------------------------------------------------------------
