@@ -39,17 +39,23 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install dependencies
+      - name: Install root dependencies (for expo-modules-core@3.x with plugin)
+        working-directory: .
+        run: npm install 2>&1 | tail -5
+
+      - name: Install mobile_app dependencies
+        working-directory: frontend/mobile_app
         run: npm install
+
+      - name: Copy expo-module-gradle-plugin from root to mobile_app
+        run: |
+          cp -r ../../node_modules/expo-modules-core/expo-module-gradle-plugin node_modules/expo-modules-core/
+          echo 'rootProject.name = "expo-module-gradle-plugin"' > node_modules/expo-modules-core/expo-module-gradle-plugin/settings.gradle.kts
+          echo "Plugin copied. Contents:"
+          ls node_modules/expo-modules-core/expo-module-gradle-plugin/
 
       - name: Prebuild (generate native project)
         run: npx expo prebuild --platform android --no-install
-
-      - name: Copy expo-module-gradle-plugin to mobile_app node_modules
-        run: |
-          # Root has expo-modules-core@3.x which includes the plugin, mobile_app has 2.x without it
-          cp -r ../../node_modules/expo-modules-core/expo-module-gradle-plugin node_modules/expo-modules-core/
-          echo "Plugin copied: $(ls node_modules/expo-modules-core/expo-module-gradle-plugin/)"
 
       - name: Patch Gradle config for AGP compatibility
         run: |
