@@ -61,14 +61,19 @@ jobs:
         run: |
           # Pin AGP to 8.6.0 (compatible with RN 0.76 + expo-modules-core)
           sed -i "s/classpath('com.android.tools.build:gradle')/classpath('com.android.tools.build:gradle:8.6.0')/" android/build.gradle
-          # Add google() to pluginManagement repositories
-          sed -i "s|pluginManagement {|pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }|" android/settings.gradle
+
+          # Add Kotlin resolution strategy + google() repos to pluginManagement
+          sed -i "s|pluginManagement {|pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n    resolutionStrategy {\n        eachPlugin {\n            if (requested.id.namespace == 'org.jetbrains.kotlin') {\n                useVersion('1.9.25')\n            }\n        }\n    }|" android/settings.gradle
+
           # Add expo-module-gradle-plugin as included build after the RN plugin line
           sed -i "s|includeBuild(new File(\[\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|includeBuild(new File(new File([\"node\", \"--print\", \"require.resolve('expo-modules-core/package.json', { paths: [require.resolve('expo/package.json')] })\"].execute(null, rootDir).text.trim()).getParentFile(), \"expo-module-gradle-plugin\"))\n    includeBuild(new File([\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|" android/settings.gradle
-          echo "=== build.gradle AGP ==="
+
+          # Fix 'release' component error in ExpoModulesCorePlugin.gradle
+          sed -i "s/from components.release/from components.getByName('release')/" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+
+          echo "=== Patches applied ==="
           grep "com.android.tools.build" android/build.gradle
-          echo "=== settings.gradle pluginManagement ==="
-          head -12 android/settings.gradle
+          head -16 android/settings.gradle
 
       - name: Build APK
         run: |
