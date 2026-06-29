@@ -31,6 +31,8 @@ frontend/web_portal/
 .vercel
 dist/
 .expo/
+android/
+ios/
 *.log
 build_*.bat
 build_*.txt

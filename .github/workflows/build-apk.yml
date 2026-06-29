@@ -1,10 +1,32 @@
-name: Build APK
+# =============================================================================
+# build-apk.yml
+# Volunteer Rewards App — Android APK Build (Expo SDK 54)
+#
+# PURPOSE:
+#   Build a debug APK from the Expo mobile project in frontend/mobile_app/.
+#   SDK 54 natively includes expo-module-gradle-plugin via expo-modules-core@3.x,
+#   eliminating ALL the plugin patching and Kotlin version conflicts from SDK 52.
+#
+# TRIGGERS:
+#   - Manual dispatch (workflow_dispatch): primary trigger for on-demand APK builds
+#   - Push to 'apk-build' branch: optional CI trigger for the build branch
+#
+# SECRETS REQUIRED:
+#   None for debug APK. For release/signed APK, add:
+#   - ANDROID_KEYSTORE_BASE64
+#   - ANDROID_KEY_ALIAS
+#   - ANDROID_KEY_PASSWORD
+#   - ANDROID_STORE_PASSWORD
+# =============================================================================
+
+name: Build Android APK
 
 on:
+  # Allow manual trigger from GitHub UI (Actions tab → Run workflow)
   workflow_dispatch:
     inputs:
-      build-type:
-        description: 'Build type (debug/release)'
+      build_type:
+        description: 'Build type (debug or release)'
         required: true
         default: 'debug'
         type: choice
@@ -12,100 +34,288 @@ on:
           - debug
           - release
 
+  # Automatically build when pushing to this dedicated branch
+  push:
+    branches:
+      - apk-build
+
+# Cancel any in-progress builds if a new one is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: Build Android APK
+  build-apk:
+    name: Build Android APK (Expo SDK 54)
+    # Ubuntu runner — required for EAS local builds and Gradle builds
+    # Windows runners do NOT support eas build --local
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend/mobile_app
+
+    # -----------------------------------------------------------
+    # Environment: pin versions to ensure reproducible builds
+    # -----------------------------------------------------------
+    env:
+      # Java version — must match what Expo SDK 54 / AGP 8.6 expects
+      JAVA_VERSION: '17'
+      # Node version — Expo SDK 54 requires Node 18+
+      NODE_VERSION: '20'
+      # Working directory — all npm/gradle commands run from here
+      MOBILE_APP_DIR: frontend/mobile_app
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # ----------------------------------------------------------------
+      # STEP 1: Checkout the full repository
+      # ----------------------------------------------------------------
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
         with:
-          node-version: 20
-          cache: 'npm'
-          cache-dependency-path: frontend/mobile_app/package-lock.json
+          # Fetch full history so expo prebuild has git context
+          fetch-depth: 0
 
-      - name: Setup Java 17
+      # ----------------------------------------------------------------
+      # STEP 2: Set up Java (JDK 17)
+      # Expo SDK 54 + AGP 8.6 officially targets JDK 17.
+      # JDK 21 may cause subtle toolchain issues — stick with 17.
+      # ----------------------------------------------------------------
+      - name: ☕ Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
-          java-version: '17'
+          # Cache Gradle dependencies between workflow runs
+          cache: 'gradle'
 
-      - name: Setup Android SDK
+      # ----------------------------------------------------------------
+      # STEP 3: Set up Android SDK
+      # Installs the command-line tools and required SDK packages.
+      # ----------------------------------------------------------------
+      - name: 🤖 Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # Accept all SDK licenses automatically
+          accept-android-sdk-licenses: true
 
-      - name: Install root dependencies (expo SDK 54 → latest plugin versions)
-        working-directory: .
+      # ----------------------------------------------------------------
+      # STEP 4: Install additional Android SDK components
+      # The setup-android action installs basics; we need specific versions.
+      # ----------------------------------------------------------------
+      - name: 📦 Install Android SDK packages
         run: |
-          for i in 1 2 3; do
-            npm install --no-audit --no-fund 2>&1 && echo "Root deps installed" && break
-            if [ $i -eq 3 ]; then echo "All 3 retries failed"; exit 1; fi
-            echo "Retry $i failed, waiting 10s..." && sleep 10
-          done
+          echo "Installing required Android SDK packages..."
+          sdkmanager --install \
+            "platforms;android-34" \
+            "platforms;android-35" \
+            "build-tools;34.0.0" \
+            "build-tools;35.0.0" \
+            "platform-tools" \
+            --sdk_root=$ANDROID_SDK_ROOT
+          echo "✅ Android SDK packages installed"
 
-      - name: Install mobile_app dependencies
-        working-directory: frontend/mobile_app
-        run: npm install --no-audit --no-fund
+      # ----------------------------------------------------------------
+      # STEP 5: Set up Node.js
+      # ----------------------------------------------------------------
+      - name: 🟢 Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # Cache node_modules based on lock file for faster builds
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            ${{ env.MOBILE_APP_DIR }}/package-lock.json
 
-      - name: Copy Gradle plugins from root (newer versions include them)
+      # ----------------------------------------------------------------
+      # STEP 6: Install root-level dependencies
+      # The root workspace may contain shared Expo tooling.
+      # ----------------------------------------------------------------
+      - name: 📦 Install root dependencies
         run: |
-          # Copy expo-module-gradle-plugin (from expo-modules-core@3.x)
-          cp -r ../../node_modules/expo-modules-core/expo-module-gradle-plugin node_modules/expo-modules-core/
-          echo 'rootProject.name = "expo-module-gradle-plugin"' > node_modules/expo-modules-core/expo-module-gradle-plugin/settings.gradle.kts
+          echo "Installing root workspace dependencies..."
+          npm ci --prefer-offline || npm install
+          echo "✅ Root dependencies installed"
 
-          # Copy expo-gradle-plugin (from expo-modules-autolinking root version)
-          mkdir -p node_modules/expo-modules-autolinking/android
-          cp -r ../../node_modules/expo-modules-autolinking/android/expo-gradle-plugin node_modules/expo-modules-autolinking/android/
-
-          echo "Plugins copied ✓"
-
-      - name: Prebuild (generate native project)
-        run: npx expo prebuild --platform android --no-install
-
-      - name: Patch Gradle config for compatibility
+      # ----------------------------------------------------------------
+      # STEP 7: Install mobile_app dependencies
+      # Uses npm ci for reproducible installs from package-lock.json.
+      # Falls back to npm install if lock file is missing/outdated.
+      # ----------------------------------------------------------------
+      - name: 📦 Install mobile_app dependencies
+        working-directory: ${{ env.MOBILE_APP_DIR }}
         run: |
-          # 1. Pin AGP to 8.6.0 (matches RN 0.76 requirement)
-          sed -i "s/classpath('com.android.tools.build:gradle')/classpath('com.android.tools.build:gradle:8.6.0')/" android/build.gradle
+          echo "Installing mobile app dependencies..."
+          npm ci --prefer-offline || npm install
+          echo "✅ Mobile app dependencies installed"
 
-          # 2. Add plugin repositories to pluginManagement
-          sed -i "s|pluginManagement {|pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }|" android/settings.gradle
-
-          # 4. Add includeBuild for expo-gradle-plugin (autolinking) + expo-module-gradle-plugin (modules-core)
-          sed -i "s|includeBuild(new File(\[\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|includeBuild(new File(new File([\"node\", \"--print\", \"require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })\"].execute(null, rootDir).text.trim()).getParentFile(), \"android/expo-gradle-plugin\"))\n    includeBuild(new File(new File([\"node\", \"--print\", \"require.resolve('expo-modules-core/package.json', { paths: [require.resolve('expo/package.json')] })\"].execute(null, rootDir).text.trim()).getParentFile(), \"expo-module-gradle-plugin\"))\n    includeBuild(new File([\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|" android/settings.gradle
-
-          # 5. Fix release component in ExpoModulesCorePlugin.gradle
-          #    Use findByName to guard against missing component in AGP 8.x
-          if grep -q "components.getByName" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle; then
-            sed -i "s|from components.getByName('release')|def releaseComp = components.findByName(\"release\"); if (releaseComp != null) { from releaseComp }|" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
-          else
-            sed -i "s|from components.release|def releaseComp = components.findByName(\"release\"); if (releaseComp != null) { from releaseComp }|" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+      # ----------------------------------------------------------------
+      # STEP 8: Verify expo-module-gradle-plugin is present
+      # This is the plugin that was MISSING in SDK 52 and caused all the
+      # cascading failures. With SDK 54, it ships in expo-modules-core@3.x.
+      # If this step fails, the SDK version is wrong.
+      # ----------------------------------------------------------------
+      - name: 🔍 Verify expo-module-gradle-plugin exists
+        working-directory: ${{ env.MOBILE_APP_DIR }}
+        run: |
+          PLUGIN_PATH=$(find node_modules -path "*/expo-module-gradle-plugin/build.gradle" -o -path "*/expo-module-gradle-plugin/build.gradle.kts" 2>/dev/null | head -1)
+          if [ -z "$PLUGIN_PATH" ]; then
+            echo "❌ expo-module-gradle-plugin NOT FOUND"
+            echo "This means expo-modules-core < 3.x is installed (SDK 52 or lower)"
+            echo ""
+            echo "Current expo-modules-core version:"
+            cat node_modules/expo-modules-core/package.json | grep '"version"' || echo "Not found"
+            echo ""
+            echo "Fix: Run 'npx expo upgrade 54' in frontend/mobile_app/ and commit the changes"
+            exit 1
           fi
+          echo "✅ expo-module-gradle-plugin found at: $PLUGIN_PATH"
+          echo ""
+          echo "expo-modules-core version:"
+          cat node_modules/expo-modules-core/package.json | grep '"version"'
 
-          # 6. Remove Kotlin version from expo-module-gradle-plugin (use classpath version)
-          sed -i 's/kotlin("jvm") version "[^"]*"/kotlin("jvm")/' node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts
-
-          echo "=== Patches applied ==="
-          echo "AGP:" && grep "com.android.tools.build" android/build.gradle
-          echo "Kotlin:" && grep "kotlin(\"jvm\")" node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts
-          echo "Release component:" && grep "findByName" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
-
-      - name: Build APK
+      # ----------------------------------------------------------------
+      # STEP 9: Run expo prebuild (clean)
+      # Generates the android/ native project folders from the
+      # Expo config (app.json / app.config.js).
+      # --clean ensures we start fresh (removes stale android/ directory)
+      # CI=1 makes it fully non-interactive.
+      # ----------------------------------------------------------------
+      - name: 🔧 Run expo prebuild --clean
+        working-directory: ${{ env.MOBILE_APP_DIR }}
         run: |
-          cd android
-          if [ "${{ github.event.inputs.build-type }}" = "release" ]; then
-            ./gradlew assembleRelease
-          else
-            ./gradlew assembleDebug
-          fi
+          echo "Running expo prebuild (clean mode)..."
+          CI=1 npx expo prebuild --clean --platform android
+          echo "✅ Prebuild complete — android/ directory generated"
+          echo ""
+          echo "Generated files:"
+          ls -la android/
 
-      - name: Upload APK
+      # ----------------------------------------------------------------
+      # STEP 10: Verify Gradle wrapper is present and executable
+      # The gradlew file should have been generated by expo prebuild.
+      # ----------------------------------------------------------------
+      - name: 🔐 Fix Gradle wrapper permissions
+        working-directory: ${{ env.MOBILE_APP_DIR }}/android
+        run: |
+          if [ ! -f "gradlew" ]; then
+            echo "❌ gradlew not found — expo prebuild may have failed"
+            exit 1
+          fi
+          chmod +x gradlew
+          echo "✅ gradlew is executable"
+          echo ""
+          # Print Gradle version for debugging
+          ./gradlew --version
+
+      # ----------------------------------------------------------------
+      # STEP 11: Cache Gradle build outputs
+      # Significantly speeds up subsequent builds.
+      # ----------------------------------------------------------------
+      - name: 💾 Cache Gradle build outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ${{ env.MOBILE_APP_DIR }}/android/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # ----------------------------------------------------------------
+      # STEP 12: Build the APK
+      # assembleDebug — unsigned debug APK (no keystore required)
+      # assembleRelease — would require signing config
+      #
+      # --stacktrace: print full stack traces on failure (essential for debugging)
+      # --no-daemon: CI environments shouldn't run persistent daemons
+      # ----------------------------------------------------------------
+      - name: 🏗️ Build ${{ github.event.inputs.build_type == 'release' && 'Release' || 'Debug' }} APK
+        working-directory: ${{ env.MOBILE_APP_DIR }}/android
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+          GRADLE_TASK="assemble${BUILD_TYPE^}"
+          echo "Starting Gradle $GRADLE_TASK build..."
+          ./gradlew "$GRADLE_TASK" \
+            --stacktrace \
+            --no-daemon \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
+          echo "✅ Gradle build complete"
+
+      # ----------------------------------------------------------------
+      # STEP 13: Locate the built APK
+      # Expo/RN projects output APKs to app/build/outputs/apk/debug/
+      # ----------------------------------------------------------------
+      - name: 📍 Locate built APK
+        working-directory: ${{ env.MOBILE_APP_DIR }}
+        id: locate-apk
+        run: |
+          APK_PATH=$(find android -name "*.apk" -type f 2>/dev/null | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "❌ No APK found after build. Check Gradle output above."
+            exit 1
+          fi
+          echo "✅ APK found: $APK_PATH"
+          echo "APK size: $(du -sh "$APK_PATH" | cut -f1)"
+          # Export for use in the upload step
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+
+      # ----------------------------------------------------------------
+      # STEP 14: Upload APK as a workflow artifact
+      # Download from: Actions tab → click the workflow run → Artifacts section
+      # Retained for 30 days by default.
+      # ----------------------------------------------------------------
+      - name: 📤 Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-${{ github.event.inputs.build-type }}.apk
-          path: frontend/mobile_app/android/app/build/outputs/apk/${{ github.event.inputs.build-type }}/app-*.apk
+          name: volunteer-rewards-${{ github.event.inputs.build_type || 'debug' }}-apk-${{ github.run_number }}
+          path: ${{ env.MOBILE_APP_DIR }}/${{ steps.locate-apk.outputs.apk_path }}
           retention-days: 30
+          if-no-files-found: error
+
+      # ----------------------------------------------------------------
+      # STEP 15: Print build summary
+      # ----------------------------------------------------------------
+      - name: 📊 Build Summary
+        if: success()
+        run: |
+          echo "============================================"
+          echo "✅ APK BUILD SUCCESSFUL"
+          echo "============================================"
+          echo ""
+          echo "APK Location (in artifact): ${{ steps.locate-apk.outputs.apk_path }}"
+          echo "Artifact Name: volunteer-rewards-${{ github.event.inputs.build_type || 'debug' }}-apk-${{ github.run_number }}"
+          echo ""
+          echo "To download: Go to Actions tab → this workflow run → Artifacts section"
+          echo "To install:  adb install <downloaded-apk-file>"
+          echo "============================================"
+
+      # ----------------------------------------------------------------
+      # STEP 16: On failure — dump useful diagnostics
+      # Prints Gradle properties, node_modules state, and env info
+      # to help with debugging without having to re-run the workflow.
+      # ----------------------------------------------------------------
+      - name: 🔎 Diagnostic dump on failure
+        if: failure()
+        working-directory: ${{ env.MOBILE_APP_DIR }}
+        run: |
+          echo "======== ENVIRONMENT ========"
+          java -version
+          node --version
+          npm --version
+          echo ""
+          echo "======== EXPO DOCTOR ========"
+          npx expo-doctor || true
+          echo ""
+          echo "======== KEY PACKAGE VERSIONS ========"
+          cat package.json | grep -E '"expo"|"react-native"|"expo-modules-core"' || true
+          echo ""
+          echo "======== ANDROID DIR CONTENTS ========"
+          ls -la android/ 2>/dev/null || echo "android/ not generated"
+          echo ""
+          echo "======== GRADLE PROPERTIES ========"
+          cat android/gradle.properties 2>/dev/null || echo "gradle.properties not found"
+          echo ""
+          echo "======== SETTINGS.GRADLE ========"
+          cat android/settings.gradle 2>/dev/null || echo "settings.gradle not found"
+          echo ""
+          echo "======== EXPO-MODULES-CORE VERSION ========"
+          cat node_modules/expo-modules-core/package.json 2>/dev/null | grep '"version"' || echo "Not installed"
