@@ -39,7 +39,12 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install root dependencies (expo SDK 54 → latest plugin versions)
+      - name: Install required Android SDK platform (SDK 36 for RN 0.81.5)
+        run: |
+          sdkmanager --install "platforms;android-36" "build-tools;36.0.0" --sdk_root=$ANDROID_SDK_ROOT
+          echo "SDK 36 installed ✓"
+
+      - name: Install root dependencies
         working-directory: .
         run: |
           for i in 1 2 3; do
@@ -52,51 +57,54 @@ jobs:
         working-directory: frontend/mobile_app
         run: npm install --no-audit --no-fund
 
-      - name: Copy Gradle plugins from root (newer versions include them)
+      - name: Verify expo-module-gradle-plugin exists (SDK 54 ships it)
         run: |
-          # Copy expo-module-gradle-plugin (from expo-modules-core@3.x)
-          cp -r ../../node_modules/expo-modules-core/expo-module-gradle-plugin node_modules/expo-modules-core/
-          echo 'rootProject.name = "expo-module-gradle-plugin"' > node_modules/expo-modules-core/expo-module-gradle-plugin/settings.gradle.kts
+          PLUGIN_PATH=$(find node_modules -path "*/expo-module-gradle-plugin/build.gradle*" 2>/dev/null | head -1)
+          if [ -z "$PLUGIN_PATH" ]; then
+            echo "❌ Plugin not found — expo-modules-core may be < 3.x"
+            cat node_modules/expo-modules-core/package.json | grep '"version"'
+            exit 1
+          fi
+          echo "✅ Plugin found at: $PLUGIN_PATH"
 
-          # Copy expo-gradle-plugin (from expo-modules-autolinking root version)
-          mkdir -p node_modules/expo-modules-autolinking/android
-          cp -r ../../node_modules/expo-modules-autolinking/android/expo-gradle-plugin node_modules/expo-modules-autolinking/android/
-
-          echo "Plugins copied ✓"
+          # Create settings.gradle.kts if missing (needed for CI)
+          PLUGIN_DIR=$(dirname "$PLUGIN_PATH")
+          if [ ! -f "$PLUGIN_DIR/settings.gradle.kts" ]; then
+            echo 'pluginManagement {
+              repositories {
+                mavenCentral()
+                google()
+                gradlePluginPortal()
+              }
+            }
+            rootProject.name = "expo-module-gradle-plugin"' > "$PLUGIN_DIR/settings.gradle.kts"
+            echo "Created settings.gradle.kts ✓"
+          fi
 
       - name: Prebuild (generate native project)
         run: npx expo prebuild --platform android --no-install
 
-      - name: Patch Gradle config for compatibility
+      - name: Patch expo-module-gradle-plugin settings
         run: |
-          # 1. Pin AGP to 8.6.0 (matches RN 0.76 requirement)
-          sed -i "s/classpath('com.android.tools.build:gradle')/classpath('com.android.tools.build:gradle:8.6.0')/" android/build.gradle
-
-          # 2. Add plugin repositories to pluginManagement
-          sed -i "s|pluginManagement {|pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }|" android/settings.gradle
-
-          # 4. Add includeBuild for expo-gradle-plugin (autolinking) + expo-module-gradle-plugin (modules-core)
-          sed -i "s|includeBuild(new File(\[\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|includeBuild(new File(new File([\"node\", \"--print\", \"require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })\"].execute(null, rootDir).text.trim()).getParentFile(), \"android/expo-gradle-plugin\"))\n    includeBuild(new File(new File([\"node\", \"--print\", \"require.resolve('expo-modules-core/package.json', { paths: [require.resolve('expo/package.json')] })\"].execute(null, rootDir).text.trim()).getParentFile(), \"expo-module-gradle-plugin\"))\n    includeBuild(new File([\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|" android/settings.gradle
-
-          # 5. Fix release component in ExpoModulesCorePlugin.gradle
-          #    Use findByName to guard against missing component in AGP 8.x
-          if grep -q "components.getByName" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle; then
-            sed -i "s|from components.getByName('release')|def releaseComp = components.findByName(\"release\"); if (releaseComp != null) { from releaseComp }|" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+          PLUGIN_DIR="node_modules/expo-modules-core/expo-module-gradle-plugin"
+          if [ ! -f "$PLUGIN_DIR/settings.gradle.kts" ]; then
+            echo 'pluginManagement {
+              repositories {
+                mavenCentral()
+                google()
+                gradlePluginPortal()
+              }
+            }
+            rootProject.name = "expo-module-gradle-plugin"' > "$PLUGIN_DIR/settings.gradle.kts"
+            echo "Created settings.gradle.kts ✓"
           else
-            sed -i "s|from components.release|def releaseComp = components.findByName(\"release\"); if (releaseComp != null) { from releaseComp }|" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+            echo "settings.gradle.kts already exists ✓"
           fi
-
-          # 6. Remove Kotlin version from expo-module-gradle-plugin (use classpath version)
-          sed -i 's/kotlin("jvm") version "[^"]*"/kotlin("jvm")/' node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts
-
-          echo "=== Patches applied ==="
-          echo "AGP:" && grep "com.android.tools.build" android/build.gradle
-          echo "Kotlin:" && grep "kotlin(\"jvm\")" node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts
-          echo "Release component:" && grep "findByName" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
 
       - name: Build APK
         run: |
           cd android
+          chmod +x gradlew
           if [ "${{ github.event.inputs.build-type }}" = "release" ]; then
             ./gradlew assembleRelease
           else
