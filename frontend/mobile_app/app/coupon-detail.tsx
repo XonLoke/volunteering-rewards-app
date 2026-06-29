@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Svg, Rect } from "react-native-svg";
 import { useEffect, useState } from "react";

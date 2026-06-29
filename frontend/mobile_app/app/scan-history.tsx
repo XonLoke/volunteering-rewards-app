@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { useTheme } from "../../contexts/ThemeContext";
-import { api } from "../../src/services/api";
+import { useTheme } from "../contexts/ThemeContext";
+import { api } from "../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 

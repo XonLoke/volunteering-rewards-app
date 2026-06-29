@@ -9,8 +9,8 @@ import {
   Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTheme } from "../../contexts/ThemeContext";
-import { api } from "../../src/services/api";
+import { useTheme } from "../contexts/ThemeContext";
+import { api } from "../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";

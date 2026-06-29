@@ -11,8 +11,8 @@ import {
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useState, useCallback } from "react";
-import { useTheme } from "../../contexts/ThemeContext";
-import { api } from "../../src/services/api";
+import { useTheme } from "../contexts/ThemeContext";
+import { api } from "../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -204,7 +204,7 @@ export default function Events() {
     try {
       setBookingId(event.id);
 
-      const response = await fetch(`/events/${event.id}/register`,`, {
+      const response = await fetch(`/events/${event.id}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -279,7 +279,7 @@ export default function Events() {
       setBookingId(event.id);
 
       const response = await fetch(
-        `/events/${event.id}/register`,?user_id=${user.id}`,
+        `/events/${event.id}/register?user_id=${user.id}`,
         {
           method: "DELETE",
           headers: {

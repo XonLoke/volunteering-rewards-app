@@ -13,8 +13,8 @@ import {
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useState, useCallback } from "react";
-import { useTheme } from "../../contexts/ThemeContext";
-import { api } from "../../src/services/api";
+import { useTheme } from "../contexts/ThemeContext";
+import { api } from "../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -71,65 +71,8 @@ const getGreeting = () => {
   return "Good evening";
 };
 
-const getEventImage = (category?: string, title?: string) => {
-  const text = `${category || ""} ${title || ""}`.toLowerCase();
-
-  if (text.includes("beach") || text.includes("cleanup")) {
-    return require("@/assets/images/beach.webp");
-  }
-
-  if (
-    text.includes("food bank") ||
-    text.includes("sorting") ||
-    text.includes("packing")
-  ) {
-    return require("@/assets/images/foodbank.jpg");
-  }
-
-  if (text.includes("blood") || text.includes("donation")) {
-    return require("@/assets/images/blooddonation.jpg");
-  }
-
-  if (
-    text.includes("disaster") ||
-    text.includes("preparedness") ||
-    text.includes("workshop")
-  ) {
-    return require("@/assets/images/disasterprep.png");
-  }
-
-  if (
-    text.includes("guided") ||
-    text.includes("walk") ||
-    text.includes("botanic")
-  ) {
-    return require("@/assets/images/guidedwalk.webp");
-  }
-
-  if (
-    text.includes("soup") ||
-    text.includes("kitchen") ||
-    text.includes("willing hearts") ||
-    text.includes("elderly")
-  ) {
-    return require("@/assets/images/soup kitchen.webp");
-  }
-
-  if (text.includes("youth") || text.includes("mentor")) {
-    return require("@/assets/images/youthmentoring.jpg");
-  }
-
-  if (
-    text.includes("park") ||
-    text.includes("garden") ||
-    text.includes("wetland") ||
-    text.includes("restoration") ||
-    text.includes("environment")
-  ) {
-    return require("@/assets/images/park.jpg");
-  }
-
-  return require("@/assets/images/beach.webp");
+const getEventImage = (_category?: string, _title?: string) => {
+  return require("../assets/icon.png");
 };
 
 const getEventColor = (category?: string) => {

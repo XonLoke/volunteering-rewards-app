@@ -13,8 +13,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { api } from "../../src/services/api";
-import { useTheme } from "@/contexts/ThemeContext";
+import { api } from "../src/services/api";
+import { useTheme } from "../contexts/ThemeContext";
 
 
 

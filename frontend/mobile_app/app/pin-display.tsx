@@ -1,6 +1,6 @@
 import { Text, View, TouchableOpacity, SafeAreaView, StyleSheet, ScrollView, Alert, Clipboard } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function PINDisplay() {

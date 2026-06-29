@@ -1,6 +1,6 @@
 import { Text, View, TouchableOpacity, SafeAreaView, StyleSheet, ScrollView, TextInput, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 
