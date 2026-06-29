@@ -67,18 +67,22 @@ jobs:
           # Pin AGP to 8.6.0 (compatible with RN 0.76 + expo-modules-core)
           sed -i "s/classpath('com.android.tools.build:gradle')/classpath('com.android.tools.build:gradle:8.6.0')/" android/build.gradle
 
-          # Add Kotlin resolution strategy + google() repos to pluginManagement
-          sed -i "s|pluginManagement {|pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n    resolutionStrategy {\n        eachPlugin {\n            if (requested.id.namespace == 'org.jetbrains.kotlin') {\n                useVersion('1.9.25')\n            }\n        }\n    }|" android/settings.gradle
+          # Add google() repos to pluginManagement
+          sed -i "s|pluginManagement {|pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }|" android/settings.gradle
 
           # Add expo-module-gradle-plugin as included build after the RN plugin line
           sed -i "s|includeBuild(new File(\[\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|includeBuild(new File(new File([\"node\", \"--print\", \"require.resolve('expo-modules-core/package.json', { paths: [require.resolve('expo/package.json')] })\"].execute(null, rootDir).text.trim()).getParentFile(), \"expo-module-gradle-plugin\"))\n    includeBuild(new File([\"node\", \"--print\", \"require.resolve('@react-native/gradle-plugin/package.json'|" android/settings.gradle
 
-          # Fix 'release' component error in ExpoModulesCorePlugin.gradle
-          sed -i "s/from components.release/from components.getByName('release')/" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+          # Fix 1: Remove Kotlin version from plugin (use classpath version instead)
+          sed -i 's/kotlin("jvm") version "[^"]*"/kotlin("jvm")/' node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts
+
+          # Fix 2: Guard release component lookup in ExpoModulesCorePlugin.gradle
+          sed -i "s/from components.getByName('release')/try { from components.getByName(\"release\") } catch (Exception ig) { from components.getByName(\"debug\") }/" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
 
           echo "=== Patches applied ==="
           grep "com.android.tools.build" android/build.gradle
-          head -16 android/settings.gradle
+          grep "kotlin" node_modules/expo-modules-core/expo-module-gradle-plugin/build.gradle.kts | head -3
+          grep "components.getByName" node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
 
       - name: Build APK
         run: |
