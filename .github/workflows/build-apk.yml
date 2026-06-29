@@ -57,7 +57,7 @@ jobs:
           cp -r ../../node_modules/expo-modules-core/expo-module-gradle-plugin node_modules/expo-modules-core/
           echo 'rootProject.name = "expo-module-gradle-plugin"' > node_modules/expo-modules-core/expo-module-gradle-plugin/settings.gradle.kts
           echo "Plugin copied. Version:"
-          node -e "console.log(require('node_modules/expo-modules-core/package.json').version)"
+          node -e "console.log(require('./node_modules/expo-modules-core/package.json').version)" 2>/dev/null || true
 
       - name: Prebuild (generate native project)
         run: npx expo prebuild --platform android --no-install
