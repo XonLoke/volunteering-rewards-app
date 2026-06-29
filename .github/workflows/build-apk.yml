@@ -210,7 +210,7 @@ jobs:
       # The expo-modules-core@3.x plugin ships without a settings.gradle.kts
       # in its expo-module-gradle-plugin/ directory. Without it, Gradle
       # can't resolve the included build's plugin dependencies (Kotlin JVM).
-      # See: docs/to_be_debug_for_APK_Build.md (v2)
+      # See: docs/to_be_debug_for_APK_Build_v2.md (v2)
       #
       # The sibling expo-gradle-plugin HAS this file and works — we mirror it.
       # ----------------------------------------------------------------

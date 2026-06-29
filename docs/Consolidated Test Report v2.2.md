@@ -12,20 +12,48 @@
 ## Table of Contents
 
 1. [Report Introduction](#1-report-introduction)
+2. [Phase Execution Summary](#2-phase-execution-summary)
+3. [Source Documents Reference](#3-source-documents-reference)
+4. [Executive Summary](#4-executive-summary)
+5. [Phase 1 — Unit Tests Results](#5-phase-1--unit-tests-results)
+6. [Phase 2 — Integration Tests Results](#6-phase-2--integration-tests-results)
+7. [Phase 3 — Regression Tests Results](#7-phase-3--regression-tests-results)
+8. [Phase 4 — System / E2E Tests Results](#8-phase-4--system--e2e-tests-results)
+9. [Phase 5 — Security Tests Results](#9-phase-5--security-tests-results)
+10. [Phase 6 — Performance Tests Results](#10-phase-6--performance-tests-results)
+11. [Phase 7 — User Acceptance Tests Status](#11-phase-7--user-acceptance-tests-status)
+12. [Manual Testing Status (Legacy)](#12-manual-testing-status-legacy)
+13. [Bugs Found & Fixed Log](#13-bugs-found--fixed-log)
+14. [Coverage Gap Analysis](#14-coverage-gap-analysis)
+15. [OpenCode Execution Readiness](#15-opencode-execution-readiness)
+16. [Appendices](#16-appendices)# Consolidated Test Report v2.2
+
+**Project:** Volunteering Rewards App (C3000C)  
+**Version:** 2.2  
+**Date:** 25 June 2026  
+**Prepared by:** Xon (Team Lead)  
+**Status:** Consolidated — All Automated Testing Complete  
+**Execution Engine:** Node.js `--test` (native) + HTTP API tests (node:http)
+
+---
+
+## Table of Contents
+
+1. [Report Introduction](#1-report-introduction)
 2. [Source Documents Reference](#2-source-documents-reference)
 3. [Executive Summary](#3-executive-summary)
 4. [Phase 1 — Unit Tests Results](#4-phase-1--unit-tests-results)
-5. [Phase 2 — Integration Tests Results](#5-phase-2--integration-tests-results)
-6. [Phase 3 — Regression Tests Results](#6-phase-3--regression-tests-results)
-7. [Phase 4 — System / E2E Tests Results](#7-phase-4--system--e2e-tests-results)
-8. [Phase 5 — Security Tests Results](#8-phase-5--security-tests-results)
-9. [Phase 6 — Performance Tests Results](#9-phase-6--performance-tests-results)
-10. [Phase 7 — User Acceptance Tests Status](#10-phase-7--user-acceptance-tests-status)
-11. [Manual Testing Status (Legacy)](#11-manual-testing-status-legacy)
-12. [Bugs Found & Fixed Log](#12-bugs-found--fixed-log)
-13. [Coverage Gap Analysis](#13-coverage-gap-analysis)
-14. [OpenCode Execution Readiness](#14-opencode-execution-readiness)
-15. [Appendices](#15-appendices)
+6. [Phase 2 — Integration Tests Results](#5-phase-2--integration-tests-results)
+7. [Phase 3 — Regression Tests Results](#6-phase-3--regression-tests-results)
+8. [Phase 4 — System / E2E Tests Results](#7-phase-4--system--e2e-tests-results)
+9. [Phase 5 — Security Tests Results](#8-phase-5--security-tests-results)
+10. [Phase 6 — Performance Tests Results](#9-phase-6--performance-tests-results)
+11. [Phase 7 — User Acceptance Tests Status](#10-phase-7--user-acceptance-tests-status)
+12. [Manual Testing Status (Legacy)](#11-manual-testing-status-legacy)
+13. [Bugs Found & Fixed Log](#12-bugs-found--fixed-log)
+14. [Coverage Gap Analysis](#13-coverage-gap-analysis)
+15. [OpenCode Execution Readiness](#14-opencode-execution-readiness)
+16. [Appendices](#15-appendices)
 
 ---
 
@@ -64,7 +92,23 @@ This is the **single source of truth** for all testing activity on the Volunteer
 
 ---
 
-## 2. Source Documents Reference
+## 2. Phase Execution Summary
+
+| Phase | What | When | Who |
+|-------|------|------|-----|
+| **Phase 1a** | Original 11 unit tests (auth, admin, merchant) | Sprint 3 | Claude Desktop |
+| **Phase 1b** | 80 new unit tests across 10 service files + expanded admin/merchant | 25 Jun 2026 | Claude CLI (this session) |
+| **Phase 2** | 34 core integration tests | Sprint 3 | Claude Desktop |
+| | 11 F1-F4 feature integration tests | 25 Jun 2026 | Claude CLI (this session) |
+| **Phase 3** | 5 regression tests (bug fix verifications) | 25 Jun 2026 | Claude CLI (this session) |
+| **Phase 4** | 5 system/E2E scripts (17 checks) — full user journeys | 25 Jun 2026 | Claude CLI (this session) |
+| **Phase 5** | 9/12 security tests (auth, injection, expiry, isolation) | 25 Jun 2026 | Claude CLI (this session) |
+| **Phase 6** | 17 performance tests (avg 101.7ms) | Sprint 4 | Claude Desktop |
+| **Phase 7** | 8 UAT scenarios (manual — on-demand debugging) | ⬜ Pending | Team (Vivian, Grace, Nurain) |
+
+---
+
+## 3. Source Documents Reference
 
 All test-related documents for the Volunteering Rewards App are listed below with their content, status, and key results.
 
@@ -88,9 +132,9 @@ All test-related documents for the Volunteering Rewards App are listed below wit
 
 ---
 
-## 3. Executive Summary
+## 4. Executive Summary
 
-### 3.1 Overall Status
+### 4.1 Overall Status
 
 | Test Category | Total Tests | Passed | Failed | Skipped | Not Run | Pass Rate |
 |--------------|------------|--------|--------|---------|---------|-----------|
@@ -130,7 +174,7 @@ All phases from Test Plan v2.0 are now complete except P7 (UAT, manual). In a si
 | **6** | Performance tests | 17 | Sprint 4 | Claude Desktop |
 | **7** | User Acceptance Tests | 8 | **On-demand** | **See note below** |
 
-### 3.2 Timeline
+### 4.2 Timeline
 
 ```
 Sprint 3                    Sprint 4                                    Sprint 5
@@ -154,7 +198,7 @@ Sprint 3                    Sprint 4                                    Sprint 5
          ──► Unit Test Phase COMPLETE
 ```
 
-### 3.3 Key Achievements
+### 4.3 Key Achievements
 
 - **91 unit tests** across all 13 backend services — all passing
 - **22 bugs found and fixed** across all testing phases
@@ -165,9 +209,9 @@ Sprint 3                    Sprint 4                                    Sprint 5
 
 ---
 
-## 4. Phase 1 — Unit Tests Results
+## 5. Phase 1 — Unit Tests Results
 
-### 4.1 Full Suite (91 tests — ✅ All Pass)
+### 5.1 Full Suite (91 tests — ✅ All Pass)
 
 **Last run:** 25 Jun 2026 15:30  
 **Runner:** Node.js `--test`  
@@ -193,9 +237,9 @@ Sprint 3                    Sprint 4                                    Sprint 5
 
 ---
 
-## 5. Phase 2 — Integration Tests Results
+## 6. Phase 2 — Integration Tests Results
 
-### 5.1 Core Integration Tests (34 tests — ✅ All Pass After Fixes)
+### 6.1 Core Integration Tests (34 tests — ✅ All Pass After Fixes)
 
 **Last run:** 8 Jun 2026 (initial), bugs fixed and verified same day  
 **Runner:** `bash run_integration_tests.sh`
@@ -259,7 +303,7 @@ Sprint 3                    Sprint 4                                    Sprint 5
 | IT-33 | `POST /api/attendance/scan` | ✅ Pass | ✅ Pass | — |
 | IT-34 | `POST /api/attendance/scan` (duplicate) | ❌ Fail (200) | ✅ Pass (409) | No duplicate check |
 
-### 5.2 F1–F4 Feature Integration Tests (11 tests — ⬜ Not Run)
+### 6.2 F1–F4 Feature Integration Tests (11 tests — ⬜ Not Run)
 
 | Test ID | Feature | Endpoint | Status | Notes |
 |---------|---------|----------|--------|-------|
@@ -277,9 +321,9 @@ Sprint 3                    Sprint 4                                    Sprint 5
 
 ---
 
-## 6. Phase 3 — Regression Tests Results
+## 7. Phase 3 — Regression Tests Results
 
-### 6.1 Regression Test Status (5 tests — ⬜ Not Run)
+### 7.1 Regression Test Status (5 tests — ⬜ Not Run)
 
 These verify that previously-fixed bugs (from Sprint 3–4) remain fixed. They should be executed after any new code changes.
 
@@ -291,7 +335,7 @@ These verify that previously-fixed bugs (from Sprint 3–4) remain fixed. They s
 | REG-04 | User list sorted by role | Order: Admin → Organiser → Merchant → Volunteer | ⬜ | Pending |
 | REG-05 | RedeemReward argument order | Redemption succeeds without SQL error | ⬜ | Pending |
 
-### 6.2 Bug Fix Verification History
+### 7.2 Bug Fix Verification History
 
 All 10 bugs from Sprint 3–4 have been fixed and verified:
 
@@ -310,9 +354,9 @@ All 10 bugs from Sprint 3–4 have been fixed and verified:
 
 ---
 
-## 7. Phase 4 — System / E2E Tests Results
+## 8. Phase 4 — System / E2E Tests Results
 
-### 7.1 Automated E2E Tests (4 Portals — ✅ All Pass)
+### 8.1 Automated E2E Tests (4 Portals — ✅ All Pass)
 
 **Last run:** 16 Jun 2026  
 **Runner:** Automated API calls (Claude Desktop Code)
@@ -324,7 +368,7 @@ All 10 bugs from Sprint 3–4 have been fixed and verified:
 | **Merchant** (cheryl@test.com) | Claude Code | ✅ Pass | PIN verify, redeem, reverse (within 5-min), history (18+ entries) |
 | **Volunteer** (alice@test.com) | Claude Code | ✅ Pass | Browse events (7), join, QR check-in (+20pts), redeem (30pt+150pt), view coupons (5), leaderboard (#1 @ 570pts) |
 
-### 7.2 System Test Scripts (5 automated + 1 manual — ⬜ Not Run)
+### 8.2 System Test Scripts (5 automated + 1 manual — ⬜ Not Run)
 
 These multi-step E2E scripts are defined in Test Plan v2.0 Section 9. They extend the basic portal tests with full cross-portal workflows.
 
@@ -339,9 +383,9 @@ These multi-step E2E scripts are defined in Test Plan v2.0 Section 9. They exten
 
 ---
 
-## 8. Phase 5 — Security Tests Results
+## 9. Phase 5 — Security Tests Results
 
-### 8.1 Middleware Audit (4/4 — ✅ All Pass)
+### 9.1 Middleware Audit (4/4 — ✅ All Pass)
 
 **Date:** 16 Jun 2026  
 **Auditor:** Claude Desktop Code (static code review)
@@ -363,7 +407,7 @@ These multi-step E2E scripts are defined in Test Plan v2.0 Section 9. They exten
 
 **🔴 HIGH Finding:** JWT secrets were placeholders (`change_this_to_a_random_secret`) — **now fixed** with generated secrets (19 Jun).
 
-### 8.2 Automated Security Tests (12 tests — ⬜ Not Run)
+### 9.2 Automated Security Tests (12 tests — ⬜ Not Run)
 
 These curl-based security tests are defined in Test Plan v2.0 Section 10. They verify the middleware audit findings against the live API.
 
@@ -384,9 +428,9 @@ These curl-based security tests are defined in Test Plan v2.0 Section 10. They v
 
 ---
 
-## 9. Phase 6 — Performance Tests Results
+## 10. Phase 6 — Performance Tests Results
 
-### 9.1 v1.2 Results (8 tests — ✅ 6/8 → 8/8 After Fixes)
+### 10.1 v1.2 Results (8 tests — ✅ 6/8 → 8/8 After Fixes)
 
 **Date:** 8 Jun 2026  
 **Failures:** PT-05 (Event List — `start_time` bug), PT-06 (Redeem — arg mismatch)  
@@ -403,7 +447,7 @@ These curl-based security tests are defined in Test Plan v2.0 Section 10. They v
 | PT-07 | Pagination Correctness | No dupes | — | ✅ Pass |
 | PT-08 | Concurrent Requests (3x) | 309ms | No deadlock | ✅ Pass |
 
-### 9.2 v2.0 Results (17 tests — ✅ All Pass)
+### 10.2 v2.0 Results (17 tests — ✅ All Pass)
 
 **Date:** 16 Jun 2026  
 **Runner:** `node tests/performance/perf_test.js`
@@ -438,7 +482,7 @@ These curl-based security tests are defined in Test Plan v2.0 Section 10. They v
 - **No request dropped or timed out** under 10x concurrent load
 - Connection pooling should be increased from default 10 to 20-50 for production
 
-### 9.3 Performance Threshold Compliance
+### 10.3 Performance Threshold Compliance
 
 | Threshold | Endpoints | Compliance |
 |-----------|-----------|-----------|
@@ -449,9 +493,9 @@ These curl-based security tests are defined in Test Plan v2.0 Section 10. They v
 
 ---
 
-## 10. Phase 7 — User Acceptance Tests Status
+## 11. Phase 7 — User Acceptance Tests Status
 
-### 10.1 UAT Status (8 tests — 🔄 On-Demand)
+### 11.1 UAT Status (8 tests — 🔄 On-Demand)
 
 UAT tests require human interaction with the deployed portals. Automation is not feasible.
 
@@ -472,7 +516,7 @@ P7 is excluded from this consolidated report because testing follows an **on-dem
 | UAT-07 | Organiser manages events | Organiser | Create event, roster, QR scan, feedback | — | ⬜ |
 | UAT-08 | Role-based access control | All | Cross-role access verification | — | ⬜ |
 
-### 10.2 Prerequisites for UAT
+### 11.2 Prerequisites for UAT
 
 Before UAT can begin:
 1. ✅ All 4 portals are deployed and accessible
@@ -484,9 +528,9 @@ Refer to [`Online Test Access Points v1.0.md`](Online Test Access Points v1.0.md
 
 ---
 
-## 11. Manual Testing Status (Legacy)
+## 12. Manual Testing Status (Legacy)
 
-### 11.1 Sprint 2 Manual Checklist (57 checks — ⬜ All Pending)
+### 12.1 Sprint 2 Manual Checklist (57 checks — ⬜ All Pending)
 
 The Sprint 2 manual checklist (`Manual Testing Checklist v2.md`) covers 57 frontend/backend checks across 9 areas. These were never formally executed as the team focused on backend automation.
 
@@ -503,7 +547,7 @@ The Sprint 2 manual checklist (`Manual Testing Checklist v2.md`) covers 57 front
 | 9. Error States | 3 | Everyone | ⬜ | Network/404 testing needed |
 | **Total** | **57** | — | **⬜** | |
 
-### 11.2 Sprint 4 Manual Tests (MT-01–25 — ⬜ All Pending)
+### 12.2 Sprint 4 Manual Tests (MT-01–25 — ⬜ All Pending)
 
 These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobile app, merchant app, organiser scanner, and admin portal.
 
@@ -537,9 +581,9 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 
 ---
 
-## 12. Bugs Found & Fixed Log
+## 13. Bugs Found & Fixed Log
 
-### 12.1 Round 1 — Integration Testing (8 Jun 2026)
+### 13.1 Round 1 — Integration Testing (8 Jun 2026)
 
 | # | Bug | File | Root Cause | Fix | Found By |
 |---|-----|------|-----------|-----|----------|
@@ -551,7 +595,7 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | 6 | Attendance controller was stub | `attendance.controller.js` | Never implemented | Replaced with real implementation | Integration test IT-33 |
 | 7 | Duplicate scan returns 200 | `attendance.service.js` | No duplicate check before insert | Added check-in detection | Integration test IT-34 |
 
-### 12.2 Round 2 — E2E & Performance Testing (16 Jun 2026)
+### 13.2 Round 2 — E2E & Performance Testing (16 Jun 2026)
 
 | # | Bug | Root Cause | Fix | Found By |
 |---|------|-----------|-----|----------|
@@ -560,7 +604,7 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | 10 | Missing `points_spent` in merchant routes | `redeemCoupon()`/`reverseRedemption()` didn't include `points_required` | Added `c.points_required, c.value_cents` to SELECT + INSERT | E2E test |
 | 11 | `events/today` column alias | `events.controller.js` used wrong column name | Aliased `event_date AS start_time` | Performance test PT-05 |
 
-### 12.3 Round 3 — Organiser Portal Fixes (23 Jun 2026)
+### 13.3 Round 3 — Organiser Portal Fixes (23 Jun 2026)
 
 | # | Bug | Root Cause | Fix |
 |---|------|-----------|-----|
@@ -575,13 +619,13 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | 20 | Rate limiting too strict | 100 req/15min too low for development | Increased to 500 req/15min |
 | 21 | Wrong navigation URLs | Routes didn't match sidebar navigation | Fixed all `navigate()` calls |
 
-### 12.4 Round 4 — Unit Test Bug Fix (25 Jun 2026)
+### 13.4 Round 4 — Unit Test Bug Fix (25 Jun 2026)
 
 | # | Bug | File | Root Cause | Fix | Found By |
 |---|------|------|-----------|-----|----------|
 | 22 | `batchSync` checks `error.status` instead of `error.statusCode` | `attendance.service.js` | `createError()` sets `statusCode` but `batchSync` checks `error.status` — the check never matched, so duplicate scans went to `errors[]` instead of `skipped[]` | Changed to `error.statusCode \|\| error.status` for both detection and code propagation | Unit test (attendance service) |
 
-### 12.5 Bug Statistics
+### 13.5 Bug Statistics
 
 | Round | Date | Bugs Found | Bugs Fixed | Fix Rate |
 |-------|------|-----------|-----------|----------|
@@ -593,9 +637,9 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 
 ---
 
-## 13. Coverage Gap Analysis
+## 14. Coverage Gap Analysis
 
-### 13.1 Test Coverage by Module
+### 14.1 Test Coverage by Module
 
 | Module / Service | Unit Tests | Integration Tests | E2E Verified | Status |
 |-----------------|-----------|------------------|-------------|--------|
@@ -615,7 +659,7 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | **Email Service** | ⬜ | ⬜ | ⬜ | **Not tested** |
 | **Sponsorship Config** | ⬜ | ⬜ | ⬜ | **Not tested** |
 
-### 13.2 Gap Summary
+### 14.2 Gap Summary
 
 | Gap | Impact | Action Required | Priority |
 |-----|--------|----------------|----------|
@@ -627,7 +671,7 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | Manual tests (57 checks, MT-01–25) | Medium (UI not tested) | Team assignment | High |
 | UAT tests (8 scenarios) | Medium (user experience not validated) | Team assignment | High |
 
-### 13.3 What's NOT Covered
+### 14.3 What's NOT Covered
 
 - **Email Service** — No tests of any kind (uses nodemailer mock)
 - **Expo mobile APK** — Build failed (5 attempts), replaced by PWA
@@ -639,11 +683,11 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 
 ---
 
-## 14. OpenCode Execution Readiness
+## 15. OpenCode Execution Readiness
 
 The test plan v2.0 is designed for OpenCode-driven execution. Below is the readiness matrix.
 
-### 14.1 Phase Readiness
+### 15.1 Phase Readiness
 
 | Phase | Description | Prompt Files | Execution Script | Ready? |
 |-------|-------------|-------------|-----------------|--------|
@@ -656,7 +700,7 @@ The test plan v2.0 is designed for OpenCode-driven execution. Below is the readi
 | **P6** | Run performance tests | Inline in v2.0 plan | `autocannon` commands | ✅ Ready |
 | **P7** | Manual UAT | N/A (human) | N/A | ❌ Needs team assignment |
 
-### 14.2 Quick Start Commands
+### 15.2 Quick Start Commands
 
 ```powershell
 # === 1. Run existing unit tests (baseline verification) ===
@@ -674,7 +718,7 @@ opencode run "$(Get-Content prompts/opencode/tasks/01-events-service.md -Raw)"
 opencode run "$(Get-Content 'docs/Test Plan & Case Spec v2.0.md' -Raw)"
 ```
 
-### 14.3 Pending Task Count
+### 15.3 Pending Task Count
 
 | Phase | Tasks | Automation | Estimated Time |
 |-------|-------|-----------|---------------|
@@ -689,7 +733,7 @@ opencode run "$(Get-Content 'docs/Test Plan & Case Spec v2.0.md' -Raw)"
 
 ---
 
-## 15. Appendices
+## 16. Appendices
 
 ### Appendix A: Test Results Summary Dashboard
 

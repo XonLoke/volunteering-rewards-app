@@ -60,7 +60,7 @@ for ($i = 0; $i -lt $total; $i++) {
     $TaskStart = Get-Date
 
     try {
-        $Output = & opencode run --model opencode/deepseek-v4-flash-free $Prompt 2>&1
+        $Output = & opencode run --model opencode/claude-haiku-4-5 $Prompt 2>&1
         $ExitCode = $LASTEXITCODE
     } catch {
         $Output = $_.Exception.Message

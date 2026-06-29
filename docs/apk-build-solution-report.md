@@ -238,4 +238,4 @@ The initial debugging approach (10+ CI iterations each trying a different workar
 - [Expo SDK Changelog — SDK 53](https://expo.dev/changelog/2025/05-12-sdk-53)
 - [Expo SDK Changelog — SDK 54](https://expo.dev/changelog/2025/07-15-sdk-54)
 - [Expo Modules API — Gradle Plugin](https://docs.expo.dev/modules/native-module-tutorial/#gradle-plugin)
-- Original debugging document: `docs/to_be_debug_for_APK_Build.md`
+- Original debugging document: `docs/to_be_debug_for_APK_Build_v2.md`
