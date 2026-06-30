@@ -367,7 +367,7 @@ export default function Scanner() {
 
         {/* Camera QR Scanner */}
         {!manualMode && (
-          <div style={styles.viewfinder}>
+          <div className="scanner-viewfinder" style={styles.viewfinder}>
             <div id="qr-reader" style={styles.qrReader} />
             {cameraError && (
               <div style={styles.cameraNotice}>
@@ -520,7 +520,7 @@ export default function Scanner() {
 
 const styles = {
   wrapper: {
-    padding: 24,
+    padding: 16,
     minHeight: '100vh',
     background: '#F5F5F7',
   },

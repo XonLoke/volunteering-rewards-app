@@ -247,12 +247,13 @@ export default function PinVerify() {
           <div key={ri} style={styles.keypadRow}>
             {row.map((key) => {
               if (key === '') {
-                return <div key={ri + '-' + Math.random()} style={styles.keypadPlaceholder} />;
+                return <div key={ri + '-' + Math.random()} className="keypad-placeholder" style={styles.keypadPlaceholder} />;
               }
               if (key === 'backspace') {
                 return (
                   <button
                     key="backspace"
+                    className="keypad-key"
                     style={styles.keypadKey}
                     onClick={() => handleKeypadPress('backspace')}
                     disabled={phase !== 'pin_entry'}
@@ -267,6 +268,7 @@ export default function PinVerify() {
               return (
                 <button
                   key={key}
+                  className="keypad-key"
                   style={styles.keypadKey}
                   onClick={() => handleKeypadPress(key)}
                   disabled={phase !== 'pin_entry'}
@@ -473,7 +475,7 @@ export default function PinVerify() {
 
   return (
     <div style={styles.wrapper}>
-      <div style={styles.container}>
+      <div className="merchant-pin-container" style={styles.container}>
         {phase === 'pin_entry' && renderPinEntry()}
         {phase === 'verifying' && renderVerifying()}
         {phase === 'verified' && renderVerified()}
@@ -487,13 +489,14 @@ export default function PinVerify() {
 
 const styles = {
   wrapper: {
-    padding: 24,
+    padding: 16,
     minHeight: '100vh',
     background: '#F5F5F7',
   },
   container: {
     maxWidth: 440,
     margin: '0 auto',
+    padding: '0 4px',
   },
   heading: {
     fontSize: 24,

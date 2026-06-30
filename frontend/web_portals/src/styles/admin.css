@@ -856,13 +856,34 @@
   }
 
   .scanner-wrapper .scanner-action-row button {
-    width: 100%;
+    width: 100% !important;
+  }
+}
+
+/* Scanner viewfinder on small screens */
+@media (max-width: 480px) {
+  .scanner-wrapper .scanner-viewfinder {
+    padding: 24px 12px !important;
   }
 }
 
 /* ===== Merchant Portal Responsive ===== */
 @media (max-width: 480px) {
   .merchant-login-card {
-    padding: 24px !important;
+    padding: 20px !important;
+    margin: 12px !important;
+  }
+}
+
+/* Merchant PinVerify keypad on small screens */
+@media (max-width: 400px) {
+  .merchant-pin-container .keypad-key {
+    width: 64px !important;
+    height: 50px !important;
+    font-size: 20px !important;
+  }
+  .merchant-pin-container .keypad-placeholder {
+    width: 64px !important;
+    height: 50px !important;
   }
 }
