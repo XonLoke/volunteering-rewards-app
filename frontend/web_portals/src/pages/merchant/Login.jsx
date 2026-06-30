@@ -116,11 +116,11 @@ const styles = {
     background: '#F5F5F7',
   },
   card: {
-    background: '#FFFFFF',
-    borderRadius: 16,
-    padding: 28,
+    background: 'transparent',
+    borderRadius: 0,
+    padding: 24,
     width: '100%',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+    boxShadow: 'none',
   },
   header: {
     textAlign: 'center',
