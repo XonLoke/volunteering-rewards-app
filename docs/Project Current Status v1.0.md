@@ -14,7 +14,7 @@
 | **Organiser Portal** | `https://webportals-lovat.vercel.app/organiser` | ✅ Loads | bob@test.com |
 | **Merchant Portal** | `https://webportals-lovat.vercel.app/merchant` | ✅ Loads | cheryl@test.com |
 | **Scanner PWA** | `https://webportals-lovat.vercel.app/scan` | ✅ Loads | bob@test.com |
-| **Volunteer PWA** | `https://dist-orpin-nine-46.vercel.app/home` | ✅ Loads | alice@test.com |
+| **Volunteer PWA** | `https://volunteering-rewards-app.vercel.app/home` | ✅ Loads | alice@test.com |
 
 ### API Login Verification (all 4 roles working)
 

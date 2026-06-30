@@ -62,7 +62,7 @@
 
 | Portal | URL | Best Viewed On |
 |--------|-----|----------------|
-| **Volunteer PWA** | `https://dist-orpin-nine-46.vercel.app` | Phone / Mobile Chrome |
+| **Volunteer PWA** | `https://volunteering-rewards-app.vercel.app` | Phone / Mobile Chrome |
 | **Admin Portal** | `https://webportals-lovat.vercel.app/admin/login` | Desktop |
 | **Organiser Portal** | `https://webportals-lovat.vercel.app/organiser/login` | Desktop |
 | **Merchant Portal** | `https://webportals-lovat.vercel.app/merchant` | Phone / Desktop |
@@ -164,7 +164,7 @@ As an admin, I want to configure the points-per-dollar rate so that coupon point
 ## 6. UAT-04: Volunteer Browses and Joins Events
 
 **Tester:** Vivian  
-**Portal:** Volunteer PWA → `https://dist-orpin-nine-46.vercel.app`  
+**Portal:** Volunteer PWA → `https://volunteering-rewards-app.vercel.app`  
 **Duration:** ~20 minutes  
 **Device:** Phone (or Chrome mobile view)
 
@@ -179,7 +179,7 @@ As a volunteer, I want to browse and join volunteering events so that I can part
 
 | # | Action | Expected Result | Status |
 |---|--------|----------------|--------|
-| 1 | Open `https://dist-orpin-nine-46.vercel.app` on phone | Splash screen loads with brand and "Get Started" | ⬜ |
+| 1 | Open `https://volunteering-rewards-app.vercel.app` on phone | Splash screen loads with brand and "Get Started" | ⬜ |
 | 2 | Tap "Get Started" | Redirected to login page | ⬜ |
 | 3 | Tap "Create an account" | Registration form displays | ⬜ |
 | 4 | Fill in: name, email (unique), password with uppercase+number | Fields accept input | ⬜ |
@@ -481,7 +481,7 @@ When you find a bug during UAT, report it using this format:
 
 | Portal | URL |
 |--------|-----|
-| Volunteer PWA | `https://dist-orpin-nine-46.vercel.app` |
+| Volunteer PWA | `https://volunteering-rewards-app.vercel.app` |
 | Admin | `https://webportals-lovat.vercel.app/admin/login` |
 | Organiser | `https://webportals-lovat.vercel.app/organiser/login` |
 | Merchant | `https://webportals-lovat.vercel.app/merchant` |

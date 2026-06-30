@@ -60,7 +60,7 @@ Please update Jira with the following changes. This update covers the **new PWA-
 
 | Issue Key | Summary | Assignee | Status |
 |---|---|---|---|
-| **KAN-157** | **PWA-APK Unification (NEW)** | **Xon** | **⬜ To Do** |
+| **KAN-157** | **PWA-APK Unification (DONE ✅)** | **Xon** | **✅ Done** |
 | KAN-155 | UAT participation | Xon | ⬜ To Do |
 | KAN-156 | Security test: Auth & session management | Vivian | ⬜ To Do |
 | KAN-157 | Security test: Input validation | Vivian | ⬜ To Do |
@@ -87,7 +87,7 @@ Please update Jira with the following changes. This update covers the **new PWA-
 |---|---|---|
 | APK Build | ✅ Done | 100% |
 | CI Build | ✅ Done | 100% |
-| PWA-APK Unification | ⬜ Planned | 0% |
+| PWA-APK Unification | ✅ Done | 100% |
 | APK Testing | ⬜ Not started | 0% |
 | Security Testing | ⬜ Not started | 0% |
 | Integration Testing | ⬜ Not started | 0% |

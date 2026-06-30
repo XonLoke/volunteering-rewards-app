@@ -158,7 +158,7 @@ Since the APK build is blocked, the volunteer mobile app was rebuilt as a **web 
 
 ### 3.5 Vercel PWA — Volunteer Mobile App (APK Workaround)
 
-**URL:** `https://dist-orpin-nine-46.vercel.app`
+**URL:** `https://volunteering-rewards-app.vercel.app`
 **Plan:** Free Tier (Hobby)
 **Service Type:** Progressive Web App (PWA) hosted as static site
 
@@ -371,7 +371,7 @@ Both Render and Vercel are connected to the same GitHub repository. Any push to 
 **Resolution:**
 - The volunteer mobile app was rebuilt as a **web PWA** using `react-native-web` instead of a native APK
 - 26 mobile screens preserved with identical UI and functionality
-- Deployed to Vercel at `https://dist-orpin-nine-46.vercel.app`
+- Deployed to Vercel at `https://volunteering-rewards-app.vercel.app`
 - PWA is installable on phone home screen with full offline support via service worker
 - If native APK is still needed later: local build with Android Studio, waiting for Expo SDK patch, or building on a team member's machine with Android SDK
 
@@ -432,10 +432,10 @@ All web portals are accessible through the same Vercel deployment. The volunteer
 
 | Purpose | URL | Notes |
 |---------|-----|-------|
-| **Volunteer App** | `https://dist-orpin-nine-46.vercel.app` | Installable on home screen via browser prompt |
-| **Login** | `https://dist-orpin-nine-46.vercel.app/login` | alice@test.com / password123 |
-| **Events** | `https://dist-orpin-nine-46.vercel.app/events` | Requires login |
-| **Rewards** | `https://dist-orpin-nine-46.vercel.app/rewards` | Requires login |
+| **Volunteer App** | `https://volunteering-rewards-app.vercel.app` | Installable on home screen via browser prompt |
+| **Login** | `https://volunteering-rewards-app.vercel.app/login` | alice@test.com / password123 |
+| **Events** | `https://volunteering-rewards-app.vercel.app/events` | Requires login |
+| **Rewards** | `https://volunteering-rewards-app.vercel.app/rewards` | Requires login |
 
 ### Backend API (Render)
 

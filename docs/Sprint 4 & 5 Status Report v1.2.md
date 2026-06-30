@@ -49,7 +49,7 @@ A volunteering rewards platform where volunteers earn points by attending events
 | CORS fix — frontend-backend connection resolved | 5 | ✅ Complete | 16 Jun |
 | Frontend deployment — Vercel (`webportals-lovat.vercel.app`) | 5 | ✅ Complete | 16 Jun |
 | Deployment architecture report (`docs/Deployment Architecture Report v1.0.md`) | 5 | ✅ Complete | 16 Jun |
-| Volunteer PWA — deployed at `https://dist-orpin-nine-46.vercel.app` | 5 | ✅ Complete | 19 Jun |
+| Volunteer PWA — deployed at `https://volunteering-rewards-app.vercel.app` | 5 | ✅ Complete | 19 Jun |
 | README updated with architecture, URLs, test accounts | 5 | ✅ Complete | 19 Jun |
 | v1.0.0 release tagged and published on GitHub | 5 | ✅ Complete | 19 Jun |
 | Organiser login page — created at `/organiser/login` with green-themed UI, role-gated to organisers | 5 | ✅ Complete | 19 Jun |
@@ -124,7 +124,7 @@ A volunteering rewards platform where volunteers earn points by attending events
 | Docker build pipeline | Xon | ✅ Complete | bcrypt + Neon SSL + CORS |
 | Security audit | Xon/Vivian | ✅ Complete | Security Audit Report v1.0.md |
 | Final E2E test pass | Xon | ✅ Complete | E2E Test Results v1.0.md |
-| Volunteer PWA deployment | Xon | ✅ Complete | `https://dist-orpin-nine-46.vercel.app` — with PWA manifest + service worker |
+| Volunteer PWA deployment | Xon | ✅ Complete | `https://volunteering-rewards-app.vercel.app` — with PWA manifest + service worker |
 | Volunteer App APK (originally planned) | Xon | ❌ Blocked | 5 EAS Build attempts failed — Expo SDK 54 / AGP 8.11 Gradle bug. Switched to web PWA as working alternative. |
 | README update | Xon | ✅ Complete | Added architecture, deployment URLs, test accounts |
 | v1.0.0 release tag | Xon | ✅ Complete | Tagged and published on GitHub |
@@ -162,7 +162,7 @@ A volunteering rewards platform where volunteers earn points by attending events
 | Organiser Portal | `https://webportals-lovat.vercel.app/organiser` | ✅ Live |
 | Merchant Portal | `https://webportals-lovat.vercel.app/merchant` | ✅ Live |
 | Scanner PWA | `https://webportals-lovat.vercel.app/scan` | ✅ Live |
-| Volunteer PWA | `https://dist-orpin-nine-46.vercel.app` | ✅ Live |
+| Volunteer PWA | `https://volunteering-rewards-app.vercel.app` | ✅ Live |
 
 ### Deployment Costs
 
@@ -192,7 +192,7 @@ A volunteering rewards platform where volunteers earn points by attending events
 2. **All 4 additional features (F1-F4)** built and integrated by Xon alone
 3. **Full deployment pipeline** — backend (Render + Neon) + frontend (Vercel) — zero cost
 4. **5 failed EAS Build attempts** documented — known Expo SDK 54 / AGP 8.11 bug
-5. **Volunteer PWA deployed** at `https://dist-orpin-nine-46.vercel.app` with PWA manifest, service worker, and installability — replaces blocked APK
+5. **Volunteer PWA deployed** at `https://volunteering-rewards-app.vercel.app` with PWA manifest, service worker, and installability — replaces blocked APK
 6. **README updated** with full architecture, deployment URLs, test accounts, and quick-start guide
 7. **v1.0.0 release tagged** and published on GitHub
 8. **4 critical bugs** found and fixed during regression testing

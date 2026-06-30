@@ -31,7 +31,7 @@ All portals are live and verified working (tested 23 Jun 2026):
 | **Organiser Portal** | [webportals-lovat.vercel.app/organiser/login](https://webportals-lovat.vercel.app/organiser/login) | bob@test.com | ✅ With login + auth redirect |
 | **Merchant Portal** | [webportals-lovat.vercel.app/merchant](https://webportals-lovat.vercel.app/merchant) | cheryl@test.com | ✅ With login |
 | **Scanner PWA** | [webportals-lovat.vercel.app/scan](https://webportals-lovat.vercel.app/scan) | bob@test.com | ✅ With login |
-| **Volunteer PWA** | [dist-orpin-nine-46.vercel.app](https://dist-orpin-nine-46.vercel.app) | alice@test.com | ✅ With PWA manifest + service worker |
+| **Volunteer PWA** | [volunteering-rewards-app.vercel.app](https://volunteering-rewards-app.vercel.app) | alice@test.com | ✅ With PWA manifest + service worker |
 
 ### Portal Access Matrix
 

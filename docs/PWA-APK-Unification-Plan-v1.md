@@ -112,7 +112,7 @@ In the Vercel dashboard, add:
 | API endpoint paths match | Vivian's screens use `/api/v1/events`, `/api/auth/login` etc. Verify against `API_CONTRACTS_v2.md` |
 | Auth flow works | Test login with `alice@test.com` / `password123` on production API |
 | All 26 screens functional | Quick smoke test of each screen after deployment |
-| CORS not blocking | Production API must allow requests from `dist-orpin-nine-46.vercel.app` origin |
+| CORS not blocking | Production API must allow requests from `volunteering-rewards-app.vercel.app` origin |
 
 ---
 

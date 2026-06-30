@@ -40,7 +40,7 @@ Please update Jira with the following changes. This update covers all tasks comp
 | *(use existing key)* | Add service worker for offline fetch fallback | Xon | Done — 19 Jun |
 | *(use existing key)* | Deploy volunteer PWA to Vercel | Xon | Done — 19 Jun |
 
-**Detail:** The volunteer PWA at `https://dist-orpin-nine-46.vercel.app` was rebuilt with full PWA support — manifest.json (icons, theme_color #6366f1, standalone display), service-worker.js (basic offline fallback), PWA icons (192x192 and 512x512), and updated index.html with manifest link and service worker registration.
+**Detail:** The volunteer PWA at `https://volunteering-rewards-app.vercel.app` was rebuilt with full PWA support — manifest.json (icons, theme_color #6366f1, standalone display), service-worker.js (basic offline fallback), PWA icons (192x192 and 512x512), and updated index.html with manifest link and service worker registration.
 
 ---
 
@@ -75,7 +75,7 @@ Please update Jira with the following changes. This update covers all tasks comp
 ## Notes for Hermes
 
 1. **All Xon's Sprint 4-5 tasks are now complete.** Remaining work is team member tasks (Vivian, Grace, Nurain).
-2. **Volunteer mobile APK was abandoned** after 5 failed EAS Build attempts due to Expo SDK 54 / AGP 8.11 Gradle bug. Replaced with working web PWA at `https://dist-orpin-nine-46.vercel.app`.
+2. **Volunteer mobile APK was abandoned** after 5 failed EAS Build attempts due to Expo SDK 54 / AGP 8.11 Gradle bug. Replaced with working web PWA at `https://volunteering-rewards-app.vercel.app`.
 3. **v1.0.0 tagged and published** on GitHub with full release notes.
 4. **Organiser portal** now has a proper login page — previously it had none.
 5. **Git commit for this update:** `53baf3b` on `origin/main`

@@ -299,7 +299,7 @@ npx expo start
 
 - **Docker:** `docker compose up` (builds app + PostgreSQL)
 - **CI/CD:** GitHub Actions runs on push to main
-- **PWA:** Deployed via Vercel at `https://dist-orpin-nine-46.vercel.app`
+- **PWA:** Deployed via Vercel at `https://volunteering-rewards-app.vercel.app`
 - **Backend API:** Hosted on Render at `https://vol-rewards-api.onrender.com`
 - **Native APK:** Built locally or via GitHub Actions CI workflow
 

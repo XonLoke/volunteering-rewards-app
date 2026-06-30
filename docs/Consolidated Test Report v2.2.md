@@ -775,7 +775,7 @@ opencode run "$(Get-Content 'docs/Test Plan & Case Spec v2.0.md' -Raw)"
 | Organiser Portal | `https://webportals-lovat.vercel.app/organiser/login` |
 | Merchant Portal | `https://webportals-lovat.vercel.app/merchant` |
 | Scanner PWA | `https://webportals-lovat.vercel.app/scan` |
-| Volunteer PWA | `https://dist-orpin-nine-46.vercel.app` |
+| Volunteer PWA | `https://volunteering-rewards-app.vercel.app` |
 
 ### Appendix E: Test Commands Quick Reference
 

@@ -52,7 +52,7 @@ Rebuilt the volunteer mobile app as a **Progressive Web App** using `react-nativ
 - `manifest.json` + `service-worker.js` enable "Add to Home Screen" + offline cache
 - Deployed to **Vercel** (free, global CDN, zero cold starts)
 
-**URL:** `https://dist-orpin-nine-46.vercel.app`
+**URL:** `https://volunteering-rewards-app.vercel.app`
 
 **What carried over:**
 - ✅ All 26 screens (login, events, points, rewards, profile, etc.)

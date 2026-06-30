@@ -14,7 +14,7 @@ Build a native Android APK (`.apk`) from the Expo SDK 52 project at `frontend/mo
 ## 2. Current Delivery
 
 The **Progressive Web App (PWA)** is already deployed and working:
-- URL: `https://dist-orpin-nine-46.vercel.app`
+- URL: `https://volunteering-rewards-app.vercel.app`
 - All 26 Expo screens render correctly
 - Supports "Add to Home Screen" on mobile browsers
 - **This is the primary delivery** — the APK is a nice-to-have enhancement.

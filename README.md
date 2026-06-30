@@ -79,7 +79,7 @@ npm run dev
 
 | App | URL | Login |
 |-----|-----|-------|
-| **Volunteer PWA** | [dist-orpin-nine-46.vercel.app](https://dist-orpin-nine-46.vercel.app) | alice@test.com |
+| **Volunteer PWA** | [volunteering-rewards-app.vercel.app](https://volunteering-rewards-app.vercel.app) | alice@test.com |
 
 Installable on phone home screen via browser "Add to Home Screen" prompt.
 

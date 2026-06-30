@@ -14,7 +14,7 @@
 | **Organiser** | `https://webportals-lovat.vercel.app/organiser` | bob@test.com |
 | **Merchant** | `https://webportals-lovat.vercel.app/merchant` | cheryl@test.com |
 | **Scanner PWA** | `https://webportals-lovat.vercel.app/scan` | bob@test.com |
-| **Volunteer App (PWA)** | `https://dist-orpin-nine-46.vercel.app/home` | alice@test.com, eve@test.com |
+| **Volunteer App (PWA)** | `https://volunteering-rewards-app.vercel.app/home` | alice@test.com, eve@test.com |
 
 ---
 
@@ -22,14 +22,14 @@
 
 | Component | Hosted On |
 |-----------|-----------|
-| Volunteer PWA (`dist-orpin-nine-46.vercel.app`) | **Vercel** (cloud) |
+| Volunteer PWA (`volunteering-rewards-app.vercel.app`) | **Vercel** (cloud) |
 | Admin Portal (`webportals-lovat.vercel.app`) | **Vercel** (cloud) |
 | Backend API (`vol-rewards-api.onrender.com`) | **Render** (cloud) |
 | Database (`neon.tech`) | **Neon** (cloud) |
 
 All 4 services are hosted on cloud servers that run 24/7. Your computer can be completely shut down and everything still works.
 
-Anyone with the URL can open `https://dist-orpin-nine-46.vercel.app/home` on their phone, login with alice@test.com / password123, and use the volunteer app — browse events, check rewards, view leaderboard, etc. All data comes from the live Neon database via the Render API.
+Anyone with the URL can open `https://volunteering-rewards-app.vercel.app/home` on their phone, login with alice@test.com / password123, and use the volunteer app — browse events, check rewards, view leaderboard, etc. All data comes from the live Neon database via the Render API.
 
 ---
 
@@ -65,7 +65,7 @@ Anyone with the URL can open `https://dist-orpin-nine-46.vercel.app/home` on the
 - Test: PIN verification, Coupon redemption, 5-minute reversal, History
 
 ### Alice & Eve (Volunteers)
-- Use `https://dist-orpin-nine-46.vercel.app` on their phones
+- Use `https://volunteering-rewards-app.vercel.app` on their phones
 - Mobile-optimised PWA — installable on home screen
 - Test: Login, Home, Browse events, Register for event, Rewards, Leaderboard, Profile, Referral
 

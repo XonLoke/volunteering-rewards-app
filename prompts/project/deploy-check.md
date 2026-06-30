@@ -28,7 +28,7 @@ echo "=== Scanner PWA ==="
 curl -s -o /dev/null -w "Status: %{http_code}\n" https://webportals-lovat.vercel.app/scan
 
 echo "=== Volunteer PWA ==="
-curl -s -o /dev/null -w "Status: %{http_code}\n" https://dist-orpin-nine-46.vercel.app/home
+curl -s -o /dev/null -w "Status: %{http_code}\n" https://volunteering-rewards-app.vercel.app/home
 ```
 
 ### 3. Login Test (all 4 roles)
