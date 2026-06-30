@@ -108,19 +108,17 @@ export default function MerchantLogin() {
 
 const styles = {
   wrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     minHeight: '100vh',
-    padding: 24,
     background: '#F5F5F7',
   },
   card: {
     background: 'transparent',
     borderRadius: 0,
-    padding: 24,
+    padding: '32px 24px',
     width: '100%',
+    maxWidth: 440,
     boxShadow: 'none',
+    margin: '0 auto',
   },
   header: {
     textAlign: 'center',
