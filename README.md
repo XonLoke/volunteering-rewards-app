@@ -173,7 +173,7 @@ volunteering-rewards-app/
 │   ├── src/
 │   │   ├── config/             # Database connection, env vars
 │   │   ├── controllers/        # Route handlers (13 files)
-│   │   ├── middleware/          # Auth, role, rate limiter, error handler
+│   │   ├── middleware/         # Auth, role, rate limiter, error handler
 │   │   ├── routes/             # API route definitions (14 files)
 │   │   ├── services/           # Business logic (13 files)
 │   │   └── utils/              # JWT, migrations, seed
