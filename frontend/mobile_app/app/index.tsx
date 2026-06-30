@@ -1,10 +1,11 @@
-import { Text, View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import { Text, View, TouchableOpacity, StyleSheet, Dimensions, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Svg, Path, Circle } from "react-native-svg";
 import { useTheme } from "../contexts/ThemeContext";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
+const isSmallScreen = height < 700;
 
 function StarIcon({ color }: { color: string }) {
   return (
@@ -89,74 +90,82 @@ export default function Index() {
         <Text style={[styles.brandName, { color: "#fff" }]}>VolunteerRewards</Text>
       </View>
 
-      {/* Centre content */}
-      <View style={styles.centre}>
-        {/* Icon card */}
-        <View style={[styles.iconCard, { borderColor: "rgba(255,255,255,0.25)", backgroundColor: "rgba(255,255,255,0.15)" }]}>
-          <LinearGradient
-            colors={["rgba(255,120,80,0.4)", "rgba(100,80,255,0.4)"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <StarIcon color="#fff" />
+      {/* Scrollable centre + bottom */}
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* Centre content */}
+        <View style={styles.centre}>
+          {/* Icon card */}
+          <View style={[styles.iconCard, { borderColor: "rgba(255,255,255,0.25)", backgroundColor: "rgba(255,255,255,0.15)" }]}>
+            <LinearGradient
+              colors={["rgba(255,120,80,0.4)", "rgba(100,80,255,0.4)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <StarIcon color="#fff" />
+          </View>
+
+          {/* Pill badge */}
+          <View style={[styles.pill, {
+            backgroundColor: "rgba(255,255,255,0.15)",
+            borderColor: "rgba(255,255,255,0.3)",
+          }]}>
+            <View style={[styles.pillDot, { backgroundColor: "#ff7850" }]} />
+            <Text style={[styles.pillText, { color: "#fff" }]}>Give back, get rewarded</Text>
+          </View>
+
+          {/* Headline */}
+          <Text style={[styles.headline, { color: "#fff" }]}>
+            {"Volunteer.\nEarn Points.\n"}
+            <Text style={[styles.headlineAccent, { color: "#ff9d80" }]}>Get Rewarded.</Text>
+          </Text>
+
+          {/* Subtext */}
+          <Text style={[styles.subtext, { color: "rgba(255,255,255,0.75)" }]}>
+            Scan QR codes at events, rack up points, and unlock exclusive rewards
+            from partner merchants.
+          </Text>
         </View>
 
-        {/* Pill badge */}
-        <View style={[styles.pill, {
-          backgroundColor: "rgba(255,255,255,0.15)",
-          borderColor: "rgba(255,255,255,0.3)",
-        }]}>
-          <View style={[styles.pillDot, { backgroundColor: "#ff7850" }]} />
-          <Text style={[styles.pillText, { color: "#fff" }]}>Give back, get rewarded</Text>
-        </View>
+        {/* Bottom section */}
+        <View style={styles.bottom}>
+          {/* Stats row */}
+          <View style={styles.statsRow}>
+            <StatItem value="1.2k+" label="Volunteers" textColor="#fff" secondaryColor="rgba(255,255,255,0.65)" />
+            <View style={[styles.statDivider, { backgroundColor: "rgba(255,255,255,0.25)" }]} />
+            <StatItem value="80+" label="Events" textColor="#fff" secondaryColor="rgba(255,255,255,0.65)" />
+            <View style={[styles.statDivider, { backgroundColor: "rgba(255,255,255,0.25)" }]} />
+            <StatItem value="40+" label="Merchants" textColor="#fff" secondaryColor="rgba(255,255,255,0.65)" />
+          </View>
 
-        {/* Headline */}
-        <Text style={[styles.headline, { color: "#fff" }]}>
-          {"Volunteer.\nEarn Points.\n"}
-          <Text style={[styles.headlineAccent, { color: "#ff9d80" }]}>Get Rewarded.</Text>
-        </Text>
-
-        {/* Subtext */}
-        <Text style={[styles.subtext, { color: "rgba(255,255,255,0.75)" }]}>
-          Scan QR codes at events, rack up points, and unlock exclusive rewards
-          from partner merchants.
-        </Text>
-      </View>
-
-      {/* Bottom section */}
-      <View style={styles.bottom}>
-        {/* Stats row */}
-        <View style={styles.statsRow}>
-          <StatItem value="1.2k+" label="Volunteers" textColor="#fff" secondaryColor="rgba(255,255,255,0.65)" />
-          <View style={[styles.statDivider, { backgroundColor: "rgba(255,255,255,0.25)" }]} />
-          <StatItem value="80+" label="Events" textColor="#fff" secondaryColor="rgba(255,255,255,0.65)" />
-          <View style={[styles.statDivider, { backgroundColor: "rgba(255,255,255,0.25)" }]} />
-          <StatItem value="40+" label="Merchants" textColor="#fff" secondaryColor="rgba(255,255,255,0.65)" />
-        </View>
-
-        {/* CTA */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.push("/login")}
-        >
-          <LinearGradient
-            colors={["#ff7850", "#ff4d20"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.ctaButton}
+          {/* CTA */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push("/login")}
           >
-            <Text style={styles.ctaText}>Get Started</Text>
-            <ArrowIcon color="#fff" />
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={["#ff7850", "#ff4d20"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.ctaButton}
+            >
+              <Text style={styles.ctaText}>Get Started</Text>
+              <ArrowIcon color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
 
-        {/* Sign in link */}
-        <Text style={[styles.signInText, { color: "rgba(255,255,255,0.6)" }]}>
-          Already have an account?{" "}
-          <Text style={[styles.signInLink, { color: "#fff" }]}>Sign in</Text>
-        </Text>
-      </View>
+          {/* Sign in link */}
+          <Text style={[styles.signInText, { color: "rgba(255,255,255,0.6)" }]}>
+            Already have an account?{" "}
+            <Text style={[styles.signInLink, { color: "#fff" }]}>Sign in</Text>
+          </Text>
+        </View>
+      </ScrollView>
     </LinearGradient>
   );
 }
@@ -166,7 +175,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 28,
     paddingTop: 36,
-    paddingBottom: 44,
+    paddingBottom: isSmallScreen ? 20 : 44,
   },
   glow1: {
     position: "absolute",
@@ -197,6 +206,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     zIndex: 1,
+    marginBottom: isSmallScreen ? 8 : 16,
   },
   brandIconBox: {
     width: 36,
@@ -208,25 +218,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   brandName: {
-    fontSize: 15,
+    fontSize: isSmallScreen ? 14 : 15,
     fontWeight: "600",
     letterSpacing: 0.3,
   },
-  centre: {
+  scrollArea: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  centre: {
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 1,
+    paddingVertical: isSmallScreen ? 12 : 24,
   },
   iconCard: {
-    width: 110,
-    height: 110,
-    borderRadius: 28,
+    width: isSmallScreen ? 90 : 110,
+    height: isSmallScreen ? 90 : 110,
+    borderRadius: isSmallScreen ? 24 : 28,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
     borderWidth: 1.5,
-    marginBottom: 28,
+    marginBottom: isSmallScreen ? 20 : 28,
   },
   pill: {
     flexDirection: "row",
@@ -236,7 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     paddingHorizontal: 14,
     paddingVertical: 4,
-    marginBottom: 20,
+    marginBottom: isSmallScreen ? 14 : 20,
   },
   pillDot: {
     width: 6,
@@ -249,35 +265,35 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   headline: {
-    fontSize: 34,
+    fontSize: isSmallScreen ? 28 : 34,
     fontWeight: "700",
-    lineHeight: 42,
+    lineHeight: isSmallScreen ? 34 : 42,
     textAlign: "center",
     letterSpacing: -0.5,
-    marginBottom: 14,
+    marginBottom: isSmallScreen ? 10 : 14,
   },
   headlineAccent: {},
   subtext: {
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: isSmallScreen ? 13 : 15,
+    lineHeight: isSmallScreen ? 20 : 24,
     textAlign: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: isSmallScreen ? 4 : 8,
   },
   bottom: {
-    zIndex: 1,
+    paddingBottom: isSmallScreen ? 8 : 0,
   },
   statsRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 28,
+    marginBottom: isSmallScreen ? 20 : 28,
     gap: 20,
   },
   statItem: {
     alignItems: "center",
   },
   statValue: {
-    fontSize: 22,
+    fontSize: isSmallScreen ? 18 : 22,
     fontWeight: "700",
   },
   statLabel: {
@@ -285,11 +301,11 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    height: 36,
+    height: isSmallScreen ? 28 : 36,
   },
   ctaButton: {
     width: "100%",
-    paddingVertical: 18,
+    paddingVertical: isSmallScreen ? 14 : 18,
     borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -306,6 +322,7 @@ const styles = StyleSheet.create({
   signInText: {
     fontSize: 13,
     textAlign: "center",
+    paddingBottom: 8,
   },
   signInLink: {
     fontWeight: "500",
