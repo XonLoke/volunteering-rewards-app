@@ -107,7 +107,7 @@ export default function Index() {
         </View>
 
         {/* CTA */}
-        <TouchableOpacity activeOpacity={0.85} onPress={() => router.push("/login")}>
+        <TouchableOpacity activeOpacity={0.85} onPress={() => router.push("/login")} style={styles.ctaWrap}>
           <LinearGradient colors={["#ff7850", "#ff4d20"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ctaButton}>
             <Text style={styles.ctaText}>Get Started</Text>
             <ArrowIcon color="#fff" />
@@ -206,6 +206,9 @@ const styles = StyleSheet.create({
   statValue: { fontSize: RF(18), fontWeight: "700" },
   statLabel: { fontSize: RF(11) },
   statDivider: { width: 1, height: RF(28) },
+  ctaWrap: {
+    alignSelf: "stretch",
+  },
   ctaButton: {
     width: "100%",
     paddingVertical: RF(14),

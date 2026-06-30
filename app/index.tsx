@@ -111,7 +111,7 @@ export default function Index() {
           <MiniFeature value="Redeem" label="Rewards" textColor="#fff" secondaryColor="rgba(255,255,255,0.68)" />
         </View>
 
-        <TouchableOpacity activeOpacity={0.88} onPress={() => router.push("/login")}>
+        <TouchableOpacity activeOpacity={0.88} onPress={() => router.push("/login")} style={styles.ctaWrap}>
           <LinearGradient colors={["#FF7A50", "#FF4D20"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Get Started</Text>
             <ArrowIcon color="#fff" />
@@ -251,6 +251,7 @@ const styles = StyleSheet.create({
   statValue: { fontSize: RF(18), fontWeight: "900" },
   statLabel: { fontSize: RF(11), fontWeight: "700", marginTop: RF(3) },
   statDivider: { width: 1, height: RF(30), backgroundColor: "rgba(255,255,255,0.22)" },
+  ctaWrap: { alignSelf: "stretch" },
   primaryButton: {
     width: "100%",
     paddingVertical: RF(16),
