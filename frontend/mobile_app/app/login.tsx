@@ -13,10 +13,9 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { api } from "../../src/services/api";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { api, setAuthToken } from "../../src/services/api";
+import { api, setAuthToken } from "../src/services/api";
 
 export default function Login() {
   const router = useRouter();

@@ -2,7 +2,7 @@ import { Text, View, TouchableOpacity, StyleSheet, Dimensions } from "react-nati
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Svg, Path, Circle } from "react-native-svg";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "../contexts/ThemeContext";
 
 const { width } = Dimensions.get("window");
 

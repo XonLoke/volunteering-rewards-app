@@ -13,8 +13,8 @@ import {
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useState, useCallback } from "react";
-import { useTheme } from "../../contexts/ThemeContext";
-import { api } from "../../src/services/api";
+import { useTheme } from "../contexts/ThemeContext";
+import { api } from "../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -75,7 +75,7 @@ const getEventImage = (category?: string, title?: string) => {
   const text = `${category || ""} ${title || ""}`.toLowerCase();
 
   if (text.includes("beach") || text.includes("cleanup")) {
-    return require("@/assets/images/beach.webp");
+    return require("../assets/icon.png");
   }
 
   if (
@@ -83,11 +83,11 @@ const getEventImage = (category?: string, title?: string) => {
     text.includes("sorting") ||
     text.includes("packing")
   ) {
-    return require("@/assets/images/foodbank.jpg");
+    return require("../assets/icon.png");
   }
 
   if (text.includes("blood") || text.includes("donation")) {
-    return require("@/assets/images/blooddonation.jpg");
+    return require("../assets/icon.png");
   }
 
   if (
@@ -95,7 +95,7 @@ const getEventImage = (category?: string, title?: string) => {
     text.includes("preparedness") ||
     text.includes("workshop")
   ) {
-    return require("@/assets/images/disasterprep.png");
+    return require("../assets/icon.png");
   }
 
   if (
@@ -103,7 +103,7 @@ const getEventImage = (category?: string, title?: string) => {
     text.includes("walk") ||
     text.includes("botanic")
   ) {
-    return require("@/assets/images/guidedwalk.webp");
+    return require("../assets/icon.png");
   }
 
   if (
@@ -112,11 +112,11 @@ const getEventImage = (category?: string, title?: string) => {
     text.includes("willing hearts") ||
     text.includes("elderly")
   ) {
-    return require("@/assets/images/soup kitchen.webp");
+    return require("../assets/icon.png");
   }
 
   if (text.includes("youth") || text.includes("mentor")) {
-    return require("@/assets/images/youthmentoring.jpg");
+    return require("../assets/icon.png");
   }
 
   if (
@@ -126,10 +126,10 @@ const getEventImage = (category?: string, title?: string) => {
     text.includes("restoration") ||
     text.includes("environment")
   ) {
-    return require("@/assets/images/park.jpg");
+    return require("../assets/icon.png");
   }
 
-  return require("@/assets/images/beach.webp");
+  return require("../assets/icon.png");
 };
 
 const getEventColor = (category?: string) => {

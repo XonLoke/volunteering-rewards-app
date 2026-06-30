@@ -10,8 +10,8 @@ import {
   View,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useTheme } from "../../contexts/ThemeContext";
-import { api } from "../../src/services/api";
+import { useTheme } from "../contexts/ThemeContext";
+import { api } from "../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback, useRef, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -151,7 +151,7 @@ export default function Notifications() {
     );
 
     try {
-      const res = await api.post(`/notifications/${id}/read`) {
+      const res = await api.post(`/notifications/${id}/read`, {
         method: "PATCH",
       });
 
