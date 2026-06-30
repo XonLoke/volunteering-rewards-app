@@ -4,6 +4,13 @@ A multi-portal volunteering rewards platform where volunteers earn points by att
 
 **Tech Stack:** Node.js / Express / PostgreSQL 16 / React (Vite) / Expo (React Native) / PWA
 
+**Hosted on:** [Neon](https://neon.tech) (PostgreSQL) · [Render](https://render.com) (Backend API) · [Vercel](https://vercel.com) (Web portals & PWA)
+
+These platforms were chosen for **zero-cost hosting** during development and testing:
+- **Neon** — serverless PostgreSQL with a generous free tier (no time limit, auto-suspend on inactivity), perfect for a student project database.
+- **Render** — free-tier Docker-based Node.js hosting with auto-deploy from GitHub; the backend REST API cold-starts in ~30s after inactivity.
+- **Vercel** — free global CDN hosting with seamless Git integration for static SPA and Expo PWA deployments.
+
 ---
 
 ## Quick Start (Local Development)
