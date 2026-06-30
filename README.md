@@ -69,6 +69,14 @@ npm run dev
 
 Installable on phone home screen via browser "Add to Home Screen" prompt.
 
+### Mobile App (Native APK)
+
+| App | Download | Login |
+|-----|----------|-------|
+| **Volunteer Android APK** | [GitHub Releases](https://github.com/XonLoke/volunteering-rewards-app/releases) (v1.1.0+) or CI build artifacts | alice@test.com |
+
+A native Android APK built with Expo / React Native. See the [APK Installation](#apk-download--installation) section below.
+
 ### Backend API (Render)
 
 | Endpoint | URL |
@@ -77,6 +85,46 @@ Installable on phone home screen via browser "Add to Home Screen" prompt.
 | **Health Check** | [vol-rewards-api.onrender.com/api/health](https://vol-rewards-api.onrender.com/api/health) |
 
 ---
+
+---
+
+## APK Download & Installation
+
+The native Android APK provides the full volunteer experience (Home, Events, Rewards, Profile tabs) as a standalone app — no browser needed.
+
+### Option 1: Download from GitHub Releases (Recommended)
+
+1. Go to [GitHub Releases →](https://github.com/XonLoke/volunteering-rewards-app/releases)
+2. Download the latest `app-release.apk` from the release assets
+3. Transfer the APK to your Android phone (USB, email, or cloud drive)
+
+### Option 2: Download from CI Artifacts
+
+1. Go to [GitHub Actions →](https://github.com/XonLoke/volunteering-rewards-app/actions)
+2. Select the latest successful workflow run
+3. Download the APK from the **Artifacts** section
+
+### Option 3: Build Locally
+
+```bash
+cd frontend/mobile_app
+npm install
+
+# Build release APK
+cd android && ./gradlew assembleRelease
+
+# The APK will be at:
+# frontend/mobile_app/android/app/build/outputs/apk/release/app-release.apk
+```
+
+### Installation on Android
+
+1. **Enable Unknown Sources:** Go to *Settings → Security → Install unknown apps* (or *Settings → Apps → Special app access → Install unknown apps*) and allow your file manager or browser.
+2. **Locate the APK:** Open your file manager and navigate to where you saved `app-release.apk`.
+3. **Tap to install:** Select the file and follow the on-screen prompts.
+4. **Open the app:** Find "Volunteering Rewards" in your app drawer and sign in with **alice@test.com / password123**.
+
+> ⚠️ **Build size:** ~83 MB (includes Hermes engine and native libraries). The app targets Android API 36 (Android 16+).
 
 ## Architecture
 
@@ -99,7 +147,7 @@ Installable on phone home screen via browser "Add to Home Screen" prompt.
 - **Backend:** Node.js/Express REST API on Render (free tier, Docker-based)
 - **Database:** PostgreSQL 16 on Neon (serverless, no time limit)
 - **Frontend:** React + Vite SPA with PWAs on Vercel (free tier, global CDN)
-- **Mobile:** Expo/React Native PWA (APK build blocked by Expo SDK 54 AGP 8.11 bug)
+- **Mobile:** Expo/React Native — deployed as PWA + native Android APK
 
 ---
 
@@ -118,12 +166,14 @@ volunteering-rewards-app/
 │   ├── migrations/             # SQL migrations (001-023)
 │   └── tests/                  # Unit, integration, performance
 ├── frontend/
-│   └── web_portals/            # React + Vite web app
-│       └── src/
-│           ├── pages/          # Admin, Organiser, Scan, Merchant
-│           ├── layouts/        # Portal-specific layouts
-│           └── services/       # JWT API helper
-├── app/                        # Expo/React Native mobile app (26 screens)
+│   ├── web_portals/            # React + Vite web app
+│   │   └── src/
+│   │       ├── pages/          # Admin, Organiser, Scan, Merchant
+│   │       ├── layouts/        # Portal-specific layouts
+│   │       └── services/       # JWT API helper
+│   └── mobile_app/             # Expo/React Native mobile app (26 screens)
+│       ├── app/                # Tab-based UI (Home, Events, Rewards, Profile)
+│       └── android/            # Native Android project (APK output)
 ├── docs/                       # Documentation
 └── Dockerfile                  # Docker build for Render
 ```
@@ -167,9 +217,14 @@ cd backend && node src/utils/seed.js   # Re-seed database
 # Frontend
 cd frontend/web_portals && npm run dev # Start dev server (port 5173)
 
-# Mobile App
+# Mobile App (frontend/mobile_app/)
+cd frontend/mobile_app
 npx expo start                         # Start Expo dev server
 npx expo export --platform web         # Build PWA for web
+npx expo run:android                   # Build & run APK on connected device
+cd android && ./gradlew assembleRelease  # Build release APK (output: android/app/build/outputs/apk/release/)
+echo "or"
+npx eas build --platform android --profile preview  # Build APK via EAS (Expo cloud)
 
 # Database
 cd backend && node src/utils/migrationRunner.js  # Run migrations
