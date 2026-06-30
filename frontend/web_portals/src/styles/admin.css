@@ -867,25 +867,7 @@
   }
 }
 
-/* ===== Login — fully fluid, no box ===== */
-.main-content:has(.login-wrapper) {
-  padding: 0 !important;
-  margin: 0 !important;
-  min-height: 100vh !important;
-}
-.login-wrapper {
-  padding: 0 !important;
-  min-height: 100vh !important;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.login-card {
-  width: 100%;
-  max-width: 440px;
-  padding: 24px;
-}
+/* ===== Login — centered fluid ===== */
 
 /* Merchant PinVerify keypad on small screens */
 @media (max-width: 400px) {

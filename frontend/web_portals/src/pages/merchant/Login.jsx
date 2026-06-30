@@ -108,8 +108,14 @@ export default function MerchantLogin() {
 
 const styles = {
   wrapper: {
-    minHeight: '100vh',
+    position: 'fixed',
+    inset: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
     background: '#F5F5F7',
+    zIndex: 999,
   },
   card: {
     background: 'transparent',
