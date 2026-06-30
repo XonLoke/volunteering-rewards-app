@@ -26,7 +26,7 @@ export default function ScanLogin() {
 
   return (
     <div style={styles.wrapper}>
-      <div style={styles.card}>
+      <div className="login-card" style={styles.card}>
         <div style={styles.header}>
           <div style={styles.iconWrap}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#34C759" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -116,9 +116,8 @@ const styles = {
   card: {
     background: '#FFFFFF',
     borderRadius: 16,
-    padding: 40,
+    padding: 28,
     width: '100%',
-    maxWidth: 400,
     boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
   },
   header: {

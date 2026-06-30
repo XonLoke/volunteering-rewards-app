@@ -867,11 +867,21 @@
   }
 }
 
-/* ===== Merchant Portal Responsive ===== */
+/* ===== Login Cards (fluid, not fixed) ===== */
+.login-card {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+@media (max-width: 520px) {
+  .login-card {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .merchant-login-card {
     padding: 20px !important;
-    margin: 12px !important;
   }
 }
 
