@@ -2,9 +2,16 @@
 
 A multi-portal volunteering rewards platform where volunteers earn points by attending events and redeem them for merchant-sponsored coupon rewards with 6-digit PINs.
 
-**Tech Stack:** Node.js / Express / PostgreSQL 16 / React (Vite) / Expo (React Native) / PWA
+**Tech Stack:** Node.js / Express / PostgreSQL 16 / React (Vite) · React Native (Android APK + PWA)
 
 **Hosted on:** [Neon](https://neon.tech) (PostgreSQL) · [Render](https://render.com) (Backend API) · [Vercel](https://vercel.com) (Web portals & PWA)
+
+> **Note on Expo:** The React Native app is built with [Expo SDK 54](https://expo.dev). Expo is the underlying build framework that handles:
+> 1. The build toolchain — `expo run:android` and `npx expo export --platform web` produce the APK and PWA respectively
+> 2. Core packages — `expo-router`, `expo-splash-screen`, `expo-linear-gradient`, `expo-image-picker`, and others are used throughout `frontend/mobile_app/`
+> 3. Native config — Gradle properties, Android manifest, and splash screen are all managed through Expo's plugin system (`app.json` / `expo-build-properties`)
+>
+> However, **the Expo Go / dev client workflow is not used** — the mobile app is delivered as a standalone APK and PWA, not run via the Expo Go sandbox.
 
 These platforms were chosen for **zero-cost hosting** during development and testing:
 - **Neon** — serverless PostgreSQL with a generous free tier (no time limit, auto-suspend on inactivity), perfect for a student project database.
