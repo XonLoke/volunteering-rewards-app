@@ -1,15 +1,19 @@
-import { Text, View, TouchableOpacity, StyleSheet, Dimensions, ScrollView } from "react-native";
+import { Text, View, TouchableOpacity, StyleSheet, Dimensions, ScrollView, PixelRatio } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Svg, Path, Circle } from "react-native-svg";
 import { useTheme } from "../contexts/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
-const isSmallScreen = height < 700;
+
+// Responsive scale factor — font sizes shrink on small screens
+const scale = Math.min(width / 430, height / 932, 1);
+const RF = (size: number) => Math.max(Math.round(size * scale), 11);
+const RH = (size: number) => Math.max(Math.round(size * scale), 14);
 
 function StarIcon({ color }: { color: string }) {
   return (
-    <Svg width={52} height={52} viewBox="0 0 24 24" fill="none">
+    <Svg width={RF(52)} height={RF(52)} viewBox="0 0 24 24" fill="none">
       <Path
         d="M12 20.94c-1.2-.8-7-5-7-9.94a7 7 0 0 1 14 0c0 4.94-5.8 9.14-7 9.94z"
         stroke={color}
@@ -31,7 +35,7 @@ function StarIcon({ color }: { color: string }) {
 
 function ArrowIcon({ color }: { color: string }) {
   return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Svg width={RF(18)} height={RF(18)} viewBox="0 0 24 24" fill="none">
       <Path
         d="M5 12h14M12 5l7 7-7 7"
         stroke={color}
@@ -76,7 +80,7 @@ export default function Index() {
       {/* Top brand row */}
       <View style={styles.brandRow}>
         <View style={[styles.brandIconBox, { borderColor: "rgba(255,255,255,0.25)", backgroundColor: "rgba(255,255,255,0.15)" }]}>
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+          <Svg width={RF(18)} height={RF(18)} viewBox="0 0 24 24" fill="none">
             <Path
               d="M12 21c-4.97-3.6-8-7.4-8-10.5a8 8 0 0 1 16 0c0 3.1-3.03 6.9-8 10.5z"
               stroke="#fff"
@@ -90,7 +94,7 @@ export default function Index() {
         <Text style={[styles.brandName, { color: "#fff" }]}>VolunteerRewards</Text>
       </View>
 
-      {/* Scrollable centre + bottom */}
+      {/* Scrollable content — no flex centering, natural flow prevents overlap */}
       <ScrollView
         style={styles.scrollArea}
         contentContainerStyle={styles.scrollContent}
@@ -119,13 +123,13 @@ export default function Index() {
             <Text style={[styles.pillText, { color: "#fff" }]}>Give back, get rewarded</Text>
           </View>
 
-          {/* Headline */}
+          {/* Headline — responsive font */}
           <Text style={[styles.headline, { color: "#fff" }]}>
             {"Volunteer.\nEarn Points.\n"}
             <Text style={[styles.headlineAccent, { color: "#ff9d80" }]}>Get Rewarded.</Text>
           </Text>
 
-          {/* Subtext */}
+          {/* Subtext — responsive font */}
           <Text style={[styles.subtext, { color: "rgba(255,255,255,0.75)" }]}>
             Scan QR codes at events, rack up points, and unlock exclusive rewards
             from partner merchants.
@@ -173,52 +177,52 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 28,
-    paddingTop: 36,
-    paddingBottom: isSmallScreen ? 20 : 44,
+    paddingHorizontal: RF(28),
+    paddingTop: RF(32),
+    paddingBottom: RF(24),
   },
   glow1: {
     position: "absolute",
-    top: -80,
-    right: -80,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
+    top: RF(-80),
+    right: RF(-80),
+    width: RF(280),
+    height: RF(280),
+    borderRadius: RF(140),
   },
   glow2: {
     position: "absolute",
-    bottom: 160,
-    left: -60,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    bottom: RF(160),
+    left: RF(-60),
+    width: RF(220),
+    height: RF(220),
+    borderRadius: RF(110),
   },
   glow3: {
     position: "absolute",
-    top: 220,
-    right: -40,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
+    top: RF(220),
+    right: RF(-40),
+    width: RF(180),
+    height: RF(180),
+    borderRadius: RF(90),
   },
   brandRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: RF(10),
     zIndex: 1,
-    marginBottom: isSmallScreen ? 8 : 16,
+    marginBottom: RF(12),
   },
   brandIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: RF(36),
+    height: RF(36),
+    borderRadius: RF(10),
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
     borderWidth: 1,
   },
   brandName: {
-    fontSize: isSmallScreen ? 14 : 15,
+    fontSize: RF(15),
     fontWeight: "600",
     letterSpacing: 0.3,
   },
@@ -226,103 +230,101 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
+    paddingTop: RF(16),
+    paddingBottom: RF(8),
   },
   centre: {
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: isSmallScreen ? 12 : 24,
   },
   iconCard: {
-    width: isSmallScreen ? 90 : 110,
-    height: isSmallScreen ? 90 : 110,
-    borderRadius: isSmallScreen ? 24 : 28,
+    width: RF(100),
+    height: RF(100),
+    borderRadius: RF(26),
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
     borderWidth: 1.5,
-    marginBottom: isSmallScreen ? 20 : 28,
+    marginBottom: RF(22),
   },
   pill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: RF(6),
     borderWidth: 1,
     borderRadius: 100,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    marginBottom: isSmallScreen ? 14 : 20,
+    paddingHorizontal: RF(14),
+    paddingVertical: RF(4),
+    marginBottom: RF(16),
   },
   pillDot: {
-    width: 6,
-    height: 6,
+    width: RF(6),
+    height: RF(6),
     borderRadius: 3,
   },
   pillText: {
-    fontSize: 12,
+    fontSize: RF(12),
     fontWeight: "500",
     letterSpacing: 0.5,
   },
   headline: {
-    fontSize: isSmallScreen ? 28 : 34,
+    fontSize: RF(32),
     fontWeight: "700",
-    lineHeight: isSmallScreen ? 34 : 42,
+    lineHeight: RH(40),
     textAlign: "center",
     letterSpacing: -0.5,
-    marginBottom: isSmallScreen ? 10 : 14,
+    marginBottom: RF(12),
   },
   headlineAccent: {},
   subtext: {
-    fontSize: isSmallScreen ? 13 : 15,
-    lineHeight: isSmallScreen ? 20 : 24,
+    fontSize: RF(14),
+    lineHeight: RH(22),
     textAlign: "center",
-    paddingHorizontal: isSmallScreen ? 4 : 8,
+    paddingHorizontal: RF(4),
   },
   bottom: {
-    paddingBottom: isSmallScreen ? 8 : 0,
+    marginTop: RF(28),
   },
   statsRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: isSmallScreen ? 20 : 28,
-    gap: 20,
+    marginBottom: RF(24),
+    gap: RF(20),
   },
   statItem: {
     alignItems: "center",
   },
   statValue: {
-    fontSize: isSmallScreen ? 18 : 22,
+    fontSize: RF(20),
     fontWeight: "700",
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: RF(12),
   },
   statDivider: {
     width: 1,
-    height: isSmallScreen ? 28 : 36,
+    height: RF(32),
   },
   ctaButton: {
     width: "100%",
-    paddingVertical: isSmallScreen ? 14 : 18,
-    borderRadius: 16,
+    paddingVertical: RF(16),
+    borderRadius: RF(16),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    marginBottom: 14,
+    gap: RF(10),
+    marginBottom: RF(14),
   },
   ctaText: {
-    fontSize: 16,
+    fontSize: RF(16),
     fontWeight: "700",
     letterSpacing: 0.2,
     color: "#fff",
   },
   signInText: {
-    fontSize: 13,
+    fontSize: RF(13),
     textAlign: "center",
-    paddingBottom: 8,
+    paddingBottom: RF(8),
   },
   signInLink: {
     fontWeight: "500",
