@@ -25,7 +25,7 @@ export default function ScanLogin() {
   };
 
   return (
-    <div style={styles.wrapper}>
+    <div className="login-wrapper" style={styles.wrapper}>
       <div className="login-card" style={styles.card}>
         <div style={styles.header}>
           <div style={styles.iconWrap}>

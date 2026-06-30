@@ -30,7 +30,7 @@ export default function MerchantLogin() {
   };
 
   return (
-    <div style={styles.wrapper}>
+    <div className="login-wrapper" style={styles.wrapper}>
       <div className="login-card merchant-login-card" style={styles.card}>
         <div style={styles.header}>
           <div style={styles.iconWrap}>
@@ -112,7 +112,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    padding: 16,
+    padding: 24,
     background: '#F5F5F7',
   },
   card: {
