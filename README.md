@@ -144,9 +144,9 @@ cd android && ./gradlew assembleRelease
 
 ```
 ┌─────────────────┐     HTTPS requests      ┌─────────────────┐
-│   Vercel        │ ──────────────────────▶ │   Render        │
-│   (Frontend)    │ ◀────────────────────── │   (Backend)     │
-│   React/Vite    │     JSON responses      │   Node/Express  │
+│   Vercel        │ ─────────────────────▶ │   Render        │
+│   (Frontend)    │ ◀───────────────────── │   (Backend)     │
+│   React/Vite    │     JSON responses     │   Node/Express  │
 └─────────────────┘                        └────────┬────────┘
                                                     │
                                                     │ PostgreSQL (SSL)
