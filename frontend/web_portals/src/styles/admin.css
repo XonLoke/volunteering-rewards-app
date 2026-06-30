@@ -838,3 +838,31 @@
     align-items: flex-start;
   }
 }
+
+/* ===== Scanner PWA Responsive ===== */
+.scanner-wrapper {
+  padding: 24px;
+  min-height: 100vh;
+  background: #F5F5F7;
+}
+
+@media (max-width: 600px) {
+  .scanner-wrapper {
+    padding: 12px !important;
+  }
+
+  .scanner-wrapper .scanner-action-row {
+    flex-direction: column;
+  }
+
+  .scanner-wrapper .scanner-action-row button {
+    width: 100%;
+  }
+}
+
+/* ===== Merchant Portal Responsive ===== */
+@media (max-width: 480px) {
+  .merchant-login-card {
+    padding: 24px !important;
+  }
+}

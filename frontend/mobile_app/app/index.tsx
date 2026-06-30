@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 28,
-    paddingTop: 60,
+    paddingTop: 36,
     paddingBottom: 44,
   },
   glow1: {

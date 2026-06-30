@@ -31,7 +31,7 @@ export default function MerchantLogin() {
 
   return (
     <div style={styles.wrapper}>
-      <div style={styles.card}>
+      <div className="merchant-login-card" style={styles.card}>
         <div style={styles.header}>
           <div style={styles.iconWrap}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FF9500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

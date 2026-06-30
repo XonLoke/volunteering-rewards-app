@@ -286,7 +286,7 @@ export default function Scanner() {
 
   if (loading) {
     return (
-      <div style={styles.wrapper}>
+      <div className="scanner-wrapper" style={styles.wrapper}>
         <div className="loading-state" style={{ minHeight: 300 }}>
           <div style={styles.spinnerLarge} />
           <p>Loading event...</p>
@@ -297,7 +297,7 @@ export default function Scanner() {
 
   if (error) {
     return (
-      <div style={styles.wrapper}>
+      <div className="scanner-wrapper" style={styles.wrapper}>
         <div className="error-state" style={{ minHeight: 300 }}>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
@@ -316,7 +316,7 @@ export default function Scanner() {
   }
 
   return (
-    <div style={styles.wrapper}>
+    <div className="scanner-wrapper" style={styles.wrapper}>
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
@@ -401,7 +401,7 @@ export default function Scanner() {
         </div>
 
         {/* Action buttons */}
-        <div style={styles.actionRow}>
+        <div className="scanner-action-row" style={styles.actionRow}>
           <button
             style={{
               ...styles.checkinBtn,
