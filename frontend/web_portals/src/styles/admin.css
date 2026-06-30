@@ -870,13 +870,21 @@
 /* ===== Login cards — fully fluid ===== */
 .login-card {
   width: 100%;
-  max-width: 100%;
+}
+.login-card-inner {
+  width: 100%;
 }
 
-/* On mobile: remove gap so login fills entire viewport */
-@media (max-width: 600px) {
+/* On mobile: remove ALL gaps so login fills viewport edge-to-edge */
+@media (max-width: 768px) {
+  .main-content:has(.login-wrapper) {
+    padding: 0 !important;
+    margin-top: 0 !important;
+    min-height: 100vh !important;
+  }
   .login-wrapper {
     padding: 0 !important;
+    min-height: 100vh !important;
   }
   .login-card {
     border-radius: 0 !important;
@@ -885,11 +893,12 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    padding: 24px;
   }
 }
 
 /* On larger screens: graceful max-width */
-@media (min-width: 601px) {
+@media (min-width: 769px) {
   .login-card {
     max-width: 440px;
     margin: 0 auto;
