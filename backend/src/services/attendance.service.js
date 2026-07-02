@@ -121,7 +121,42 @@ const batchSync = async (scans = []) => {
   }
 };
 
+/**
+ * Get the latest attendance record for a volunteer after a given timestamp.
+ * Used by the volunteer's QR display screen to auto-detect when the organizer has scanned them.
+ *
+ * @param {number} volunteerId — the volunteer's user ID
+ * @param {string} after — ISO 8601 timestamp; only records after this time are considered
+ * @returns {object|null} — attendance record or null if none found
+ */
+async function getLatestAttendance(volunteerId, after) {
+  const { rows } = await pool.query(
+    `SELECT al.id, al.event_id, al.user_id, al.points_awarded, al.scanned_at,
+            e.title AS event_name, e.location
+     FROM attendance_logs al
+     JOIN events e ON e.id = al.event_id
+     WHERE al.user_id = $1
+       AND al.scanned_at > $2::timestamptz
+     ORDER BY al.scanned_at DESC
+     LIMIT 1`,
+    [volunteerId, after]
+  );
+
+  if (rows.length === 0) return null;
+
+  const r = rows[0];
+  return {
+    id: r.id,
+    eventId: r.event_id,
+    eventName: r.event_name,
+    location: r.location,
+    pointsAwarded: r.points_awarded,
+    scannedAt: r.scanned_at,
+  };
+}
+
 module.exports = {
   scanQR,
   batchSync,
+  getLatestAttendance,
 };

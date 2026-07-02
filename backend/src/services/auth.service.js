@@ -172,7 +172,7 @@ async function login(body) {
 
   const { rows } = await pool.query(
     `SELECT u.id, u.email, u.password_hash, u.name, u.phone, u.points,
-            u.profile_image_url, u.status, u.role_id, u.created_at, r.role_name
+            u.profile_image_url, u.volunteer_qr_code, u.status, u.role_id, u.created_at, r.role_name
      FROM users u
      JOIN roles r ON r.id = u.role_id
      WHERE u.email = $1`,
@@ -217,6 +217,7 @@ async function login(body) {
       email: user.email,
       role: user.role_name,
       points_balance: user.points,
+      volunteer_qr_code: user.volunteer_qr_code,
       avatar_url: user.profile_image_url,
     },
     token: accessToken,

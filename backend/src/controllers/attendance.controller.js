@@ -55,4 +55,39 @@ async function batch(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { scan, batch };
+// ─── GET /api/attendance/volunteer/:id/latest ──────────────────
+async function getLatestAttendance(req, res, next) {
+  try {
+    const volunteerId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+      throw createError(400, "validation_error", "Invalid volunteer ID.");
+    }
+
+    const after = req.query.after || new Date(0).toISOString();
+    const attendance = await attendanceService.getLatestAttendance(volunteerId, after);
+
+    if (!attendance) {
+      return res.json({ found: false });
+    }
+
+    res.json({
+      found: true,
+      attendance: {
+        id: attendance.id,
+        eventId: attendance.eventId,
+        event_id: attendance.eventId,
+        eventName: attendance.eventName,
+        event_name: attendance.eventName,
+        location: attendance.location,
+        pointsEarned: attendance.pointsAwarded,
+        points_earned: attendance.pointsAwarded,
+        pointsAwarded: attendance.pointsAwarded,
+        points_awarded: attendance.pointsAwarded,
+        scannedAt: attendance.scannedAt,
+        scanned_at: attendance.scannedAt,
+      },
+    });
+  } catch (err) { next(err); }
+}
+
+module.exports = { scan, batch, getLatestAttendance };
