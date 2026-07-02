@@ -131,10 +131,10 @@ async function redeemReward(rewardId, userId, meta = {}) {
     const expiryDate = coupon.expiry_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     const userCouponResult = await client.query(
-      `INSERT INTO user_coupons (user_id, coupon_id, pin_hash, status, expiry_date, created_at)
-       VALUES ($1, $2, $3, 'unused', $4, NOW())
+      `INSERT INTO user_coupons (user_id, coupon_id, pin_code, pin_hash, status, expiry_date, created_at)
+       VALUES ($1, $2, $3, $4, 'unused', $5, NOW())
        RETURNING id, user_id, coupon_id, status, expiry_date, created_at`,
-      [userId, rewardId, pinHash, expiryDate]
+      [userId, rewardId, pin, pinHash, expiryDate]
     );
     const userCoupon = userCouponResult.rows[0];
 
