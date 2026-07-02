@@ -38,8 +38,10 @@ async function today(req, res, next) {
   try {
     const result = await pool.query(`
       SELECT e.id, e.title, e.description, e.location, e.event_date,
-        e.event_date AS start_time, e.event_date AS end_time,
-        e.points_value, e.capacity, e.status,
+        e.event_date AS start_time,
+        (e.event_date + COALESCE(e.duration_hours, 0) * INTERVAL '1 hour') AS end_time,
+        e.points_value, e.capacity, e.duration_hours, e.status,
+        CASE WHEN (e.event_date + COALESCE(e.duration_hours, 3) * INTERVAL '1 hour') < NOW() THEN true ELSE false END AS has_ended,
         COALESCE(reg.count, 0)::int AS total_registered,
         COALESCE(att.count, 0)::int AS total_checked_in
       FROM events e

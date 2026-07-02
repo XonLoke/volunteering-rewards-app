@@ -61,9 +61,9 @@ async function getMyEvents(organiserId, { page = 1, limit = 20, status } = {}) {
 
 async function createEvent(organiserId, data) {
   const { rows } = await pool.query(
-    `INSERT INTO events (organizer_id, title, description, location, event_date, capacity, points_value, category, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'upcoming') RETURNING *`,
-    [organiserId, data.title, data.description, data.location, data.event_date, data.capacity, data.points_value, data.category]
+    `INSERT INTO events (organizer_id, title, description, location, event_date, duration_hours, capacity, points_value, category, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'upcoming') RETURNING *`,
+    [organiserId, data.title, data.description, data.location, data.event_date, data.duration_hours || null, data.capacity, data.points_value, data.category]
   );
   return rows[0];
 }
@@ -72,10 +72,11 @@ async function updateEvent(organiserId, eventId, data) {
   const { rows } = await pool.query(
     `UPDATE events SET title = COALESCE($3, title), description = COALESCE($4, description),
       location = COALESCE($5, location), event_date = COALESCE($6, event_date),
-      capacity = COALESCE($7, capacity), points_value = COALESCE($8, points_value),
-      status = COALESCE($9, status), updated_at = NOW()
+      duration_hours = COALESCE($7, duration_hours),
+      capacity = COALESCE($8, capacity), points_value = COALESCE($9, points_value),
+      status = COALESCE($10, status), updated_at = NOW()
      WHERE id = $1 AND organizer_id = $2 RETURNING *`,
-    [eventId, organiserId, data.title, data.description, data.location, data.event_date, data.capacity, data.points_value, data.status]
+    [eventId, organiserId, data.title, data.description, data.location, data.event_date, data.duration_hours, data.capacity, data.points_value, data.status]
   );
   if (rows.length === 0) throw createError(404, "not_found", "Event not found.");
   return rows[0];

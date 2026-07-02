@@ -113,12 +113,20 @@ export default function EventSelect() {
               const checkedIn = event.total_checked_in || 0;
               const registered = event.total_registered || 0;
               const progress = registered > 0 ? (checkedIn / registered) * 100 : 0;
+              const ended = event.has_ended;
 
               return (
-                <div key={event.id} style={styles.eventCard}>
+                <div key={event.id} style={{
+                  ...styles.eventCard,
+                  opacity: ended ? 0.7 : 1,
+                }}>
                   <div style={styles.eventHeader}>
                     <h2 style={styles.eventTitle}>{event.title}</h2>
-                    <span style={styles.eventPoints}>+{event.points_awarded || 0} pts</span>
+                    {ended ? (
+                      <span style={styles.endedBadge}>Ended</span>
+                    ) : (
+                      <span style={styles.eventPoints}>+{event.points_awarded || 0} pts</span>
+                    )}
                   </div>
 
                   <div style={styles.eventMeta}>
@@ -150,22 +158,32 @@ export default function EventSelect() {
                         style={{
                           ...styles.progressFill,
                           width: `${Math.min(progress, 100)}%`,
+                          background: ended ? '#8E8E93' : '#34C759',
                         }}
                       />
                     </div>
                   </div>
 
                   <div style={styles.cardActions}>
-                    <button
-                      style={styles.openScannerBtn}
-                      onClick={() => navigate(`/scan/scanner/${event.id}`)}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-                        <line x1="7" y1="12" x2="17" y2="12" />
-                      </svg>
-                      Open Scanner
-                    </button>
+                    {ended ? (
+                      <div style={styles.endedMessage}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span>Event has ended</span>
+                      </div>
+                    ) : (
+                      <button
+                        style={styles.openScannerBtn}
+                        onClick={() => navigate(`/scan/scanner/${event.id}`)}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                          <line x1="7" y1="12" x2="17" y2="12" />
+                        </svg>
+                        Open Scanner
+                      </button>
+                    )}
                     <button
                       style={styles.rosterBtn}
                       onClick={() => navigate(`/scan/roster/${event.id}`)}
@@ -360,5 +378,29 @@ const styles = {
     border: 'none',
     cursor: 'pointer',
     transition: 'background 0.15s',
+  },
+  endedBadge: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#8E8E93',
+    background: '#F2F2F5',
+    padding: '4px 10px',
+    borderRadius: 99,
+    whiteSpace: 'nowrap',
+  },
+  endedMessage: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    flex: 1,
+    minHeight: 48,
+    padding: '12px 20px',
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#8E8E93',
+    background: '#F2F2F5',
+    border: '1px dashed #C7C7CC',
   },
 };

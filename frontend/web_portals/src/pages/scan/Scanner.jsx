@@ -27,6 +27,15 @@ function formatTimeDisplay() {
   });
 }
 
+function formatTime(t) {
+  if (!t) return '';
+  const d = new Date(t);
+  return d.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 const ERROR_MAP = {
   not_registered: 'Volunteer is not registered for this event.',
   already_checked_in: 'Volunteer has already been checked in.',
@@ -310,6 +319,30 @@ export default function Scanner() {
           >
             Back to Events
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (event?.has_ended) {
+    return (
+      <div className="scanner-wrapper" style={styles.wrapper}>
+        <div style={styles.container}>
+          <div style={styles.endedPanel}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+            </svg>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1C1C1E', margin: '12px 0 4px' }}>Event has ended</h2>
+            <p style={{ fontSize: 14, color: '#6C6C70', margin: '0 0 24px' }}>
+              {event.title} ended at {event.end_time ? formatTime(event.end_time) : ''}. Scanning is no longer available.
+            </p>
+            <button
+              style={styles.backBtn}
+              onClick={() => navigate('/scan/events')}
+            >
+              Back to Events
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -847,5 +880,14 @@ const styles = {
     color: '#6C6C70',
     textAlign: 'center',
     margin: '8px 0 0',
+  },
+  endedPanel: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    minHeight: 300,
+    padding: '48px 24px',
   },
 };
