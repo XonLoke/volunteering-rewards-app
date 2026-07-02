@@ -11,6 +11,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Input from '../../src/components/Input';
 import Button from '../../src/components/Button';
 import Toast from '../../src/components/Toast';
@@ -43,6 +44,7 @@ interface RegisterResponse {
     email: string;
     role: string;
     points_balance: number;
+    volunteer_qr_code?: string;
   };
 }
 
@@ -140,6 +142,20 @@ export default function RegisterScreen() {
       // Store auth token
       setAuthToken(response.token);
       await setToken(response.token);
+
+      // Save user data for QR code display
+      const userData = {
+        id: response.user.id,
+        name: response.user.name,
+        email: response.user.email,
+        role: response.user.role,
+        points: response.user.points_balance,
+        volunteer_qr_code: response.user.volunteer_qr_code || '',
+      };
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      if (response.user.points_balance !== undefined) {
+        await AsyncStorage.setItem('userPoints', String(response.user.points_balance));
+      }
 
       // Navigate to main app
       router.replace('/(tabs)/home');

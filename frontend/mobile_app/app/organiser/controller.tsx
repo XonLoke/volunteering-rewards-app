@@ -1,7 +1,18 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useState, useEffect } from "react";
+
+// Hardcoded demo event; in a real app this comes from API or route params
+const DEMO_EVENT_ID = 1;
 
 export default function Controller() {
+  const [eventId] = useState(DEMO_EVENT_ID);
+
+  const handleScan = () => {
+    router.push(`/organiser/scanner?eventId=${eventId}`);
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.topBar}>
@@ -40,11 +51,11 @@ export default function Controller() {
         <Box value="71%" label="Check-in Rate" color="#2563EB" />
       </View>
 
-      <TouchableOpacity style={styles.scan}>
+      <TouchableOpacity style={styles.scan} onPress={handleScan} activeOpacity={0.86}>
         <Ionicons name="qr-code-outline" size={36} color="#fff" />
         <View>
           <Text style={styles.scanText}>Scan QR Code</Text>
-          <Text style={styles.scanSub}>Tap to scan volunteer QR</Text>
+          <Text style={styles.scanSub}>Tap to open camera scanner</Text>
         </View>
       </TouchableOpacity>
 
