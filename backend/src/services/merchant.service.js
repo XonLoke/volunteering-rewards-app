@@ -19,6 +19,7 @@ async function findCouponByPin(pin) {
     `SELECT uc.id AS user_coupon_id, uc.user_id, uc.coupon_id, uc.status,
             uc.expiry_date, uc.created_at, uc.redeemed_at, uc.verified_by,
             c.title, c.description, c.points_required,
+            c.value_cents, c.merchant_name,
             u.name AS volunteer_name, u.email AS volunteer_email
        FROM user_coupons uc
        JOIN coupons c ON c.id = uc.coupon_id
@@ -34,7 +35,17 @@ async function findCouponByPin(pin) {
     throw createError(400, "expired", "Coupon has expired.");
   }
 
-  return { data: coupon };
+  const { revoked_at, ...rest } = coupon;
+
+  return {
+    coupon: {
+      ...rest,
+      coupon_title: coupon.title,
+      coupon_type: coupon.title,
+      valid_until: coupon.expiry_date,
+      points_cost: coupon.points_required,
+    },
+  };
 }
 
 async function verifyPin({ pin }) {
@@ -46,6 +57,8 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
 
   try {
     await client.query("BEGIN");
+
+    const normalisedPin = pin ? normalisePin(pin) : null;
 
     let query;
     let params;
@@ -64,7 +77,7 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
                  JOIN users u ON u.id = uc.user_id
                 WHERE uc.pin_hash = $1
                 FOR UPDATE`;
-      params = [hashPin(normalisePin(pin))];
+      params = [hashPin(normalisedPin)];
     }
 
     const lookup = await client.query(query, params);
@@ -94,10 +107,14 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
     await client.query("COMMIT");
 
     return {
-      data: {
+      redemption: {
         ...updated.rows[0],
+        user_coupon_id: coupon.user_coupon_id,
+        coupon_type: coupon.title,
         coupon_title: coupon.title,
         volunteer_name: coupon.volunteer_name,
+        value_cents: coupon.value_cents,
+        pin: pin || null,
       },
     };
   } catch (err) {

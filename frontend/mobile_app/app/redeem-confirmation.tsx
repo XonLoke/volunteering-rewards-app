@@ -53,49 +53,25 @@ export default function RedeemConfirmation() {
     try {
       setConfirming(true);
 
-      const storedUser = await AsyncStorage.getItem("user");
+      // Backend reads user ID from auth token, coupon ID from URL path
+      const response = await api.post(`/rewards/${coupon.couponId}/redeem`);
 
-      if (!storedUser) {
-        Alert.alert("Login required", "Please login again.");
-        router.replace("/login");
-        return;
-      }
-
-      const user = JSON.parse(storedUser);
-
-      const response = await api.post("/rewards/redeem", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          coupon_id: coupon.couponId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        Alert.alert(
-          "Redemption failed",
-          data.error || data.message || "Please try again."
-        );
-        return;
-      }
-
+      // response = { data: { id, user_id, coupon_id, status, pin, points_balance, ... } }
+      const result = response?.data || response;
+      const pin = result.pin || "";
       const remainingPoints =
-        typeof data.remainingPoints === "number"
-          ? data.remainingPoints
+        typeof result.points_balance === "number"
+          ? result.points_balance
           : newBalance;
 
-      const updatedUser = {
-        ...user,
-        points: remainingPoints,
-      };
+      const storedUser = await AsyncStorage.getItem("user");
 
-      await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
-      await AsyncStorage.setItem("userPoints", String(remainingPoints));
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const updatedUser = { ...user, points: remainingPoints };
+        await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+        await AsyncStorage.setItem("userPoints", String(remainingPoints));
+      }
 
       router.replace({
         pathname: "/redeem-success",
@@ -103,15 +79,16 @@ export default function RedeemConfirmation() {
           title: coupon.title,
           pointsCost: String(coupon.pointsCost),
           remainingPoints: String(remainingPoints),
-          pin: data.pin ?? "",
+          pin,
           color: coupon.color,
           emoji: coupon.emoji,
           validUntil: coupon.validUntil,
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Redeem confirm error:", error);
-      Alert.alert("Error", "Failed to redeem. Check your connection.");
+      const message = error?.message || "Failed to redeem. Check your connection.";
+      Alert.alert("Redemption failed", message);
     } finally {
       setConfirming(false);
     }

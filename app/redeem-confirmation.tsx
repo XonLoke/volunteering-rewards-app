@@ -77,30 +77,26 @@ export default function RedeemConfirmation() {
 
       const user = JSON.parse(storedUser);
 
-      const response = await authFetch(`${BASE_URL}/redeem`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          coupon_id: coupon.couponId,
-        }),
-      });
+      // Backend reads user ID from auth token, coupon ID from URL path
+      const response = await authFetch(
+        `${BASE_URL}/rewards/${coupon.couponId}/redeem`,
+        { method: "POST" }
+      );
 
-      const data = await response.json();
+      const json = await response.json();
 
-      if (!response.ok || !data.success) {
-        Alert.alert(
-          "Redemption failed",
-          data.error || data.message || "Please try again."
-        );
+      if (!response.ok) {
+        const msg = json?.error?.message || json?.message || "Redemption failed";
+        Alert.alert("Redemption failed", msg);
         return;
       }
 
+      // response = { data: { id, user_id, pin, points_balance, ... } }
+      const result = json?.data || json;
+      const pin = result.pin || "";
       const remainingPoints =
-        typeof data.remainingPoints === "number"
-          ? data.remainingPoints
+        typeof result.points_balance === "number"
+          ? result.points_balance
           : newBalance;
 
       const updatedUser = {
@@ -117,7 +113,7 @@ export default function RedeemConfirmation() {
           title: coupon.title,
           pointsCost: String(coupon.pointsCost),
           remainingPoints: String(remainingPoints),
-          pin: data.pin ?? "",
+          pin,
           color: coupon.color,
           emoji: coupon.emoji,
           validUntil: coupon.validUntil,
