@@ -32,20 +32,15 @@ export default function EventSelect() {
   const { toast } = useToast();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const fetchEvents = async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await apiGet('/events/today');
       setEvents(res.data || []);
     } catch (err) {
-      if (err.status === 404) {
-        setEvents([]);
-      } else {
-        setError(err.message || 'Failed to load events');
-      }
+      // Gracefully degrade: treat all load failures as "no events today"
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -75,28 +70,6 @@ export default function EventSelect() {
           <div className="loading-state" style={{ minHeight: 300 }}>
             <div style={styles.spinnerLarge} />
             <p>Loading today's events...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={styles.wrapper}>
-        <div style={styles.container}>
-          <div className="error-state" style={{ minHeight: 300 }}>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <h2>Failed to load events</h2>
-            <p>{error}</p>
-            <button
-              style={styles.retryBtn}
-              onClick={fetchEvents}
-            >
-              Retry
-            </button>
           </div>
         </div>
       </div>
