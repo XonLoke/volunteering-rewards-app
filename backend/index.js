@@ -336,6 +336,9 @@ app.use("/api", require("./src/routes/merchant.routes"));
 app.use("/api/settings", require("./src/routes/settings.routes"));
 app.use("/api/contact", require("./src/routes/contact.routes"));
 
+// AI — LLM-powered recommendations & feedback summary (Gen 2)
+app.use("/api/ai", require("./src/routes/ai.routes"));
+
 // ─── 404 Handler ─────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({ error: { code: "not_found", message: "Route not found" } });
