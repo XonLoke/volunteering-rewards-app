@@ -21,7 +21,7 @@ export default function MerchantLogin() {
         setLoading(false);
         return;
       }
-      navigate('/merchant/verify');
+      navigate('/merchant/dashboard');
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {

@@ -24,4 +24,16 @@ router.post("/coupons/redeem",  authenticate, requireMerchantOrAdmin, controller
 router.post("/coupons/reverse", authenticate, requireMerchantOrAdmin, controller.reverse);  // REW-07
 router.get("/merchant/history", authenticate, requireMerchantOrAdmin, controller.history);  // REW-09
 
+// ─── Merchant Dashboard ────────────────────────────────────
+router.get("/merchant/dashboard", authenticate, requireMerchantOrAdmin, controller.dashboard);
+
+// ─── Merchant Products CRUD ────────────────────────────────
+router.get("/merchant/products", authenticate, requireMerchantOrAdmin, controller.listProducts);
+router.post("/merchant/products", authenticate, requireMerchantOrAdmin, controller.createProduct);
+router.put("/merchant/products/:id", authenticate, requireMerchantOrAdmin, controller.updateProduct);
+router.delete("/merchant/products/:id", authenticate, requireMerchantOrAdmin, controller.deleteProduct);
+
+// ─── Merchant Redemption Records ──────────────────────────
+router.get("/merchant/redemptions", authenticate, requireMerchantOrAdmin, controller.listRedemptions);
+
 module.exports = router;

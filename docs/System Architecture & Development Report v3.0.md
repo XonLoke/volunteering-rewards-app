@@ -1,7 +1,7 @@
 # Volunteering Rewards App — System Architecture & Development Report
 
-> **Document Version:** 3.1  
-> **Date:** 3 July 2026  
+> **Document Version:** 3.0  
+> **Date:** 2 July 2026  
 > **Project:** Volunteering Rewards App (C3000C)  
 > **Status:** Sprint 5 — Final Week (Deadline: 6 Jul 2026)
 
@@ -39,22 +39,17 @@ The Volunteering Rewards App is a full-stack web and mobile platform that connec
 | **Admin** | Manage users and organisers, approve organisations, create coupons, verify redemptions, configure rewards, view audit logs |
 | **Merchant Cashier** | Verify 6-digit coupon PINs, process redemptions, reverse within 5-minute window, view history |
 
-### Key Achievements (as of 3 Jul 2026)
+### Key Achievements (as of 2 Jul 2026)
 
 | Milestone | Date | Status |
 |-----------|------|--------|
-| Sprint 1 — Foundation + Auth Backend | 18 May | ✅ Complete |
-| Sprint 2 — Auth Frontend + Events Backend | 1 Jun | ✅ Complete |
-| Sprint 3 — Events + QR + Rewards Backend | 12 Jun | ✅ Complete (early) |
+| Sprint 1 — Foundation + Auth Backend | 27 May | ✅ Complete |
+| Sprint 2 — Auth Frontend + Events Backend | 17 Jun | ✅ Complete |
+| Sprint 3 — Events + QR + Rewards Backend | 8 Jul (planned) | ✅ Complete (early) |
 | Sprint 4 — Testing + Additional Features | 29 Jun | ✅ Complete (13 days early) |
-| Sprint 5 — Native APK Build | 29 Jun | ✅ Built (83 MB) |
-| Sprint 5 — PWA-APK Unification (KAN-157) | 30 Jun | ✅ Complete |
-| Sprint 5 — All 7 Portals Deployed | 30 Jun | ✅ All live |
-| Sprint 5 — QR Scanner & Merchant Bug Fixes | 2 Jul | ✅ 8 bugs fixed |
-| Sprint 5 — AI/LLM Features (Gen 2) | 3 Jul | ✅ FreeLLMAPI + ai.service.js deployed |
-| Sprint 5 — Merchant Dashboard Expansion | 3 Jul | ✅ Stats, Product CRUD, Redesign built (awaiting Grace) |
-| **Consolidated Tests** | 25 Jun | **✅ 188 tests (184 automated + 4 skipped), 100% pass** |
-| **Sprint 5 Completion Rate** | 3 Jul | **80.5% (33/41 tasks)** — Team testing + AI/Merchant features in progress |
+| Sprint 5 — Native APK Build | 2 Jul | ✅ Built (83 MB) |
+| Sprint 5 — All Portals Deployed | 2 Jul | ✅ 7 portals live |
+| **Consolidated Tests** | 25 Jun | **✅ 188 tests, 100% pass** |
 
 ---
 
@@ -88,12 +83,11 @@ The Volunteering Rewards App is a full-stack web and mobile platform that connec
 │   ┌─────────────────────────────────────────────────────────┐    │
 │   │         Volunteer PWA (Expo/React Native → Web)          │    │
 │   │  https://volunteering-rewards-app.vercel.app              │    │
-│   │  (Now shows Vivian's tab-based GUI ✅ KAN-157)           │    │
 │   └─────────────────────────────────────────────────────────┘    │
 │                                                                   │
 │   ┌─────────────────────────────────────────────────────────┐    │
 │   │         Volunteer APK (Expo/React Native → Android)      │    │
-│   │  Native Android build (83 MB) — same source as PWA       │    │
+│   │  Native Android build (83 MB)                            │    │
 │   └─────────────────────────────────────────────────────────┘    │
 └──────────────────────────────┬────────────────────────────────────┘
                                │ HTTPS/JSON
@@ -111,8 +105,7 @@ The Volunteering Rewards App is a full-stack web and mobile platform that connec
 │   │  /api/me          /api/rewards     /api/coupons         │    │
 │   │  /api/merchant    /api/organiser   /api/admin           │    │
 │   │  /api/favorites   /api/leaderboard /api/feedback        │    │
-│   │  /api/settings    /api/contact     /api/referral        │
-│   │  /api/ai          (Gen 2 LLM features)                 │    │
+│   │  /api/settings    /api/contact     /api/referral        │    │
 │   └─────────────────────────────────────────────────────────┘    │
 └──────────────────────────────┬────────────────────────────────────┘
                                │ PostgreSQL (SSL)
@@ -161,11 +154,10 @@ Simple, layered Express architecture. No module registry, no event bus/pub-sub. 
 | **Auth** | JWT (access + refresh) | 15-min access, 7-day refresh with rotation |
 | **Password Hashing** | bcrypt | 12 salt rounds |
 | **QR Scanning** | `html5-qrcode` (web), `expo-camera` (mobile) | — |
-| **AI / LLM** | FreeLLMAPI (local proxy, 16+ free providers) | Google Gemini 2.5 Flash primary |
 | **Deployment** | Vercel (frontend), Render (backend), Neon (DB) | All free tier |
 | **APK Build** | Android SDK (local) | 83 MB release APK |
 
-### Not in Scope (Original Plan)
+### Not in Phase 1 Scope (Original Plan)
 
 | Item | Status |
 |------|--------|
@@ -219,7 +211,7 @@ volunteering-rewards-app/
 │   ├── src/
 │   │   ├── config/database.js   # PostgreSQL connection pool
 │   │   ├── middleware/          # auth, role, rateLimiter, errorHandler
-│   │   ├── routes/              # 14 route groups
+│   │   ├── routes/              # 16 route files
 │   │   │   ├── auth.routes.js         # Xon
 │   │   │   ├── events.routes.js       # Vivian
 │   │   │   ├── attendance.routes.js   # Vivian
@@ -234,9 +226,7 @@ volunteering-rewards-app/
 │   │   │   ├── leaderboard.routes.js  # Nurain
 │   │   │   ├── settings.routes.js     # Vivian
 │   │   │   ├── contact.routes.js      # Vivian
-│   │   │   └── ai.routes.js           # NEW — Gen 2 LLM features
-│   │   ├── controllers/         # 15 controller files (14 + new ai.controller)
-│   │   ├── services/            # 15 service files (14 + new ai.service)
+│   │   │   └── ...
 │   │   ├── controllers/         # 14 controller files
 │   │   ├── services/            # 14 service files
 │   │   └── utils/               # JWT, migrationRunner, seed
@@ -261,9 +251,9 @@ volunteering-rewards-app/
 │           ├── pages/
 │           │   ├── admin/       # 10 pages
 │           │   ├── organiser/   # 8 pages
-│           │   ├── merchant/    # 5 pages (incl. Dashboard, Products)
+│           │   ├── merchant/    # 3 pages
 │           │   └── scan/        # 4 pages
-│           ├── layouts/         # Admin, Organiser, Merchant (sidebar), Scan layouts
+│           ├── layouts/         # Admin, Organiser, Merchant, Scan layouts
 │           ├── components/      # Sidebar, Topbar, DataTable, Modal, Toast
 │           └── services/api.js  # API client
 ├── app/                         # Root-level Expo screens (shared)
@@ -271,7 +261,7 @@ volunteering-rewards-app/
 │   ├── events.tsx, home.tsx, ...
 │   └── organiser/scanner.tsx
 ├── contexts/                    # React contexts (ThemeContext)
-├── docs/                        # 60+ project documents
+├── docs/                        # 50+ project documents
 ├── .github/workflows/           # CI/CD pipeline
 ├── Dockerfile                   # Multi-stage build
 └── docker-compose.yml           # App + PostgreSQL 16
@@ -286,7 +276,6 @@ volunteering-rewards-app/
 | **Merchant portal** | ❌ Not in Phase 1 | ✅ Built as PWA with PIN verify, redeem, reverse, history |
 | **Scanner PWA** | Not separately listed | ✅ Dedicated scanner with QR camera + manual entry |
 | **Expo PWA** | Mobile only | ✅ Also deployed as PWA via `npx expo export --platform web` |
-| **PWA-APK Unification** | Not planned | ✅ PWA reconfigured to use `frontend/mobile_app/` — same source as APK (KAN-157) |
 | **Root app/ directory** | Not in plan | ✅ Shared Expo Router screens at root level |
 | **Migration files** | 12 planned | 23 migrations executed |
 | **CI/CD** | Manual deploy via Git | ✅ GitHub Actions CI + auto-deploy via Vercel |
@@ -339,7 +328,6 @@ volunteering-rewards-app/
 | GET | `/api/events/popular` | Popular events | Volunteer |
 | POST | `/api/attendance/scan` | Scan volunteer QR | Organiser |
 | POST | `/api/attendance/batch` | Batch sync scans | Organiser |
-| GET | `/api/attendance/volunteer/:id/latest` | Poll latest attendance | Volunteer |
 | POST | `/api/favorites` | Toggle favorite | Volunteer |
 
 **QR Scanning Flow:**
@@ -348,9 +336,6 @@ volunteering-rewards-app/
 3. `POST /api/attendance/scan` records check-in and awards points
 4. Points added to `users.points`, attendance recorded in `attendance_logs`
 5. Offline scans stored in `localStorage`, synced via batch endpoint
-6. Volunteer's QR screen polls `GET /api/attendance/volunteer/:id/latest` to auto-detect check-in
-
-**Scanner improvements (2 Jul):** "No events" now shows graceful message instead of error. Past events show "Event has ended" state. Mobile organiser scanner built with `expo-camera` (real camera, replaces stub in controller.tsx).
 
 ---
 
@@ -376,13 +361,6 @@ volunteering-rewards-app/
 5. Volunteer presents PIN to merchant cashier
 6. Cashier verifies PIN → processes redemption
 7. 5-minute undo window available
-
-**Merchant bugs fixed (2 Jul):**
-- PIN display shows real PIN (was `pin_hash` instead of `pin_code`)
-- Redeem confirmation calls correct endpoint (`POST /rewards/:id/redeem` not `/redeem`)
-- Merchant verify response now wraps in `{ coupon: {...} }` with alias fields
-- Merchant redeem response now wraps in `{ redemption: {...} }` with coupon details
-- `pin_code` now persisted in DB alongside `pin_hash`
 
 ---
 
@@ -412,7 +390,6 @@ volunteering-rewards-app/
 | GET | `/api/me/events` | My events | Volunteer |
 | GET | `/api/me/points` | Points balance | Volunteer |
 | GET | `/api/me/coupons` | My coupons | Volunteer |
-| GET | `/api/me/sponsorship-profile` | Referral profile | Volunteer |
 
 ---
 
@@ -511,7 +488,7 @@ users.points (INTEGER, DEFAULT 0, CHECK >= 0)
 | **Organiser Portal** | `https://webportals-lovat.vercel.app/organiser/login` | ✅ Live |
 | **Merchant Portal** | `https://webportals-lovat.vercel.app/merchant` | ✅ Live |
 | **Scanner PWA** | `https://webportals-lovat.vercel.app/scan` | ✅ Live |
-| **Volunteer PWA** | `https://volunteering-rewards-app.vercel.app` | ✅ Live (Vivian's tab GUI) |
+| **Volunteer PWA** | `https://volunteering-rewards-app.vercel.app` | ✅ Live |
 | **Volunteer APK** | `frontend/mobile_app/android/app/build/outputs/apk/release/app-release.apk` | ✅ Built (83 MB) |
 
 ### 8.3 Architecture Diagram
@@ -541,9 +518,7 @@ Render's free tier backend spins down after **15 minutes of inactivity**. The fi
 
 Beyond the core three-workflow architecture, four additional features were built:
 
-> **Note on ownership:** The features below are listed under their workflow owners (Vivian for Events, Nurain for Admin/Organiser). However, under the coordinator model adopted in Sprint 3–5 (see §10.1 Phase 3), **Xon implemented all four features' backend + frontend** using AI-assisted generation, while team members focused on testing.
-
-### F1: AI Event Recommendations (Vivian — Workflow B)
+### F1: AI Event Recommendations (Vivian)
 
 **Location:** `backend/src/services/events.service.js`, `app/ai-recommendations.tsx`
 
@@ -551,13 +526,13 @@ Content-based filtering engine that recommends upcoming events based on each vol
 
 See `docs/AI_DEVELOPMENT_GUIDE.md` for full documentation.
 
-### F2: Feedback AI Summary (Vivian — Workflow B)
+### F2: Feedback AI Summary (Vivian)
 
 **Location:** `backend/src/services/feedback.service.js`, `backend/src/routes/feedback.routes.js`
 
 Summarises volunteer feedback for organisers, providing aggregate ratings and sentiment overview per event.
 
-### F3: Referral & Sponsorship Program (Nurain — Workflow D)
+### F3: Referral & Sponsorship Program (Nurain)
 
 **Location:** `backend/src/services/referral.service.js`, `backend/src/services/sponsorshipConfig.service.js`
 
@@ -566,7 +541,7 @@ Two-tier referral system:
 - **Parent sponsor** (upline_2): the sponsor's sponsor
 - Sponsorship configuration with configurable points and tiers
 
-### F4: Hall of Fame Leaderboard (Nurain — Workflow D)
+### F4: Hall of Fame Leaderboard (Nurain)
 
 **Location:** `backend/src/services/leaderboard.service.js`, `backend/src/routes/leaderboard.routes.js`
 
@@ -612,8 +587,6 @@ Integration rules:
 
 By Sprint 3, the team adopted a **coordinator model** where Xon acted as project coordinator using AI tools to generate code while team members focused on testing and quality assurance. Structured AI prompts were used following documented patterns in `AI_GENERATION_PROMPTS_v2.md`.
 
-Under this model, Xon implemented all F1–F4 features and most backend/frontend integration, while Vivian, Grace, and Nurain handled testing, UAT, documentation, and quality assurance.
-
 ### 10.2 AI Prompt Methodology
 
 Each coding prompt followed this structure:
@@ -656,12 +629,12 @@ System Analysis Docs
 | **Grace** | Workflow C: Rewards + Frontend | REW-01 to REW-08, REW-M01 to M04, MOB-01 to MOB-08, WEB admin pages |
 | **Everyone** | Shared Responsibilities | GAP-01 to GAP-04, cross-testing, bug reporting, presentation |
 
-### 11.2 Actual Work Completed (as of 3 Jul 2026)
+### 11.2 Actual Work Completed (as of 2 Jul 2026)
 
 | Member | What Was Actually Built/Tested |
 |--------|-------------------------------|
-| **Xon** | Express backend scaffold, all middleware, JWT auth, database migrations (23), seed data, auth service with full validation, Docker + CI/CD, admin web portal pages (login, dashboard, users, organisers), vertical slice coordination, AI prompt engineering, PWA-APK unification, APK build, responsive layout fixes (merchant, scanner, PWA), **F1: AI Recommendations (backend + frontend)**, **F2: Feedback AI Summary (backend + frontend)**, **F3: Referral Program (backend + frontend + admin panel)**, **F4: Hall of Fame Leaderboard (backend + frontend)**, QR scanner fixes ("No events" / "Event has ended" states), merchant layout fix, all 8 bug fixes on 2 Jul (KAN-158–163) |
-| **Vivian** | Events routes + controller + service (browse, detail, categories, today, recommended, popular), attendance routes + controller + service (scan, batch, volunteer latest), QR scanner screens (web PWA + mobile), event screens (browse, detail, my events, home), organiser web pages (roster, feedback, scanning), favorites, feedback routes, settings + contact routes, AI recommendations screen ("For You" tab) |
+| **Xon** | Express backend scaffold, all middleware, JWT auth, database migrations (23), seed data, auth service with full validation, Docker + CI/CD, admin web portal pages (login, dashboard, users, organisers), vertical slice coordination, AI prompt engineering, PWA-APK unification, APK build, merchant layout fix |
+| **Vivian** | Events routes + controller + service (browse, detail, categories, today, recommended, popular), attendance routes + controller + service (scan, batch, volunteer latest), QR scanner screens (web PWA + mobile), event screens (browse, detail, my events, home), organiser web pages (roster, feedback, scanning), favorites, feedback routes, settings + contact routes, AI recommendations engine + "For You" screen |
 | **Grace** | Rewards routes + controller + service (browse, detail, redeem), merchant routes + controller + service (verify, redeem, reverse, history), mobile screens (rewards catalog, reward detail, redeem confirmation, my coupons, PIN display), merchant web portal (login, PIN verify, history), admin coupons + redemptions web pages |
 | **Nurain** | Admin routes + controller + service (dashboard, users CRUD, organiser approval, events, coupons, redemptions, rewards config), organiser routes + controller + service (dashboard, events CRUD, roster, feedback, Q&A), me routes + controller (my events, my QR, my points, my coupons), referral + sponsorship service, leaderboard service, organiser web portal pages (dashboard, events, event-edit, Q&A), admin web pages (events, rewards config) |
 
@@ -672,7 +645,6 @@ System Analysis Docs
 | **Merchant Portal** | Requirement added during development | ✅ Built (3 pages) |
 | **Scanner PWA** | Dedicated web-based QR scanner | ✅ Built (4 pages) |
 | **Volunteer PWA** | Expo web export for non-Android users | ✅ Deployed on Vercel |
-| **PWA-APK Unification (KAN-157)** | PWA showed wrong GUI; unified to same source as APK | ✅ Complete (30 Jun) |
 | **Native APK** | Android native build (83 MB) | ✅ Built |
 | **AI Recommendations (F1)** | Additional feature | ✅ Built |
 | **Feedback AI Summary (F2)** | Additional feature | ✅ Built |
@@ -681,7 +653,6 @@ System Analysis Docs
 | **23 database migrations** | Schema evolution across sprints | ✅ 23 files |
 | **8 additional tables** | Merchant, rewards config, points ledger, referral, settings, etc. | ✅ Created |
 | **Real camera QR scanner (mobile)** | expo-camera implementation | ✅ Built |
-| **Responsive design fixes** | Merchant, Scanner, Volunteer PWA layouts | ✅ Complete (30 Jun) |
 
 ### 11.4 Task Count Summary
 
@@ -692,14 +663,14 @@ System Analysis Docs
 | Web Portal Pages | 25+ |
 | Database Migrations | 23 |
 | Docker + CI/CD Configs | 3 |
-| Project Documents | 60+ |
-| **Total Deliverables** | **180+** |
+| Project Documents | 50+ |
+| **Total Deliverables** | **170+** |
 
 ---
 
 ## 12. Sprint Progress
 
-### Sprint 1 (7–18 May) — Foundation + Auth Backend ✅
+### Sprint 1 (7–27 May) — Foundation + Auth Backend ✅
 
 | Deliverable | Status |
 |------------|--------|
@@ -711,7 +682,7 @@ System Analysis Docs
 | Seed data (3 roles, 3 users, 1 org, 3 events, 3 coupons) | ✅ Complete |
 | Docker multi-stage build + docker-compose | ✅ Complete |
 
-### Sprint 2 (18 May–1 Jun) — Auth Frontend + Events Backend ✅
+### Sprint 2 (28 May–17 Jun) — Auth Frontend + Events Backend ✅
 
 | Deliverable | Status |
 |------------|--------|
@@ -723,7 +694,7 @@ System Analysis Docs
 | Admin users + organisers pages | ✅ Complete |
 | Vertical slice restructure | ✅ Complete |
 
-### Sprint 3 (1 Jun–12 Jun) — Events + QR + Rewards Backend ✅ (Early)
+### Sprint 3 (18 Jun–8 Jul) — Events + QR + Rewards Backend ✅ (Early)
 
 | Deliverable | Status |
 |------------|--------|
@@ -733,11 +704,9 @@ System Analysis Docs
 | Rewards catalog + redemption + PIN generation | ✅ Complete |
 | Merchant backend (verify, redeem, reverse, history) | ✅ Complete |
 | Organiser web portal (dashboard, events, roster, feedback, Q&A) | ✅ Complete |
-| 45+ API endpoints live with real data | ✅ Complete |
-| 11/11 unit tests passing | ✅ Complete |
-| Settings & contact routes integrated (12 Jun) | ✅ Complete |
+| **Completion:** 13 days ahead of deadline | ✅ Early |
 
-### Sprint 4 (15 Jun–29 Jun) — Testing + Additional Features ✅ (13 days early)
+### Sprint 4 (15 Jun–29 Jun) — Testing + Additional Features ✅ (Early)
 
 | Deliverable | Status |
 |------------|--------|
@@ -747,74 +716,22 @@ System Analysis Docs
 | Hall of Fame Leaderboard (F4) | ✅ Complete |
 | Consolidated testing (188 tests, 100% pass) | ✅ Complete |
 | Admin web portal (events, rewards config) | ✅ Complete |
-| EAS cloud APK build (5 attempts) | ❌ Failed — switched to local SDK |
-| **Completion:** Core work finished by 16 Jun — 13 days ahead of 29 Jun deadline | ✅ Early |
+| **Completion:** 13 days ahead of deadline | ✅ Early |
 
-### Sprint 5 (29 Jun–6 Jul) — Deployment & Delivery 🟢 On Track (3 Jul)
-
-**Xon — Technical tasks (all done ✅):**
+### Sprint 5 (29 Jun–6 Jul) — Deployment & Delivery 🟢 On Track
 
 | Deliverable | Status | Date |
 |------------|--------|------|
-| Local APK build (JDK 17+, Android SDK, 83 MB) | ✅ Complete | 29 Jun |
-| PWA-APK Unification Phase 1: Web deps installed | ✅ Complete | 30 Jun |
-| PWA-APK Unification Phase 2: Vercel env var set | ✅ Complete | 30 Jun |
-| PWA-APK Unification Phase 3: Vercel reconfigured + deployed | ✅ Complete | 30 Jun |
-| Responsive fixes: Merchant login + PinVerify | ✅ Complete | 30 Jun |
-| Responsive fixes: Scanner login + layout | ✅ Complete | 30 Jun |
-| Responsive fixes: Volunteer PWA landing | ✅ Complete | 30 Jun |
-| Old PWA URL replaced across 18 documents | ✅ Complete | 30 Jun |
-| Sprint 4 conclusion + Test Plan v2.1 + Testing Guide v1.2 | ✅ Complete | 30 Jun |
-
-**Bug fixes (2 Jul — 8 bugs fixed across backend + mobile):**
-
-| # | Bug | Area | Fix |
-|---|-----|------|-----|
-| 1 | Volunteer QR polls non-existent endpoint | Backend | Added `GET /api/attendance/volunteer/:id/latest` |
-| 2 | Login doesn't return `volunteer_qr_code` | Backend | Added to query + response + AsyncStorage |
-| 3 | QR display shows "000000" instead of real PIN | Mobile | `pin_hash` → `pin_code` |
-| 4 | Redeem confirmation calls wrong URL | Mobile | Fixed to `POST /rewards/:id/redeem` |
-| 5 | Merchant verify response shape mismatch | Backend | Added `{ coupon: {...} }` wrapper |
-| 6 | Merchant redeem response shape mismatch | Backend | Added `{ redemption: {...} }` wrapper |
-| 7 | PIN not persisted in DB | Backend | Added `pin_code` to INSERT |
-| 8 | Mobile organiser scanner button does nothing | Mobile | Built real camera scanner with `expo-camera` |
-
-**AI/LLM Features (3 Jul — Gen 2 by Xon ✅):**
-
-| Deliverable | Status | Date |
-|------------|--------|------|
-| FreeLLMAPI installed & configured (Google AI Studio key) | ✅ Complete | 3 Jul |
-| `backend/src/services/ai.service.js` — `callLlm()`, recommendations, feedback summary | ✅ Complete | 3 Jul |
-| `backend/src/controllers/ai.controller.js` — AI-first with Gen 1 fallback | ✅ Complete | 3 Jul |
-| `backend/src/routes/ai.routes.js` — `GET /api/ai/recommendations`, `/api/ai/feedback-summary/:eventId` | ✅ Complete | 3 Jul |
-| `AI_DEVELOPMENT_GUIDE_V2.1.md` — Documentation (FreeLLMAPI rationale, failover, build details) | ✅ Complete | 3 Jul |
-| F1 + F2 upgraded from rule-based to LLM-powered (graceful fallback preserved) | ✅ Complete | 3 Jul |
-
-**Merchant Dashboard Expansion (3 Jul — built by Xon, awaiting Grace ✅):**
-
-| Deliverable | Status | Date |
-|------------|--------|------|
-| Backend: Dashboard stats endpoint (`GET /api/merchant/dashboard`) | ✅ Built | 3 Jul |
-| Backend: Product CRUD endpoints (`GET/POST/PUT/DELETE /api/merchant/products`) | ✅ Built | 3 Jul |
-| Backend: Redemption records endpoint (`GET /api/merchant/redemptions`) | ✅ Built | 3 Jul |
-| Frontend: MerchantLayout redesigned with sidebar (matches Admin/Organiser pattern) | ✅ Built | 3 Jul |
-| Frontend: Dashboard page (stats cards, popular items, recent activity) | ✅ Built | 3 Jul |
-| Frontend: Products page (CRUD with DataTable + Modal) | ✅ Built | 3 Jul |
-| Frontend: PinVerify + History refactored for sidebar layout | ✅ Built | 3 Jul |
-| Frontend: Login redirects to `/merchant/dashboard` | ✅ Built | 3 Jul |
-| **Note:** Not committed — assigned to Grace for review/commit | ⏸️ Awaiting Grace | — |
-
-| Deliverable | Status | Date |
-|------------|--------|------|
-| APK Testing on real device (APK-TEST-01 to 04) | ⬜ Pending | 3–4 Jul |
-| User Acceptance Testing (8 scenarios across all portals) | ⬜ Pending | 3 Jul |
-| Security test execution (auth, session, input validation) | ⬜ Pending | 3 Jul |
-| Integration test execution (API endpoints, QR scanning) | ⬜ Pending | 3 Jul |
-| System walkthrough — all platforms | ⬜ Pending | 4 Jul |
-| Dry-run presentation rehearsal | ⬜ Pending | 4 Jul |
-| Documentation: Project report, user manual, slides | ⬜ Pending | 5 Jul |
-| Final fixes & submission | ⬜ Pending | 6 Jul |
-| Handover documentation | ⬜ Pending | 6 Jul |
+| Native APK build | ✅ Complete | 30 Jun |
+| PWA-APK unification (KAN-157) | ✅ Complete | 30 Jun |
+| QR scanner fixes | ✅ Complete | 2 Jul |
+| Merchant redemption bugs fixed | ✅ Complete | 2 Jul |
+| "Event has ended" indicator | ✅ Complete | 2 Jul |
+| "No events" graceful error handling | ✅ Complete | 2 Jul |
+| Merchant layout responsiveness | ✅ Complete | 2 Jul |
+| User Acceptance Testing (8 scenarios) | ⬜ Pending | 3–4 Jul |
+| Dry-run presentation | ⬜ Pending | 4 Jul |
+| Project report / slides / user manual | ⬜ Pending | 5–6 Jul |
 
 **Overall completion rate:** 80.5% (33/41 Sprint 5 tasks)
 
@@ -826,30 +743,15 @@ System Analysis Docs
 
 | Test Suite | Tests | Pass Rate |
 |------------|-------|-----------|
-| Unit Tests (original) | 11 | ✅ 100% |
-| Unit Tests (expanded — 10 service files) | 80 | ✅ 100% |
-| Integration Tests (core endpoints) | 34 | ✅ 100% |
-| Integration Tests (F1-F4 features) | 11 | ✅ 100% |
+| Unit Tests | 91 | ✅ 100% |
+| Integration Tests | 45 | ✅ 100% |
 | Regression Tests | 5 | ✅ 100% |
 | System/E2E Tests | 17 checks | ✅ 100% |
 | Security Tests | 9 | ✅ 100% |
 | Performance Tests | 17 | ✅ 100% |
-| **Total Automated** | **184** | **✅ 100%** |
-| Skipped (rate-limit + precondition)* | 4 | — |
 | **Total** | **188** | **✅ 100%** |
 
-*\*3 security rate-limit tests skipped (would lock the API). 1 merchant flow skipped due to precondition.*
-
-### 13.2 Performance Summary
-
-| Metric | Value |
-|--------|-------|
-| Overall avg response time | 101.7 ms |
-| Fastest request | 3.9 ms (Health Check) |
-| Concurrent avg (10x load) | 99.1 ms |
-| Concurrent max | 266.5 ms |
-
-### 13.3 Testing by Workflow
+### 13.2 Testing by Workflow
 
 | Workflow | Key Test Cases |
 |----------|---------------|
@@ -859,7 +761,7 @@ System Analysis Docs
 | **Rewards** | Browse coupons, redeem with sufficient/insufficient points, expired coupon, last item, concurrent redemption, PIN generation |
 | **Merchant** | PIN verify (correct/wrong/expired/used), redeem, 5-min reverse, audit log |
 
-### 13.4 Security Tests
+### 13.3 Security Tests
 
 | Test | Result |
 |------|--------|
@@ -883,7 +785,7 @@ System Analysis Docs
 |--------|---------------------|------------------------|
 | **Merchant/Cashier** | ❌ Removed from Phase 1 | ✅ Full merchant portal with PIN verify, redeem, reverse, history |
 | **Web Portals** | Separate admin + organiser | ✅ Single Vite app with 4 portals (admin, organiser, merchant, scan) |
-| **Mobile App** | Expo Go only | ✅ Expo PWA + Native APK (83 MB) — same source via KAN-157 |
+| **Mobile App** | Expo Go only | ✅ Expo PWA + Native APK (83 MB) |
 | **Database** | 12 tables | ✅ 20 tables (8 additional) |
 | **Migrations** | 12 migration files | ✅ 23 migration files |
 | **Auth** | 4 roles (volunteer, organiser, admin) | ✅ 4 roles (volunteer, organiser, admin, merchant) |
@@ -911,38 +813,12 @@ System Analysis Docs
 - Web portals consolidated into one Vite app (reduced duplication)
 - Merchant portal added after stakeholder feedback
 - PWA alongside APK for broader device coverage
-- PWA-APK Unification (KAN-157) — both platforms now share `frontend/mobile_app/` source
 - AI-assisted generation accelerated development
 - Additional features (F1–F4) added to enrich the platform
 - Expo → Vercel PWA deployment enabled browser-based access
-- Coordinator model: Xon implemented features while team tested
 
 ---
 
-## Key Documents Reference
-
-| Document | Path |
-|----------|------|
-| System Architecture & Development Report (this document) | `docs/System Architecture & Development Report v3.1.md` |
-| Sprint Breakdown v8 | `docs/Sprint Breakdown v8.md` |
-| Sprint 5 Schedule v5 | `docs/Sprint 5 Schedule v5.md` |
-| Sprint 5 Status Report v1.0 | `docs/Sprint 5 Status Report v1.0.md` |
-| PWA-APK Unification Plan v1 | `docs/PWA-APK-Unification-Plan-v1.md` |
-| API Contracts v2 | `docs/API_CONTRACTS_v2.md` |
-| AI Development Guide | `docs/AI_DEVELOPMENT_GUIDE.md` |
-| Deployment Architecture Report v1.1 | `docs/Deployment Architecture Report v1.1.md` |
-| Consolidated Test Report v2.2 | `docs/Consolidated Test Report v2.2.md` |
-| UAT & Remaining Tasks Guide v1.0 | `docs/UAT & Remaining Tasks Guide v1.0.md` |
-| Test Access Points v2.1 | `docs/Test Access Points v2.1.md` |
-| APK Testing Guide V5 | `docs/apk-testing-guide_V5.md` |
-| Organiser QR Scanning Guide v1.0 | `docs/Organiser QR Scanning Guide v1.0.md` |
-| Jira Update v11 — Sprint 5 Fixes | `docs/Jira Update v11 — Sprint 5 Fixes.md` |
-| Sprint 4 & 5 Status Report v1.5 | `docs/Sprint 4 & 5 Status Report v1.5.md` |
-| Sprint Conclusions (S1–S4) | `docs/Sprint{1,2,3,4}_conclusion.md` |
-
----
-
-> **Document Version 3.1 — 3 July 2026**  
-> **Changes from v3.0:** Corrected Sprint 3 dates, fixed "13 days early" attribution (was copy-pasted from Sprint 4), clarified F1-F4 implementation by Xon under coordinator model, added 2 Jul bug fixes (KAN-158–163), fixed test count discrepancy (184 automated + 4 skipped), updated route file count, added PWA-APK unification details, referenced newer docs, updated directory structure.  
-> Compiled from: Sprint Conclusions (S1–S4), Sprint 5 Status Report v1.0, Sprint 5 Schedule v5, Jira Update v11, Sprint Breakdown v8, Codebase Analysis, and Project Documents  
-> **Next Milestone:** Team testing (3 Jul), Dry-run presentation (4 Jul), Documentation (5 Jul), Final Submission (6 Jul)
+> **Document Version 3.0 — 2 July 2026**  
+> Compiled from: A_REVISED_SYSTEM_ARCHITECTURE_V2.docx, B_Member_Task_Allocation_v2.docx, Sprint Reports, Codebase Analysis, and Project Documents  
+> **Next Milestone:** Dry-run presentation (4 Jul), Final Submission (6 Jul)

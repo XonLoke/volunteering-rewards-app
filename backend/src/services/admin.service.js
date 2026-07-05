@@ -722,6 +722,38 @@ async function createMerchantAccount(data, adminId) {
 }
 
 
+// ─── Create Any User Account (admin, volunteer, etc.) ─────
+async function createUserAccount(data, adminId) {
+  const bcrypt = require("bcrypt");
+  const { v4: uuidv4 } = require("uuid");
+
+  if (!data.email || !data.password || !data.name || !data.role_name) {
+    throw createError(400, "validation_error", "Name, email, password, and role are required.");
+  }
+  if (data.password.length < 8) {
+    throw createError(400, "validation_error", "Password must be at least 8 characters.");
+  }
+
+  const { rows: existing } = await pool.query("SELECT id FROM users WHERE email = $1", [data.email]);
+  if (existing.length > 0) throw createError(409, "email_taken", "Email already in use.");
+
+  const roleResult = await pool.query("SELECT id FROM roles WHERE role_name = $1", [data.role_name]);
+  if (roleResult.rows.length === 0) throw createError(400, "invalid_role", "Invalid role. Valid: volunteer, organizer, admin, merchant.");
+  const roleId = roleResult.rows[0].id;
+
+  const hash = await bcrypt.hash(data.password, 12);
+  const qr = uuidv4();
+
+  const { rows: userRows } = await pool.query(
+    `INSERT INTO users (email, password_hash, name, role_id, points, volunteer_qr_code, status)
+     VALUES ($1, $2, $3, $4, 0, $5, 'active') RETURNING id, email, name`,
+    [data.email, hash, data.name, roleId, qr]
+  );
+
+  return { user: { ...userRows[0], role: data.role_name }, message: `Account created with role: ${data.role_name}` };
+}
+
+
 // ─── Reset User Password ──────────────────────────────────
 async function resetUserPassword(userId, { newPassword }) {
   if (!newPassword || newPassword.length < 8) {
@@ -756,5 +788,6 @@ module.exports = {
   createProspect,
   updateProspectStatus,
   createMerchantAccount,
+  createUserAccount,
   resetUserPassword,
 };

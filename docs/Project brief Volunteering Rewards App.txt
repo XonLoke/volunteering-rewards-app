@@ -1,0 +1,32 @@
+Project brief
+
+Project ID	: SOI-2024-2420-0008
+Project title	: Volunteering Rewards App
+Proposed by	: Leonard Gan
+Domain		: Application Development (includes mobile app)
+Programme	: PTDSE; DDDD; DTECH
+Skill required	: Web Application
+Resources Required: IDE for web application
+
+-----------------------------------------------------
+
+Project Supervisor: Andy Tao
+Project Team:
+Nurain Haziqah Hayatullah - group leader
+Koh Wen Qi Vivian
+Grace Pang Hui Hui
+John Lok Jeong Horng (Xon) - technical coordinator
+
+Project title: Volunteering Rewards App
+Domain: Application Development (includes mobile app)
+Skill required: Web Application
+
+Motivatiob and Benefits: 
+We can encourage Singaporeans to perform volunteering activities (e.g. performing a beach cleanup or taking the elderly for a morning walk) by rewarding their efforts. These volunteers earn points by scanning a QRCode marker after the volunteering activity. When they have accumulated sufficient points, they can redeem these points for coupons from participating outlets. Benefits of making this app is to encourage Singaporeans to get into the act of volunteering. Distribution of rewards made via mobile devices would save time and manpower cost, and give the volunteer a wide range of rewards.
+
+Project Details: 
+Volunteers scan the QR code markers to gain reward points. When the user has accumulated sufficient points, he/she can redeem the coupon from a list of participating stores. These coupons have a validity period and are issued in a fixed quantity. When the user uses the coupon, he/she inform the cashier of the coupon’s 6-digit PIN. The cashier enters the 6-digit PIN into the web app coupon verification. Upon successful coupon verification, the cashier issues the item.
+
+Deliverables:
+•  Application Development (includes mobile app).
+•  Presentation slides with project details.

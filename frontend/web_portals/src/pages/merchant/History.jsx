@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiGet } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
+import Topbar from '../../components/Topbar';
 
 const CENTS_PER_POINT = 100;
 
@@ -140,11 +141,6 @@ export default function History() {
     currentPage * PAGE_SIZE
   );
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    navigate('/merchant');
-  };
-
   const statusConfig = (item) => {
     if (item.reversed_at) return { status: 'reversed', label: 'Reversed' };
     if (item.status === 'used' || item.status === 'approved') return { status: 'approved', label: 'Used' };
@@ -152,8 +148,10 @@ export default function History() {
   };
 
   return (
-    <div style={styles.wrapper}>
-      <div style={styles.container}>
+    <div className="main-content">
+      <Topbar title="Redemption History" />
+      <div style={{ padding: '24px' }}>
+        <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
           <div>
@@ -161,9 +159,6 @@ export default function History() {
             <p style={styles.subtitle}>{redemptions.length} total redemptions</p>
           </div>
           <div style={styles.headerActions}>
-            <button style={styles.logoutBtn} onClick={handleLogout}>
-              Logout
-            </button>
             <button style={styles.refreshBtn} onClick={fetchHistory}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="23 4 23 10 17 10" />
@@ -353,17 +348,13 @@ export default function History() {
             &larr; Back to Verification
           </button>
         </div>
+        </div>
       </div>
     </div>
   );
 }
 
 const styles = {
-  wrapper: {
-    padding: 24,
-    minHeight: '100vh',
-    background: '#F5F5F7',
-  },
   container: {
     maxWidth: 800,
     margin: '0 auto',

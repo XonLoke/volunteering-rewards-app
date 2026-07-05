@@ -4,13 +4,16 @@
 
 | | |
 |---|---|
-| **Version** | 4.1 |
-| **Date** | 29 June 2026 |
+| **Version** | 5.0 |
+| **Date** | 2 July 2026 |
 | **CI Build** | ✅ Available |
 | **GitHub Release** | ✅ APK uploaded to v1.0.0 |
-| **PWA-APK Match** | ✅ PWA now shows same GUI as APK |
+| **PWA-APK Match** | ✅ PWA shows same GUI as APK (KAN-157) |
+| **Non-Android Testers** | ✅ Alternative methods documented |
 
 **Purpose:** Step-by-step instructions to install and test the native Android APK on a real device. After the PWA-APK Unification (KAN-157), the PWA and APK now share the same tab-based GUI — testing results apply to both platforms.
+
+If you **do not own an Android phone**, see [Section 3.3 — Testing Without an Android Phone](#33-testing-without-an-android-phone) for alternatives.
 
 ---
 
@@ -19,6 +22,9 @@
 - [1. Prerequisites](#1-prerequisites)
 - [2. Obtain the APK](#2-obtain-the-apk)
 - [3. Installation Methods](#3-installation-methods)
+  - [3.1 Install via ADB (USB Cable) — Recommended](#31-install-via-adb-usb-cable--recommended)
+  - [3.2 Copy to Phone Directly](#32-copy-to-phone-directly-if-adb-is-not-available)
+  - [3.3 Testing Without an Android Phone](#33-testing-without-an-android-phone)
 - [4. Testing Checklist](#4-testing-checklist)
 - [5. Reporting Issues](#5-reporting-issues)
 - [6. Uninstalling the App](#6-uninstalling-the-app)
@@ -136,6 +142,143 @@ Or find "Volunteer Rewards" in your app drawer and tap it.
 2. On your phone, open the APK file (tap it in the file manager or Downloads folder)
 3. If prompted, allow installation from "Unknown sources" or "Install from file manager"
 4. Follow the on-screen prompts to install
+
+---
+
+### 3.3 Testing Without an Android Phone
+
+If you do not own an Android phone, you have several alternatives. The APK and PWA are built from the **same Expo/React Native codebase** — all features work identically across both.
+
+#### Option 1: Use the PWA (Recommended — No Setup)
+
+The **Progressive Web App** at `https://volunteering-rewards-app.vercel.app` shares the same source code as the APK. Every testing scenario can be verified via the PWA:
+
+| Test Scenario | PWA | APK |
+|--------------|:---:|:---:|
+| Browse events | ✅ | ✅ |
+| Register / join events | ✅ | ✅ |
+| View points & rewards | ✅ | ✅ |
+| Redeem coupons | ✅ | ✅ |
+| QR code display | ✅ | ✅ |
+| Profile & settings | ✅ | ✅ |
+| Referral program | ✅ | ✅ |
+| Leaderboard | ✅ | ✅ |
+| AI Recommendations | ✅ | ✅ |
+| Add to Home Screen | ✅ Browser prompt | ✅ Native |
+| Offline support | Limited | ✅ Full |
+
+**How to test:**
+1. Open `https://volunteering-rewards-app.vercel.app` on any device (phone, tablet, desktop)
+2. Tap "Add to Home Screen" for PWA install
+3. Login with `alice@test.com` / `password123`
+4. Run through the testing checklist in Section 4
+
+> **Organiser scanner & merchant cashier features** can also be tested on desktop:
+> - Scanner: `https://webportals-lovat.vercel.app/scan` (manual ID entry works without camera)
+> - Merchant: `https://webportals-lovat.vercel.app/merchant`
+
+---
+
+#### Option 2: Android Emulator (Android Studio — Free, 15-min Setup)
+
+Anyone can run the APK on their computer using Android Studio's built-in virtual device.
+
+**Requirements:** Windows, macOS, or Linux with 8GB+ RAM
+
+**Step 1 — Install Android Studio:**
+```
+Download from: https://developer.android.com/studio
+Run the installer — ensure "Android Virtual Device" component is selected
+```
+
+**Step 2 — Create a Virtual Device:**
+```
+Open Android Studio → More Actions → Virtual Device Manager
+Click "Create Device"
+  → Category: Phone
+  → Device: Pixel 6 or Pixel 7 (recommended)
+  → Next
+Download system image:
+  → Choose "UpsideDownCake" (Android 14, API 34)
+  → Click "Download" next to the latest stable image
+  → Next
+Verify configuration:
+  → Name: Pixel 6 API 34
+  → Orientation: Portrait
+  → Graphics: Automatic
+  → Finish
+```
+
+**Step 3 — Install the APK:**
+```
+In Virtual Device Manager, click the play icon (▶) on your device
+Wait for boot (first boot: 2–5 minutes)
+Once booted, drag the APK file onto the emulator screen
+
+Or via command line:
+  adb install D:\c3000c\volunteering-rewards-app\frontend\mobile_app\android\app\build\outputs\apk\release\app-release.apk
+```
+
+**Step 4 — Test:**
+```
+Login with alice@test.com / password123
+Run through the testing checklist (Section 4)
+```
+
+> The emulator supports camera simulation for QR testing:
+> Click the camera icon in the emulator toolbar → Upload a QR code image to simulate scanning
+
+---
+
+#### Option 3: Windows Subsystem for Android (Windows 11 Only)
+
+```
+1. Open Microsoft Store → Search "Windows Subsystem for Android" → Install
+2. Open WSA Settings → Turn on "Developer Mode"
+3. Open PowerShell / CMD and run:
+   adb install D:\c3000c\volunteering-rewards-app\frontend\mobile_app\android\app\build\outputs\apk\release\app-release.apk
+4. The app appears in your Windows Start Menu — launch and test
+```
+
+---
+
+#### Option 4: Expo Go (iOS / Quick Feature Testing)
+
+For testing specific features without installing the APK:
+
+```
+1. Install "Expo Go" from the App Store (iOS) or Google Play (Android)
+2. The project coordinator starts the Expo dev server locally
+3. Scan the QR code with Expo Go → app loads on your device
+```
+
+> **Note:** For standalone iOS testing, an Apple Developer account ($99/year) and EAS Build are required.
+
+---
+
+#### Configuring API URL for Testing
+
+When testing on a virtual device or physical phone, ensure the app points to the **production backend** (not localhost):
+
+**Via environment variable (recommended):**
+```bash
+EXPO_PUBLIC_API_URL=https://vol-rewards-api.onrender.com/api
+```
+
+**Via API config file:**
+```javascript
+// In frontend/mobile_app/src/services/api.ts
+// Change this:
+// const BASE_URL = "http://localhost:3000/api";
+// To this:
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
+```
+
+**Verify the connection:**
+```bash
+curl https://vol-rewards-api.onrender.com/api/health
+# Should return: {"status":"ok","db_connected":true,...}
+```
 
 ---
 
@@ -324,6 +467,8 @@ Impact of keeping it disabled: React Native New Architecture (Fabric / TurboModu
 
 ## 10. Summary Checklist
 
+### For Android Phone Testers
+
 | Step | Done? |
 |---|---|
 | APK downloaded from GitHub Releases | ☐ |
@@ -338,6 +483,24 @@ Impact of keeping it disabled: React Native New Architecture (Fabric / TurboModu
 | Profile/Settings tests passed (Section 4.6) | ☐ |
 | Performance/Stability tests passed (Section 4.7) | ☐ |
 
+### For Non-Android Testers
+
+| Step | Done? |
+|---|---|
+| Chosen alternative method: PWA / Emulator / WSA / Expo Go | ☐ |
+| API URL configured to production backend (if needed) | ☐ |
+| PWA: Opened `https://volunteering-rewards-app.vercel.app` | ☐ |
+| PWA: Added to Home Screen (optional) | ☐ |
+| Emulator: Android Studio installed & virtual device created | ☐ |
+| Emulator: APK installed via drag-and-drop | ☐ |
+| App Launch tests passed (Section 4.1) | ☐ |
+| Authentication tests passed (Section 4.2) | ☐ |
+| Home Screen tests passed (Section 4.3) | ☐ |
+| Navigation tests passed (Section 4.4) | ☐ |
+| Events tests passed (Section 4.5) | ☐ |
+| Profile/Settings tests passed (Section 4.6) | ☐ |
+| Performance/Stability tests passed (Section 4.7) | ☐ |
+
 ---
 
-*— End of APK Testing Guide v4.0 —*
+*— End of APK Testing Guide v5.0 —*

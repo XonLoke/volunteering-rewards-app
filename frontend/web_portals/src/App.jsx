@@ -36,6 +36,8 @@ import Roster from './pages/scan/Roster';
 
 // Merchant pages
 import MerchantLogin from './pages/merchant/Login';
+import MerchantDashboard from './pages/merchant/Dashboard';
+import MerchantProducts from './pages/merchant/Products';
 import PinVerify from './pages/merchant/PinVerify';
 import History from './pages/merchant/History';
 
@@ -94,12 +96,18 @@ const router = createBrowserRouter([
     ],
   },
   {
+    path: '/merchant/login',
+    element: <MerchantLogin />,
+  },
+  {
     path: '/merchant',
     element: <MerchantLayout />,
     children: [
-      { index: true, element: <MerchantLogin /> },
+      { index: true, element: <Navigate to="/merchant/dashboard" replace /> },
+      { path: 'dashboard', element: <MerchantDashboard /> },
       { path: 'verify', element: <PinVerify /> },
       { path: 'history', element: <History /> },
+      { path: 'products', element: <MerchantProducts /> },
     ],
   },
   {

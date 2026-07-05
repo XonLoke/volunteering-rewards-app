@@ -1,13 +1,29 @@
-# Sprint Breakdown v8 — Final Version
+# Sprint Breakdown v8.1 — Final Version
 
-**Version:** 8.0
-**Date:** 29 June 2026 (Updated — Added PWA-APK Unification)
+**Version:** 8.1
+**Date:** 5 July 2026 (Updated — Added Admin Account Creation feature)
 **Project:** Volunteering Rewards App (C3000C)
 **Timeline:** May 7 – July 6, 2026 (9 weeks)
 
 ---
 
-## Rationale for Changes (v7.2 → v8)
+## Rationale for Changes (v8 → v8.1)
+
+### Admin Account Creation Feature (5 Jul)
+
+**Trigger:** Supervisor raised a security concern about the one-click "Switch to Admin" button in the volunteer detail view on the Admin Users page.
+
+**Changes made:**
+1. **Removed** the one-click role-toggle button from `UserDetailModal` — the detail view now only displays user information
+2. **Built** a proper "Invite User" feature with:
+   - New endpoint: `POST /api/admin/users/create-account` (backend service + controller + route)
+   - New `InviteUserModal` in the admin Users page with Name, Email, Password, and Role dropdown
+   - "+ Invite User" button in the page header toolbar
+3. **Verified** — 10/10 API end-to-end tests passed + 37/37 unit tests still passing
+
+**Result:** Admin can create any user (admin, volunteer, organiser, merchant) through a deliberate multi-field form instead of a single-click toggle. Supervisor concern addressed.
+
+### Previous Changes (v7.2 → v8)
 
 Following the successful APK build for `frontend/mobile_app/`, two issues were identified:
 
@@ -79,7 +95,7 @@ Following the successful APK build for `frontend/mobile_app/`, two issues were i
 
 | Member | Focus |
 |--------|-------|
-| **Xon** | ✅ APK Build complete. ✅ CI Build passing. **NEW:** PWA-APK Unification (KAN-157) — Phase 1-3 + Verification. Backend deployment (Render). Complete remaining feature frontend work (Referral UI, Summarizer UI). README, final API docs. |
+| **Xon** | ✅ APK Build complete. ✅ CI Build passing. ✅ PWA-APK Unification (KAN-157) — Phase 1-3 + Verification. **NEW (5 Jul):** Admin Account Creation feature — removed one-click role toggle, built InviteUserModal + API endpoint, 10/10 E2E tests passed. Backend deployment (Render). Complete remaining feature frontend work (Referral UI, Summarizer UI). README, final API docs. |
 | **Vivian** | APK Testing (APK-TEST-01/02). Security tests. UAT: volunteer mobile + organiser flows. |
 | **Grace** | Integration tests (API, QR scanning). UAT: E2E volunteer journey. |
 | **Nurain** | APK Testing (APK-TEST-03/04). Documentation: report, manual, slides. UAT: merchant flows. |
@@ -138,6 +154,7 @@ Following the successful APK build for `frontend/mobile_app/`, two issues were i
 | **29 Jun** | Sprint 4 ends: all test types complete. APK Build successful. CI Build passing. | ✅ Done |
 | **30 Jun** | **PWA-APK Unification complete (NEW)** — PWA matches APK GUI | ⬜ |
 | **4 Jul** | Dry-run presentation for team feedback. All features complete. | ⬜ |
+| **5 Jul** | **✅ Admin Account Creation feature built + tested (10/10)** | **✅** |
 | **6 Jul** | **FINAL DELIVERY** — Presentation, report, demo, deployment | ⬜ |
 
 ---
@@ -164,10 +181,11 @@ Following the successful APK build for `frontend/mobile_app/`, two issues were i
 | Document | Location | Description |
 |----------|----------|-------------|
 | PWA-APK Unification Plan v1 | `docs/PWA-APK-Unification-Plan-v1.md` | 3-phase plan to fix PWA to match APK |
-| Sprint 5 Schedule v4 | `docs/Sprint 5 Schedule v4.md` | Detailed task assignments by date |
-| APK Testing Guide V4 | `docs/apk-testing-guide_V4.md` | Step-by-step APK install & test instructions |
-| Jira Update v10 | `docs/Jira Update v10 — Sprint 5.md` | Jira board update instructions |
+| Sprint 5 Schedule v6 | `docs/Sprint 5 Schedule v6.md` | Detailed task assignments by date |
+| APK Testing Guide V5 | `docs/apk-testing-guide_V5.md` | Step-by-step APK install & test instructions |
+| Admin Account Creation Report v1.0 | `docs/Admin Account Creation Implementation Report v1.0.md` | Full implementation report with test results |
+| Jira Update v11 | `docs/Jira Update v11 — Sprint 5 Fixes.md` | Jira board update instructions |
 
 ---
 
-*— End of Sprint Breakdown v8 —*
+*— End of Sprint Breakdown v8.1 —*

@@ -231,9 +231,337 @@ async function getRedemptionHistory({ page = 1, limit = 20, action, search } = {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Merchant Dashboard
+// ---------------------------------------------------------------------------
+
+/**
+ * Find merchant business record by user's email.
+ */
+async function findMerchantByUserEmail(userEmail) {
+  const result = await pool.query(
+    `SELECT id, name FROM merchants WHERE contact_email = $1 AND status = 'active' LIMIT 1`,
+    [userEmail]
+  );
+  return result.rows[0] || null;
+}
+
+/**
+ * Find merchant business record by user ID.
+ * Looks up user email first, then finds merchant by contact_email.
+ */
+async function findMerchantByUserId(userId) {
+  const userResult = await pool.query(
+    `SELECT email FROM users WHERE id = $1`,
+    [userId]
+  );
+  if (userResult.rows.length === 0) return null;
+  return findMerchantByUserEmail(userResult.rows[0].email);
+}
+
+/**
+ * GET /api/merchant/dashboard
+ *
+ * Returns aggregated stats for the merchant's dashboard.
+ */
+async function getDashboardStats(userId) {
+  const merchant = await findMerchantByUserId(userId);
+  if (!merchant) {
+    return {
+      merchant_name: "Your Store",
+      today_redemptions: 0,
+      today_value: 0,
+      active_products: 0,
+      total_redemptions: 0,
+      popular_items: [],
+      recent_activity: [],
+    };
+  }
+
+  const merchantId = merchant.id;
+
+  // Today's date range
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const [todayStats, productCount, popularItems, recentActivity] =
+    await Promise.all([
+      // Today's redemption stats
+      pool.query(
+        `SELECT COUNT(*)::int AS count, COALESCE(SUM(rl.value_cents), 0)::int AS total_value
+           FROM redemption_logs rl
+           JOIN user_coupons uc ON uc.id = rl.user_coupon_id
+           JOIN coupons c ON c.id = uc.coupon_id
+          WHERE rl.created_at >= $1
+            AND rl.action = 'used'
+            AND (c.merchant_name = $2 OR c.merchant_name ILIKE $3)`,
+        [todayStart, merchant.name, `%${merchant.name}%`]
+      ),
+      // Active product count
+      pool.query(
+        `SELECT COUNT(*)::int AS count
+           FROM merchant_products
+          WHERE merchant_id = $1 AND is_active = TRUE`,
+        [merchantId]
+      ),
+      // Popular items (top 5 most redeemed)
+      pool.query(
+        `SELECT c.title, COUNT(*)::int AS redemption_count
+           FROM redemption_logs rl
+           JOIN user_coupons uc ON uc.id = rl.user_coupon_id
+           JOIN coupons c ON c.id = uc.coupon_id
+          WHERE rl.action = 'used'
+            AND (c.merchant_name = $1 OR c.merchant_name ILIKE $2)
+          GROUP BY c.title
+          ORDER BY redemption_count DESC
+          LIMIT 5`,
+        [merchant.name, `%${merchant.name}%`]
+      ),
+      // Recent activity (last 10 redemptions)
+      pool.query(
+        `SELECT rl.id, rl.created_at, rl.value_cents,
+                c.title AS coupon_title,
+                u.name AS volunteer_name
+           FROM redemption_logs rl
+           JOIN user_coupons uc ON uc.id = rl.user_coupon_id
+           JOIN coupons c ON c.id = uc.coupon_id
+           JOIN users u ON u.id = uc.user_id
+          WHERE rl.action = 'used'
+            AND (c.merchant_name = $1 OR c.merchant_name ILIKE $2)
+          ORDER BY rl.created_at DESC
+          LIMIT 10`,
+        [merchant.name, `%${merchant.name}%`]
+      ),
+    ]);
+
+  const totalResult = await pool.query(
+    `SELECT COUNT(*)::int AS count
+       FROM redemption_logs rl
+       JOIN user_coupons uc ON uc.id = rl.user_coupon_id
+       JOIN coupons c ON c.id = uc.coupon_id
+      WHERE rl.action = 'used'
+        AND (c.merchant_name = $1 OR c.merchant_name ILIKE $2)`,
+    [merchant.name, `%${merchant.name}%`]
+  );
+
+  return {
+    merchant_name: merchant.name,
+    today_redemptions: todayStats.rows[0]?.count || 0,
+    today_value_cents: todayStats.rows[0]?.total_value || 0,
+    active_products: productCount.rows[0]?.count || 0,
+    total_redemptions: totalResult.rows[0]?.count || 0,
+    popular_items: (popularItems.rows || []).map((r) => ({
+      title: r.title,
+      redemption_count: r.redemption_count,
+    })),
+    recent_activity: (recentActivity.rows || []).map((r) => ({
+      id: r.id,
+      coupon_title: r.coupon_title,
+      volunteer_name: r.volunteer_name,
+      value_cents: r.value_cents,
+      redeemed_at: r.created_at,
+    })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Merchant Products CRUD
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /api/merchant/products
+ */
+async function listProducts(userId) {
+  const merchant = await findMerchantByUserId(userId);
+  if (!merchant) return { data: [] };
+
+  const result = await pool.query(
+    `SELECT id, name, description, points_cost, is_active, created_at, updated_at
+       FROM merchant_products
+      WHERE merchant_id = $1
+      ORDER BY is_active DESC, created_at DESC`,
+    [merchant.id]
+  );
+
+  return { data: result.rows };
+}
+
+/**
+ * POST /api/merchant/products
+ */
+async function createProduct(userId, { name, description, points_cost }) {
+  if (!name || !name.trim()) {
+    throw createError(400, "missing_name", "Product name is required.");
+  }
+
+  const merchant = await findMerchantByUserId(userId);
+  if (!merchant) {
+    throw createError(404, "merchant_not_found", "Merchant record not found.");
+  }
+
+  const cost = parseInt(points_cost) || 0;
+
+  const result = await pool.query(
+    `INSERT INTO merchant_products (merchant_id, name, description, points_cost, is_active)
+     VALUES ($1, $2, $3, $4, TRUE)
+     RETURNING id, name, description, points_cost, is_active, created_at`,
+    [merchant.id, name.trim(), description || null, cost]
+  );
+
+  return { data: result.rows[0] };
+}
+
+/**
+ * PUT /api/merchant/products/:id
+ */
+async function updateProduct(userId, productId, { name, description, points_cost, is_active }) {
+  const merchant = await findMerchantByUserId(userId);
+  if (!merchant) {
+    throw createError(404, "merchant_not_found", "Merchant record not found.");
+  }
+
+  // Verify product belongs to this merchant
+  const existing = await pool.query(
+    `SELECT id FROM merchant_products WHERE id = $1 AND merchant_id = $2`,
+    [productId, merchant.id]
+  );
+  if (existing.rows.length === 0) {
+    throw createError(404, "not_found", "Product not found or does not belong to you.");
+  }
+
+  const updates = [];
+  const values = [];
+  let idx = 0;
+
+  if (name !== undefined) { idx++; updates.push(`name = $${idx}`); values.push(name.trim()); }
+  if (description !== undefined) { idx++; updates.push(`description = $${idx}`); values.push(description); }
+  if (points_cost !== undefined) { idx++; updates.push(`points_cost = $${idx}`); values.push(parseInt(points_cost) || 0); }
+  if (is_active !== undefined) { idx++; updates.push(`is_active = $${idx}`); values.push(is_active); }
+
+  if (updates.length === 0) {
+    throw createError(400, "no_updates", "No fields to update.");
+  }
+
+  updates.push(`updated_at = NOW()`);
+  values.push(productId);
+
+  const result = await pool.query(
+    `UPDATE merchant_products SET ${updates.join(", ")} WHERE id = $${values.length}
+     RETURNING id, name, description, points_cost, is_active, created_at, updated_at`,
+    values
+  );
+
+  return { data: result.rows[0] };
+}
+
+/**
+ * DELETE /api/merchant/products/:id  (soft delete)
+ */
+async function deleteProduct(userId, productId) {
+  const merchant = await findMerchantByUserId(userId);
+  if (!merchant) {
+    throw createError(404, "merchant_not_found", "Merchant record not found.");
+  }
+
+  const result = await pool.query(
+    `UPDATE merchant_products
+        SET is_active = FALSE, updated_at = NOW()
+      WHERE id = $1 AND merchant_id = $2
+      RETURNING id, name, is_active`,
+    [productId, merchant.id]
+  );
+
+  if (result.rows.length === 0) {
+    throw createError(404, "not_found", "Product not found or does not belong to you.");
+  }
+
+  return { data: result.rows[0], message: "Product deactivated." };
+}
+
+/**
+ * GET /api/merchant/redemptions
+ *
+ * Detailed redemption records for this merchant with filtering.
+ */
+async function listRedemptions(userId, { page = 1, limit = 20, date_from, date_to, search } = {}) {
+  const merchant = await findMerchantByUserId(userId);
+  if (!merchant) return { data: [], total: 0, page, limit, total_pages: 0 };
+
+  const safePage = toPositiveInt(page, 1);
+  const safeLimit = Math.min(toPositiveInt(limit, 20), 100);
+  const offset = (safePage - 1) * safeLimit;
+
+  const where = [
+    `rl.action = 'used'`,
+    `(c.merchant_name = $1 OR c.merchant_name ILIKE $2)`,
+  ];
+  const values = [merchant.name, `%${merchant.name}%`];
+  let idx = 2;
+
+  if (date_from) {
+    idx++;
+    where.push(`rl.created_at >= $${idx}`);
+    values.push(date_from);
+  }
+  if (date_to) {
+    idx++;
+    where.push(`rl.created_at <= $${idx}`);
+    values.push(date_to);
+  }
+  if (search) {
+    idx++;
+    where.push(`(c.title ILIKE $${idx} OR u.name ILIKE $${idx} OR u.email ILIKE $${idx})`);
+    values.push(`%${search}%`);
+  }
+
+  const whereSql = where.join(" AND ");
+
+  const count = await pool.query(
+    `SELECT COUNT(*)::int AS total
+       FROM redemption_logs rl
+       JOIN user_coupons uc ON uc.id = rl.user_coupon_id
+       JOIN coupons c ON c.id = uc.coupon_id
+       JOIN users u ON u.id = uc.user_id
+      WHERE ${whereSql}`,
+    values
+  );
+
+  idx++;
+  values.push(safeLimit, offset);
+  const result = await pool.query(
+    `SELECT rl.id, rl.user_coupon_id, rl.points_spent, rl.value_cents,
+            rl.created_at AS redeemed_at, rl.notes,
+            c.id AS coupon_id, c.title AS coupon_title,
+            u.id AS volunteer_id, u.name AS volunteer_name, u.email AS volunteer_email
+       FROM redemption_logs rl
+       JOIN user_coupons uc ON uc.id = rl.user_coupon_id
+       JOIN coupons c ON c.id = uc.coupon_id
+       JOIN users u ON u.id = uc.user_id
+      WHERE ${whereSql}
+      ORDER BY rl.created_at DESC
+      LIMIT $${idx} OFFSET $${idx + 1}`,
+    values
+  );
+
+  const total = count.rows[0]?.total || 0;
+  return {
+    data: result.rows,
+    total,
+    page: safePage,
+    limit: safeLimit,
+    total_pages: Math.ceil(total / safeLimit),
+  };
+}
+
 module.exports = {
   verifyPin,
   redeemCoupon,
   reverseRedemption,
   getRedemptionHistory,
+  getDashboardStats,
+  listProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  listRedemptions,
 };

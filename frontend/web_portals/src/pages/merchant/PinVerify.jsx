@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
 import Modal from '../../components/Modal';
+import Topbar from '../../components/Topbar';
 import { apiPost } from '../../services/api';
 
 const CENTS_PER_POINT = 100;
@@ -176,11 +177,6 @@ export default function PinVerify() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    navigate('/merchant');
-  };
-
   // --- PIN ENTRY PHASE ---
   const renderPinEntry = () => (
     <>
@@ -295,7 +291,6 @@ export default function PinVerify() {
       </button>
 
       <div style={styles.footerLinks}>
-        <button style={styles.linkBtn} onClick={handleLogout}>Logout</button>
         <button style={styles.linkBtn} onClick={() => navigate('/merchant/history')}>
           View History
         </button>
@@ -474,27 +469,25 @@ export default function PinVerify() {
   );
 
   return (
-    <div style={styles.wrapper}>
-      <div className="merchant-pin-container" style={styles.container}>
-        {phase === 'pin_entry' && renderPinEntry()}
-        {phase === 'verifying' && renderVerifying()}
-        {phase === 'verified' && renderVerified()}
-        {phase === 'redeeming' && renderRedeeming()}
-        {phase === 'redeemed' && renderRedeemed()}
-        {phase === 'reversing' && renderReversing()}
+    <div className="main-content">
+      <Topbar title="Verify PIN" />
+      <div style={{ padding: '24px' }}>
+        <div className="merchant-pin-container" style={styles.container}>
+          {phase === 'pin_entry' && renderPinEntry()}
+          {phase === 'verifying' && renderVerifying()}
+          {phase === 'verified' && renderVerified()}
+          {phase === 'redeeming' && renderRedeeming()}
+          {phase === 'redeemed' && renderRedeemed()}
+          {phase === 'reversing' && renderReversing()}
+        </div>
       </div>
     </div>
   );
 }
 
 const styles = {
-  wrapper: {
-    padding: 16,
-    minHeight: '100vh',
-    background: '#F5F5F7',
-  },
   container: {
-    maxWidth: 440,
+    maxWidth: 480,
     margin: '0 auto',
     padding: '0 4px',
   },

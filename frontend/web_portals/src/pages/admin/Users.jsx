@@ -6,7 +6,7 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { apiGet, apiPut, apiDel } from '../../services/api';
+import { apiGet, apiPut, apiPost, apiDel } from '../../services/api';
 
 function ResetPasswordModal({ isOpen, onClose, user, onReset }) {
   const [newPassword, setNewPassword] = useState('');
@@ -67,7 +67,7 @@ const NAV_ITEMS = [
   ]},
 ];
 
-function UserDetailModal({ userId, isOpen, onClose, onUpdate, onRoleChange }) {
+function UserDetailModal({ userId, isOpen, onClose, onUpdate }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
@@ -127,15 +127,7 @@ function UserDetailModal({ userId, isOpen, onClose, onUpdate, onRoleChange }) {
           <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 16 }}>
             Created: {user.created_at ? new Date(user.created_at).toLocaleDateString() : "--"}
           </div>
-          {(user.role === 'admin' || user.role === 'volunteer') && (
-            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12, marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: 13, color: "var(--muted)" }}>Role: <strong>{user.role}</strong></span>
-              <button className={"btn btn-sm " + (user.role === 'admin' ? 'btn-secondary' : 'btn-primary')}
-                onClick={() => onRoleChange(user, user.role === 'admin' ? 'volunteer' : 'admin')}>
-                Switch to {user.role === 'admin' ? 'Volunteer' : 'Admin'}
-              </button>
-            </div>
-          )}
+          {/* Role-change button removed per supervisor request — security concern */}
         </div>
       )}
     </Modal>
@@ -160,6 +152,80 @@ function SuspendModal({ isOpen, onClose, user, onConfirm }) {
   );
 }
 
+const INVITE_ROLES = [
+  { value: "volunteer", label: "Volunteer" },
+  { value: "organizer", label: "Organiser" },
+  { value: "admin", label: "Admin" },
+  { value: "merchant", label: "Merchant" },
+];
+
+const INITIAL_INVITE = { name: "", email: "", password: "", role_name: "volunteer" };
+
+function InviteUserModal({ isOpen, onClose, onSubmit }) {
+  const [form, setForm] = useState(INITIAL_INVITE);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) { setForm(INITIAL_INVITE); setError(null); }
+  }, [isOpen]);
+
+  const handleSubmit = async () => {
+    setError(null);
+    if (!form.name.trim() || !form.email.trim() || !form.password) {
+      setError("All fields are required."); return;
+    }
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters."); return;
+    }
+    setSubmitting(true);
+    try {
+      await onSubmit(form);
+      setForm(INITIAL_INVITE);
+    } catch (err) {
+      setError(err.message || "Failed to invite user.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Invite User"
+      actions={[
+        { label: "Cancel", variant: "secondary", onClick: onClose },
+        { label: "Create Account", variant: "primary", onClick: handleSubmit, disabled: submitting },
+      ]}>
+      {error && (
+        <div style={{ padding: "8px 12px", borderRadius: 6, background: "#fff0f0", color: "#d32f2f", fontSize: 13, marginBottom: 12 }}>
+          {error}
+        </div>
+      )}
+      <div className="form-group" style={{ marginBottom: 12 }}>
+        <label className="form-label">Name *</label>
+        <input className="form-input" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})}
+          placeholder="Full name" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }} />
+      </div>
+      <div className="form-group" style={{ marginBottom: 12 }}>
+        <label className="form-label">Email *</label>
+        <input className="form-input" type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})}
+          placeholder="email@example.com" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }} />
+      </div>
+      <div className="form-group" style={{ marginBottom: 12 }}>
+        <label className="form-label">Password *</label>
+        <input className="form-input" type="password" value={form.password} onChange={(e) => setForm({...form, password: e.target.value})}
+          placeholder="Min 8 characters" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Role *</label>
+        <select className="form-select" value={form.role_name} onChange={(e) => setForm({...form, role_name: e.target.value})}
+          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14 }}>
+          {INVITE_ROLES.map((r) => (<option key={r.value} value={r.value}>{r.label}</option>))}
+        </select>
+      </div>
+    </Modal>
+  );
+}
+
 export default function Users() {
   const { toast } = useToast();
   const location = useLocation();
@@ -176,6 +242,7 @@ export default function Users() {
   const [detailOpen, setDetailOpen] = useState(!!location.state?.userId);
   const [suspendUser, setSuspendUser] = useState(null);
   const [resetPwUser, setResetPwUser] = useState(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true); setError(null);
@@ -201,10 +268,6 @@ export default function Users() {
     try { await apiPut("/admin/users/" + user.id + "/reset-password", { newPassword }); toast("Password reset", "success"); setResetPwUser(null); }
     catch (err) { toast(err.message || "Failed", "error"); throw err; }
   };
-  const handleChangeRole = async (user, newRole) => {
-    try { await apiPut("/admin/users/" + user.id + "/role", { role_name: newRole }); toast("Role changed to " + newRole, "success"); setDetailOpen(false); fetchUsers(); }
-    catch (err) { toast(err.message || "Failed", "error"); }
-  };
   const confirmSuspend = async (user) => {
     try {
       const newStatus = user.status === "active" ? "disabled" : "active";
@@ -212,6 +275,12 @@ export default function Users() {
       toast(newStatus === "disabled" ? "User suspended" : "User reactivated", "success");
       setSuspendUser(null); fetchUsers();
     } catch (err) { toast(err.message || "Failed to update user", "error"); }
+  };
+  const handleInviteUser = async (form) => {
+    await apiPost("/admin/users/create-account", form);
+    toast(`Account created: ${form.name} (${form.role_name})`, "success");
+    setInviteOpen(false);
+    fetchUsers();
   };
 
   const totalPages = Math.ceil(total / pageSize);
@@ -252,6 +321,7 @@ export default function Users() {
               <option value="active">Active</option>
               <option value="disabled">Disabled</option>
             </select>
+            <button className="btn btn-primary btn-sm" onClick={() => setInviteOpen(true)}>+ Invite User</button>
           </div>
         </div>
 
@@ -282,9 +352,10 @@ export default function Users() {
       </div>
 
       <UserDetailModal userId={selectedUserId} isOpen={detailOpen}
-        onClose={() => { setDetailOpen(false); setSelectedUserId(null); }} onRoleChange={handleChangeRole} />
+        onClose={() => { setDetailOpen(false); setSelectedUserId(null); }} />
       <SuspendModal isOpen={!!suspendUser} onClose={() => setSuspendUser(null)} user={suspendUser} onConfirm={confirmSuspend} />
       <ResetPasswordModal isOpen={!!resetPwUser} onClose={() => setResetPwUser(null)} user={resetPwUser} onReset={handleResetPassword} />
+      <InviteUserModal isOpen={inviteOpen} onClose={() => setInviteOpen(false)} onSubmit={handleInviteUser} />
     </div>
   );
 }

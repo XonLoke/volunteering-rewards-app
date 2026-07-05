@@ -1,6 +1,6 @@
 # Volunteering Rewards App — System Architecture & Development Report
 
-> **Document Version:** 3.1  
+> **Document Version:** 3.2  
 > **Date:** 3 July 2026  
 > **Project:** Volunteering Rewards App (C3000C)  
 > **Status:** Sprint 5 — Final Week (Deadline: 6 Jul 2026)
@@ -111,7 +111,7 @@ The Volunteering Rewards App is a full-stack web and mobile platform that connec
 │   │  /api/me          /api/rewards     /api/coupons         │    │
 │   │  /api/merchant    /api/organiser   /api/admin           │    │
 │   │  /api/favorites   /api/leaderboard /api/feedback        │    │
-│   │  /api/settings    /api/contact     /api/referral        │
+│   │  /api/settings    /api/contact     /api/referral        │    │
 │   │  /api/ai          (Gen 2 LLM features)                 │    │
 │   └─────────────────────────────────────────────────────────┘    │
 └──────────────────────────────┬────────────────────────────────────┘
@@ -215,11 +215,11 @@ volunteering-rewards-app/
 ```
 volunteering-rewards-app/
 ├── backend/                     # Express.js API server
-│   ├── index.js                 # Entry point — mounts 14 route groups
+│   ├── index.js                 # Entry point — mounts 15 route groups
 │   ├── src/
 │   │   ├── config/database.js   # PostgreSQL connection pool
 │   │   ├── middleware/          # auth, role, rateLimiter, errorHandler
-│   │   ├── routes/              # 14 route groups
+│   │   ├── routes/              # 15 route groups
 │   │   │   ├── auth.routes.js         # Xon
 │   │   │   ├── events.routes.js       # Vivian
 │   │   │   ├── attendance.routes.js   # Vivian
@@ -237,8 +237,6 @@ volunteering-rewards-app/
 │   │   │   └── ai.routes.js           # NEW — Gen 2 LLM features
 │   │   ├── controllers/         # 15 controller files (14 + new ai.controller)
 │   │   ├── services/            # 15 service files (14 + new ai.service)
-│   │   ├── controllers/         # 14 controller files
-│   │   ├── services/            # 14 service files
 │   │   └── utils/               # JWT, migrationRunner, seed
 │   ├── migrations/              # 23 SQL migration files (001–023)
 │   ├── create_diana.js          # Utility scripts
@@ -284,9 +282,11 @@ volunteering-rewards-app/
 | **Monorepo structure** | `mobile/` + `web/` | `frontend/mobile_app/` + `frontend/web_portals/` |
 | **Web portals** | Separate admin + organiser | Single Vite app with 4 portal routes (admin, organiser, merchant, scan) |
 | **Merchant portal** | ❌ Not in Phase 1 | ✅ Built as PWA with PIN verify, redeem, reverse, history |
+| **Merchant dashboard** | ❌ Not planned | ✅ Dashboard + product CRUD + sidebar layout |
 | **Scanner PWA** | Not separately listed | ✅ Dedicated scanner with QR camera + manual entry |
 | **Expo PWA** | Mobile only | ✅ Also deployed as PWA via `npx expo export --platform web` |
 | **PWA-APK Unification** | Not planned | ✅ PWA reconfigured to use `frontend/mobile_app/` — same source as APK (KAN-157) |
+| **AI/LLM Features (Gen 2)** | ❌ Not planned (Gen 1 was SQL-based) | ✅ FreeLLMAPI + ai.service.js with graceful fallback to Gen 1 |
 | **Root app/ directory** | Not in plan | ✅ Shared Expo Router screens at root level |
 | **Migration files** | 12 planned | 23 migrations executed |
 | **CI/CD** | Manual deploy via Git | ✅ GitHub Actions CI + auto-deploy via Vercel |
@@ -335,7 +335,7 @@ volunteering-rewards-app/
 | POST | `/api/events/:id/qna` | Ask question | Volunteer |
 | GET | `/api/events/:id/roster` | Volunteer roster | Organiser |
 | GET | `/api/events/:id/stats` | Check-in stats | Organiser |
-| GET | `/api/events/recommended` | AI recommendations | Volunteer |
+| GET | `/api/events/recommended` | AI recommendations (Gen 1) | Volunteer |
 | GET | `/api/events/popular` | Popular events | Volunteer |
 | POST | `/api/attendance/scan` | Scan volunteer QR | Organiser |
 | POST | `/api/attendance/batch` | Batch sync scans | Organiser |
@@ -413,6 +413,38 @@ volunteering-rewards-app/
 | GET | `/api/me/points` | Points balance | Volunteer |
 | GET | `/api/me/coupons` | My coupons | Volunteer |
 | GET | `/api/me/sponsorship-profile` | Referral profile | Volunteer |
+
+---
+
+### Workflow E: AI Features (Gen 2 — LLM-Powered) — Xon (Builder)
+
+Built on 3 Jul 2026 per supervisor Andy's advice. Upgrades F1 and F2 from rule-based algorithms to real LLM-powered features via FreeLLMAPI.
+
+**Backend routes:**
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/ai/recommendations` | AI event recommendations (LLM-first) | Volunteer |
+| GET | `/api/ai/feedback-summary/:eventId` | AI feedback summary (LLM-first) | Organiser |
+
+**Architecture:**
+
+```
+[Request] → ai.controller → ai.service.getAiRecommendations()
+                                → callLlm(prompt) → FreeLLMAPI → Google Gemini
+                                → SUCCESS: return AI result
+                                → FAIL: return null → controller falls back to
+                                  events.service.getRecommendations() (SQL, Gen 1)
+```
+
+**Two-layer resilience:**
+1. **FreeLLMAPI auto-failover** — if Google hits rate limits, automatically routes to Groq → Cerebras → Mistral → OpenRouter
+2. **Application fallback** — if all providers exhausted, back-end gracefully degrades to Gen 1 SQL-based recommendations
+
+**Files:**
+- `backend/src/services/ai.service.js` — `callLlm()`, `getAiRecommendations()`, `getAiFeedbackSummary()`
+- `backend/src/controllers/ai.controller.js` — HTTP handlers with AI-first fallback pattern
+- `backend/src/routes/ai.routes.js` — Route definitions
 
 ---
 
@@ -500,6 +532,7 @@ users.points (INTEGER, DEFAULT 0, CHECK >= 0)
 | **Vercel** | Frontend Web Portals + PWAs (global CDN) | Free Hobby | $0/mo |
 | **Render** | Backend API (Node.js/Express) | Free Hobby | $0/mo |
 | **Neon** | PostgreSQL 16 Database (serverless) | Free Tier | $0/mo |
+| **FreeLLMAPI** | LLM proxy (localhost:3001) | Free (open source) | $0/mo |
 | **Total** | | | **$0.00/mo** |
 
 ### 8.2 Deployed Portals
@@ -529,11 +562,19 @@ users.points (INTEGER, DEFAULT 0, CHECK >= 0)
                                           │   Neon      │
                                           │  PostgreSQL │
                                           └─────────────┘
+
+┌─────────────────┐
+│  FreeLLMAPI     │  ◄── Backend calls via fetch()
+│  localhost:3001 │      POST /v1/chat/completions
+│  (LLM Proxy)    │      model: "auto" (routes to Google/Groq/etc.)
+└─────────────────┘
 ```
 
 ### 8.4 Cold Start Notice
 
 Render's free tier backend spins down after **15 minutes of inactivity**. The first request after idle takes approximately **30–60 seconds** to wake up (cold start). After that, it runs normally.
+
+FreeLLMAPI's first request after server start may experience a slight delay while the auto-router checks provider availability.
 
 ---
 
@@ -543,19 +584,25 @@ Beyond the core three-workflow architecture, four additional features were built
 
 > **Note on ownership:** The features below are listed under their workflow owners (Vivian for Events, Nurain for Admin/Organiser). However, under the coordinator model adopted in Sprint 3–5 (see §10.1 Phase 3), **Xon implemented all four features' backend + frontend** using AI-assisted generation, while team members focused on testing.
 
-### F1: AI Event Recommendations (Vivian — Workflow B)
+> **Gen 2 Upgrade (3 Jul 2026):** F1 and F2 have been upgraded from rule-based algorithms to LLM-powered via FreeLLMAPI. The rule-based versions are preserved as graceful fallbacks. See `docs/AI_DEVELOPMENT_GUIDE_V2.1.md` for full details.
 
-**Location:** `backend/src/services/events.service.js`, `app/ai-recommendations.tsx`
+### F1: AI Event Recommendations (Vivian — Workflow B) — Gen 2 LLM ✅
 
-Content-based filtering engine that recommends upcoming events based on each volunteer's past attendance category preferences. Falls back to popular events for new volunteers. Includes an interactive "Ask about your picks" assistant with four contextual questions.
+**Location:** `backend/src/services/events.service.js` (Gen 1 fallback), `backend/src/services/ai.service.js` (Gen 2 primary), `app/ai-recommendations.tsx`
 
-See `docs/AI_DEVELOPMENT_GUIDE.md` for full documentation.
+**Gen 1 (fallback):** Content-based filtering — SQL scoring by category match. Deterministic, 5-15ms latency.
+**Gen 2 (primary):** LLM-powered via FreeLLMAPI — understands semantic meaning, cross-category reasoning, natural language explanations. 1-5s latency.
 
-### F2: Feedback AI Summary (Vivian — Workflow B)
+**New endpoint:** `GET /api/ai/recommendations` returns `{ data: [...], ai_generated: true }` with per-event reasoning.
 
-**Location:** `backend/src/services/feedback.service.js`, `backend/src/routes/feedback.routes.js`
+### F2: Feedback AI Summary (Vivian — Workflow B) — Gen 2 LLM ✅
 
-Summarises volunteer feedback for organisers, providing aggregate ratings and sentiment overview per event.
+**Location:** `backend/src/services/feedback.service.js` (Gen 1 fallback), `backend/src/services/ai.service.js` (Gen 2 primary)
+
+**Gen 1 (fallback):** Lexicon-based sentiment analysis — 32 positive / 29 negative keywords.
+**Gen 2 (primary):** LLM-powered — reads all feedback, produces structured summary with `overall_sentiment`, `average_rating`, `key_themes`, `praise_points`, `improvements`.
+
+**New endpoint:** `GET /api/ai/feedback-summary/:eventId` returns `{ data: {...}, ai_generated: true }`.
 
 ### F3: Referral & Sponsorship Program (Nurain — Workflow D)
 
@@ -614,6 +661,10 @@ By Sprint 3, the team adopted a **coordinator model** where Xon acted as project
 
 Under this model, Xon implemented all F1–F4 features and most backend/frontend integration, while Vivian, Grace, and Nurain handled testing, UAT, documentation, and quality assurance.
 
+**Phase 4: Real LLM Integration (Sprint 5 — 3 Jul 2026)**
+
+Following supervisor Andy's advice, Gen 1 rule-based AI features (F1, F2) were upgraded to use actual LLM inference via FreeLLMAPI — a local proxy aggregating free tiers from 16+ providers. The Gen 1 algorithms were preserved as graceful fallbacks.
+
 ### 10.2 AI Prompt Methodology
 
 Each coding prompt followed this structure:
@@ -660,7 +711,7 @@ System Analysis Docs
 
 | Member | What Was Actually Built/Tested |
 |--------|-------------------------------|
-| **Xon** | Express backend scaffold, all middleware, JWT auth, database migrations (23), seed data, auth service with full validation, Docker + CI/CD, admin web portal pages (login, dashboard, users, organisers), vertical slice coordination, AI prompt engineering, PWA-APK unification, APK build, responsive layout fixes (merchant, scanner, PWA), **F1: AI Recommendations (backend + frontend)**, **F2: Feedback AI Summary (backend + frontend)**, **F3: Referral Program (backend + frontend + admin panel)**, **F4: Hall of Fame Leaderboard (backend + frontend)**, QR scanner fixes ("No events" / "Event has ended" states), merchant layout fix, all 8 bug fixes on 2 Jul (KAN-158–163) |
+| **Xon** | Express backend scaffold, all middleware, JWT auth, database migrations (23), seed data, auth service with full validation, Docker + CI/CD, admin web portal pages (login, dashboard, users, organisers), vertical slice coordination, AI prompt engineering, PWA-APK unification, APK build, responsive layout fixes (merchant, scanner, PWA), **F1: AI Recommendations Gen 2 (LLM)**, **F2: Feedback AI Summary Gen 2 (LLM)**, **FreeLLMAPI server setup + Google AI key**, **ai.service.js / ai.controller.js / ai.routes.js**, **Merchant Dashboard backend (6 endpoints)**, **Merchant Dashboard frontend (Dashboard, Products, sidebar layout)**, **PinVerify + History refactored for sidebar**, QR scanner fixes ("No events" / "Event has ended" states), merchant layout fix, all 8 bug fixes on 2 Jul (KAN-158–163) |
 | **Vivian** | Events routes + controller + service (browse, detail, categories, today, recommended, popular), attendance routes + controller + service (scan, batch, volunteer latest), QR scanner screens (web PWA + mobile), event screens (browse, detail, my events, home), organiser web pages (roster, feedback, scanning), favorites, feedback routes, settings + contact routes, AI recommendations screen ("For You" tab) |
 | **Grace** | Rewards routes + controller + service (browse, detail, redeem), merchant routes + controller + service (verify, redeem, reverse, history), mobile screens (rewards catalog, reward detail, redeem confirmation, my coupons, PIN display), merchant web portal (login, PIN verify, history), admin coupons + redemptions web pages |
 | **Nurain** | Admin routes + controller + service (dashboard, users CRUD, organiser approval, events, coupons, redemptions, rewards config), organiser routes + controller + service (dashboard, events CRUD, roster, feedback, Q&A), me routes + controller (my events, my QR, my points, my coupons), referral + sponsorship service, leaderboard service, organiser web portal pages (dashboard, events, event-edit, Q&A), admin web pages (events, rewards config) |
@@ -670,12 +721,13 @@ System Analysis Docs
 | Addition | Reason | Status |
 |----------|--------|--------|
 | **Merchant Portal** | Requirement added during development | ✅ Built (3 pages) |
+| **Merchant Dashboard** | Supervisor Andy advice (3 Jul) | ✅ Built, awaiting Grace commit |
 | **Scanner PWA** | Dedicated web-based QR scanner | ✅ Built (4 pages) |
 | **Volunteer PWA** | Expo web export for non-Android users | ✅ Deployed on Vercel |
 | **PWA-APK Unification (KAN-157)** | PWA showed wrong GUI; unified to same source as APK | ✅ Complete (30 Jun) |
 | **Native APK** | Android native build (83 MB) | ✅ Built |
-| **AI Recommendations (F1)** | Additional feature | ✅ Built |
-| **Feedback AI Summary (F2)** | Additional feature | ✅ Built |
+| **AI Recommendations Gen 2 (LLM)** | Supervisor Andy advice (3 Jul) — upgraded from rule-based | ✅ FreeLLMAPI + ai.service.js |
+| **Feedback AI Summary Gen 2 (LLM)** | Supervisor Andy advice (3 Jul) — upgraded from rule-based | ✅ FreeLLMAPI + ai.service.js |
 | **Referral Program (F3)** | Additional feature | ✅ Built |
 | **Hall of Fame Leaderboard (F4)** | Additional feature | ✅ Built |
 | **23 database migrations** | Schema evolution across sprints | ✅ 23 files |
@@ -687,13 +739,13 @@ System Analysis Docs
 
 | Category | Count |
 |----------|-------|
-| Core Backend Tasks | 45+ |
+| Core Backend Tasks | 50+ |
 | Mobile Screens | 25+ |
-| Web Portal Pages | 25+ |
+| Web Portal Pages | 28+ |
 | Database Migrations | 23 |
 | Docker + CI/CD Configs | 3 |
-| Project Documents | 60+ |
-| **Total Deliverables** | **180+** |
+| Project Documents | 65+ |
+| **Total Deliverables** | **190+** |
 
 ---
 
@@ -741,8 +793,8 @@ System Analysis Docs
 
 | Deliverable | Status |
 |------------|--------|
-| AI Event Recommendations (F1) | ✅ Complete |
-| Feedback AI Summary (F2) | ✅ Complete |
+| AI Event Recommendations (F1) — Gen 1 rule-based | ✅ Complete |
+| Feedback AI Summary (F2) — Gen 1 rule-based | ✅ Complete |
 | Referral Program (F3) | ✅ Complete |
 | Hall of Fame Leaderboard (F4) | ✅ Complete |
 | Consolidated testing (188 tests, 100% pass) | ✅ Complete |
@@ -752,21 +804,16 @@ System Analysis Docs
 
 ### Sprint 5 (29 Jun–6 Jul) — Deployment & Delivery 🟢 On Track (3 Jul)
 
-**Xon — Technical tasks (all done ✅):**
+**Xon — Prior technical tasks (all done ✅):**
 
 | Deliverable | Status | Date |
 |------------|--------|------|
 | Local APK build (JDK 17+, Android SDK, 83 MB) | ✅ Complete | 29 Jun |
-| PWA-APK Unification Phase 1: Web deps installed | ✅ Complete | 30 Jun |
-| PWA-APK Unification Phase 2: Vercel env var set | ✅ Complete | 30 Jun |
-| PWA-APK Unification Phase 3: Vercel reconfigured + deployed | ✅ Complete | 30 Jun |
-| Responsive fixes: Merchant login + PinVerify | ✅ Complete | 30 Jun |
-| Responsive fixes: Scanner login + layout | ✅ Complete | 30 Jun |
-| Responsive fixes: Volunteer PWA landing | ✅ Complete | 30 Jun |
-| Old PWA URL replaced across 18 documents | ✅ Complete | 30 Jun |
+| PWA-APK Unification (KAN-157) all 3 phases | ✅ Complete | 30 Jun |
+| Responsive fixes: Merchant, Scanner, Volunteer PWA | ✅ Complete | 30 Jun |
 | Sprint 4 conclusion + Test Plan v2.1 + Testing Guide v1.2 | ✅ Complete | 30 Jun |
 
-**Bug fixes (2 Jul — 8 bugs fixed across backend + mobile):**
+**Bug fixes (2 Jul — 8 bugs fixed):**
 
 | # | Bug | Area | Fix |
 |---|-----|------|-----|
@@ -783,26 +830,31 @@ System Analysis Docs
 
 | Deliverable | Status | Date |
 |------------|--------|------|
-| FreeLLMAPI installed & configured (Google AI Studio key) | ✅ Complete | 3 Jul |
-| `backend/src/services/ai.service.js` — `callLlm()`, recommendations, feedback summary | ✅ Complete | 3 Jul |
-| `backend/src/controllers/ai.controller.js` — AI-first with Gen 1 fallback | ✅ Complete | 3 Jul |
-| `backend/src/routes/ai.routes.js` — `GET /api/ai/recommendations`, `/api/ai/feedback-summary/:eventId` | ✅ Complete | 3 Jul |
-| `AI_DEVELOPMENT_GUIDE_V2.1.md` — Documentation (FreeLLMAPI rationale, failover, build details) | ✅ Complete | 3 Jul |
-| F1 + F2 upgraded from rule-based to LLM-powered (graceful fallback preserved) | ✅ Complete | 3 Jul |
+| FreeLLMAPI installed & configured (Google AI Studio key active) | ✅ Complete | 3 Jul |
+| `ai.service.js` — `callLlm()`, `getAiRecommendations()`, `getAiFeedbackSummary()` | ✅ Complete | 3 Jul |
+| `ai.controller.js` — AI-first with graceful Gen 1 fallback | ✅ Complete | 3 Jul |
+| `ai.routes.js` — `GET /api/ai/recommendations`, `GET /api/ai/feedback-summary/:eventId` | ✅ Complete | 3 Jul |
+| `index.js` — mounted `/api/ai` route group | ✅ Complete | 3 Jul |
+| `AI_DEVELOPMENT_GUIDE_V2.1.md` — rationale, architecture, failover | ✅ Complete | 3 Jul |
+| F1 + F2 upgraded from rule-based to LLM-powered (fallbacks preserved) | ✅ Complete | 3 Jul |
+| **Committed to GitHub** | ✅ Done | 3 Jul |
 
-**Merchant Dashboard Expansion (3 Jul — built by Xon, awaiting Grace ✅):**
+**Merchant Dashboard Expansion (3 Jul — built by Xon, awaiting Grace ⏸️):**
 
 | Deliverable | Status | Date |
 |------------|--------|------|
 | Backend: Dashboard stats endpoint (`GET /api/merchant/dashboard`) | ✅ Built | 3 Jul |
-| Backend: Product CRUD endpoints (`GET/POST/PUT/DELETE /api/merchant/products`) | ✅ Built | 3 Jul |
-| Backend: Redemption records endpoint (`GET /api/merchant/redemptions`) | ✅ Built | 3 Jul |
-| Frontend: MerchantLayout redesigned with sidebar (matches Admin/Organiser pattern) | ✅ Built | 3 Jul |
+| Backend: Product CRUD (`GET/POST/PUT/DELETE /api/merchant/products`) | ✅ Built | 3 Jul |
+| Backend: Redemption records (`GET /api/merchant/redemptions`) | ✅ Built | 3 Jul |
+| Frontend: MerchantLayout redesigned with sidebar (matches Admin/Organiser) | ✅ Built | 3 Jul |
 | Frontend: Dashboard page (stats cards, popular items, recent activity) | ✅ Built | 3 Jul |
 | Frontend: Products page (CRUD with DataTable + Modal) | ✅ Built | 3 Jul |
 | Frontend: PinVerify + History refactored for sidebar layout | ✅ Built | 3 Jul |
 | Frontend: Login redirects to `/merchant/dashboard` | ✅ Built | 3 Jul |
-| **Note:** Not committed — assigned to Grace for review/commit | ⏸️ Awaiting Grace | — |
+| Instruction document for Grace | ✅ Created | 3 Jul |
+| **Not committed** — assigned to Grace for review/commit | ⏸️ Awaiting Grace | — |
+
+**Remaining Sprint 5 tasks (team testing phase, 3–6 Jul):**
 
 | Deliverable | Status | Date |
 |------------|--------|------|
@@ -810,13 +862,14 @@ System Analysis Docs
 | User Acceptance Testing (8 scenarios across all portals) | ⬜ Pending | 3 Jul |
 | Security test execution (auth, session, input validation) | ⬜ Pending | 3 Jul |
 | Integration test execution (API endpoints, QR scanning) | ⬜ Pending | 3 Jul |
+| Merchant Dashboard review & commit (Grace) | ⬜ Pending | 3–4 Jul |
 | System walkthrough — all platforms | ⬜ Pending | 4 Jul |
 | Dry-run presentation rehearsal | ⬜ Pending | 4 Jul |
 | Documentation: Project report, user manual, slides | ⬜ Pending | 5 Jul |
 | Final fixes & submission | ⬜ Pending | 6 Jul |
 | Handover documentation | ⬜ Pending | 6 Jul |
 
-**Overall completion rate:** 80.5% (33/41 Sprint 5 tasks)
+**Overall completion rate:** 80.5% (33/41 Sprint 5 tasks) + new AI/merchant tasks
 
 ---
 
@@ -873,6 +926,17 @@ System Analysis Docs
 | CORS origin restriction | ✅ Pass |
 | Helmet security headers | ✅ Pass |
 
+### 13.5 AI Feature Resilience Testing
+
+| Scenario | Expected Behaviour |
+|----------|-------------------|
+| FreeLLMAPI server running | AI recommendations return LLM-generated results with reasoning |
+| FreeLLMAPI server down | Controller catches null → falls back to Gen 1 SQL recommendations |
+| LLM response >15s timeout | AbortController fires → returns null → Gen 1 fallback |
+| LLM returns malformed JSON | Parse error caught → null → Gen 1 fallback |
+| Google AI rate limited | FreeLLMAPI auto-routes to Groq/Cerebras/Mistral — no visible impact |
+| All providers exhausted | FreeLLMAPI returns error → Gen 1 fallback |
+
 ---
 
 ## 14. What Was Built vs Original Plan
@@ -882,15 +946,15 @@ System Analysis Docs
 | Aspect | Original Plan (v2.0) | What Was Actually Built |
 |--------|---------------------|------------------------|
 | **Merchant/Cashier** | ❌ Removed from Phase 1 | ✅ Full merchant portal with PIN verify, redeem, reverse, history |
+| **Merchant Dashboard** | ❌ Not planned | ✅ Stats, product CRUD, sidebar layout (awaiting Grace) |
 | **Web Portals** | Separate admin + organiser | ✅ Single Vite app with 4 portals (admin, organiser, merchant, scan) |
 | **Mobile App** | Expo Go only | ✅ Expo PWA + Native APK (83 MB) — same source via KAN-157 |
 | **Database** | 12 tables | ✅ 20 tables (8 additional) |
 | **Migrations** | 12 migration files | ✅ 23 migration files |
 | **Auth** | 4 roles (volunteer, organiser, admin) | ✅ 4 roles (volunteer, organiser, admin, merchant) |
+| **AI Features** | ❌ Not planned | ✅ Gen 1 (rule-based) + Gen 2 (LLM via FreeLLMAPI) |
 | **Referral** | ❌ Phase 2 | ✅ Built (F3) |
 | **Leaderboard** | ❌ Phase 2 | ✅ Built (F4) |
-| **AI Recommendations** | ❌ Not planned | ✅ Built (F1) |
-| **Feedback AI Summary** | ❌ Not planned | ✅ Built (F2) |
 | **CI/CD** | Manual deploy | ✅ GitHub Actions + Vercel auto-deploy |
 | **Docker** | Production only | ✅ Multi-stage build with healthcheck |
 | **Development Model** | Vibe coding with 4 owners | ✅ Vertical slices → AI-assisted coordinator model |
@@ -910,9 +974,11 @@ System Analysis Docs
 - Vertical slice architecture improved team ownership and demoability
 - Web portals consolidated into one Vite app (reduced duplication)
 - Merchant portal added after stakeholder feedback
+- Merchant dashboard added per Andy's advice (Sprint 5)
 - PWA alongside APK for broader device coverage
 - PWA-APK Unification (KAN-157) — both platforms now share `frontend/mobile_app/` source
 - AI-assisted generation accelerated development
+- Gen 2 AI (LLM via FreeLLMAPI) upgraded F1 and F2 with graceful fallback
 - Additional features (F1–F4) added to enrich the platform
 - Expo → Vercel PWA deployment enabled browser-based access
 - Coordinator model: Xon implemented features while team tested
@@ -923,26 +989,27 @@ System Analysis Docs
 
 | Document | Path |
 |----------|------|
-| System Architecture & Development Report (this document) | `docs/System Architecture & Development Report v3.1.md` |
+| System Architecture & Development Report (this document) | `docs/System Architecture & Development Report v3.2.md` |
 | Sprint Breakdown v8 | `docs/Sprint Breakdown v8.md` |
-| Sprint 5 Schedule v5 | `docs/Sprint 5 Schedule v5.md` |
+| Sprint 5 Schedule v6 | `docs/Sprint 5 Schedule v6.md` |
 | Sprint 5 Status Report v1.0 | `docs/Sprint 5 Status Report v1.0.md` |
 | PWA-APK Unification Plan v1 | `docs/PWA-APK-Unification-Plan-v1.md` |
+| AI Development Guide V2.1 | `docs/AI_DEVELOPMENT_GUIDE_V2.1.md` |
 | API Contracts v2 | `docs/API_CONTRACTS_v2.md` |
-| AI Development Guide | `docs/AI_DEVELOPMENT_GUIDE.md` |
 | Deployment Architecture Report v1.1 | `docs/Deployment Architecture Report v1.1.md` |
 | Consolidated Test Report v2.2 | `docs/Consolidated Test Report v2.2.md` |
 | UAT & Remaining Tasks Guide v1.0 | `docs/UAT & Remaining Tasks Guide v1.0.md` |
 | Test Access Points v2.1 | `docs/Test Access Points v2.1.md` |
 | APK Testing Guide V5 | `docs/apk-testing-guide_V5.md` |
 | Organiser QR Scanning Guide v1.0 | `docs/Organiser QR Scanning Guide v1.0.md` |
+| Merchant Dashboard — Grace Instructions | `docs/Merchant Dashboard — Grace Instructions.md` |
+| iOS Build Consideration | `docs/iOS Build Consideration for Volunteer Mobile App.md` |
 | Jira Update v11 — Sprint 5 Fixes | `docs/Jira Update v11 — Sprint 5 Fixes.md` |
-| Sprint 4 & 5 Status Report v1.5 | `docs/Sprint 4 & 5 Status Report v1.5.md` |
 | Sprint Conclusions (S1–S4) | `docs/Sprint{1,2,3,4}_conclusion.md` |
 
 ---
 
-> **Document Version 3.1 — 3 July 2026**  
-> **Changes from v3.0:** Corrected Sprint 3 dates, fixed "13 days early" attribution (was copy-pasted from Sprint 4), clarified F1-F4 implementation by Xon under coordinator model, added 2 Jul bug fixes (KAN-158–163), fixed test count discrepancy (184 automated + 4 skipped), updated route file count, added PWA-APK unification details, referenced newer docs, updated directory structure.  
-> Compiled from: Sprint Conclusions (S1–S4), Sprint 5 Status Report v1.0, Sprint 5 Schedule v5, Jira Update v11, Sprint Breakdown v8, Codebase Analysis, and Project Documents  
-> **Next Milestone:** Team testing (3 Jul), Dry-run presentation (4 Jul), Documentation (5 Jul), Final Submission (6 Jul)
+> **Document Version 3.2 — 3 July 2026**  
+> **Changes from v3.1:** Added Gen 2 AI/LLM features (FreeLLMAPI, ai.service, ai.controller, ai.routes), added new Workflow E (AI Features) section with two-layer resilience architecture, added Merchant Dashboard expansion details, updated directory structure with new files, added FreeLLMAPI to technology stack and deployment diagram, updated Sprint 5 with AI and merchant deliverables, added F1+F2 Gen 2 upgrade notes, added AI feature resilience testing, updated What Was Built vs Original Plan.  
+> Compiled from: Sprint Conclusions (S1–S4), Sprint 5 Status Report v1.0, Sprint 5 Schedule v6, Jira Update v11, AI Development Guide V2.1, Codebase Analysis, and Project Documents  
+> **Next Milestone:** Team testing (3 Jul), Merchant Dashboard review by Grace (3–4 Jul), Dry-run presentation (4 Jul), Documentation (5 Jul), Final Submission (6 Jul)

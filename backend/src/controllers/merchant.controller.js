@@ -46,4 +46,75 @@ async function history(req, res, next) {
   }
 }
 
-module.exports = { verify, redeem, reverse, history };
+// ---------------------------------------------------------------------------
+// Merchant Dashboard
+// ---------------------------------------------------------------------------
+
+async function dashboard(req, res, next) {
+  try {
+    const result = await merchantService.getDashboardStats(req.user.id);
+    res.json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Merchant Products CRUD
+// ---------------------------------------------------------------------------
+
+async function listProducts(req, res, next) {
+  try {
+    const result = await merchantService.listProducts(req.user.id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function createProduct(req, res, next) {
+  try {
+    const result = await merchantService.createProduct(req.user.id, req.body);
+    res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function updateProduct(req, res, next) {
+  try {
+    const result = await merchantService.updateProduct(req.user.id, req.params.id, req.body);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function deleteProduct(req, res, next) {
+  try {
+    const result = await merchantService.deleteProduct(req.user.id, req.params.id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Detailed Redemption Records (Merchant-specific)
+// ---------------------------------------------------------------------------
+
+async function listRedemptions(req, res, next) {
+  try {
+    const result = await merchantService.listRedemptions(req.user.id, req.query);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  verify, redeem, reverse, history,
+  dashboard,
+  listProducts, createProduct, updateProduct, deleteProduct,
+  listRedemptions,
+};
