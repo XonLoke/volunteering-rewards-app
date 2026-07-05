@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { api } from "../src/services/api";
+import { api, setAuthToken } from "../src/services/api";
 import { useTheme } from "../contexts/ThemeContext";
 
 
@@ -36,27 +36,39 @@ export default function Register() {
       Alert.alert("Passwords do not match", "Please make sure both passwords match.");
       return;
     }
-    if (password.length < 6) {
-      Alert.alert("Weak password", "Password must be at least 6 characters.");
+    if (password.length < 8) {
+      Alert.alert("Weak password", "Password must be at least 8 characters.");
+      return;
+    }
+    if (!/[A-Z]/.test(password) || !/\d/.test(password)) {
+      Alert.alert("Weak password", "Password must contain at least one uppercase letter and one number.");
       return;
     }
 
     setLoading(true);
     try {
-      const data = await api.post("/auth/register", { name: name.trim(), email: email.trim(), password });
-      setAuthToken(data.token);
+      const data = await api.post("/auth/register", {
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        password_confirm: confirmPassword,
+      });
 
-      if (!response.ok) {
-        throw new Error(data.error?.message || "Registration failed");
-      }
-
+      // Registration succeeded — token is returned but we want user to sign in explicitly
       Alert.alert(
         "Account Created! 🎉",
         "Welcome to Volunteer Rewards! Please sign in.",
         [{ text: "Sign In Now!", onPress: () => router.push("/login") }]
       );
     } catch (err: any) {
-      Alert.alert("Registration failed", err.message || "Something went wrong.");
+      // Show more specific validation errors if available
+      const details = (err as any)?.details;
+      let message = err.message || "Something went wrong.";
+      if (details && typeof details === "object") {
+        const msgs = Object.values(details).filter(Boolean);
+        if (msgs.length > 0) message = msgs.join("\n");
+      }
+      Alert.alert("Registration failed", message);
     } finally {
       setLoading(false);
     }
@@ -104,7 +116,7 @@ export default function Register() {
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Min. 6 characters"
+                placeholder="Min. 8 chars, uppercase + number"
                 placeholderTextColor={theme.colors.textSecondary}
                 secureTextEntry
                 style={[styles.input, { borderColor: theme.colors.border, backgroundColor: theme.colors.inputBackground, color: theme.colors.text }]}
