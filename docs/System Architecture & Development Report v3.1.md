@@ -934,7 +934,7 @@ System Analysis Docs
 | Consolidated Test Report v2.2 | `docs/Consolidated Test Report v2.2.md` |
 | UAT & Remaining Tasks Guide v1.0 | `docs/UAT & Remaining Tasks Guide v1.0.md` |
 | Test Access Points v2.1 | `docs/Test Access Points v2.1.md` |
-| APK Testing Guide V5 | `docs/apk-testing-guide_V5.md` |
+| APK Testing Guide V5.1 | `docs/apk-testing-guide_V5.1.md` |
 | Organiser QR Scanning Guide v1.0 | `docs/Organiser QR Scanning Guide v1.0.md` |
 | Jira Update v11 — Sprint 5 Fixes | `docs/Jira Update v11 — Sprint 5 Fixes.md` |
 | Sprint 4 & 5 Status Report v1.5 | `docs/Sprint 4 & 5 Status Report v1.5.md` |

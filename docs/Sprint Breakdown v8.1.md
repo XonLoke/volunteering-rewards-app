@@ -182,7 +182,7 @@ Following the successful APK build for `frontend/mobile_app/`, two issues were i
 |----------|----------|-------------|
 | PWA-APK Unification Plan v1 | `docs/PWA-APK-Unification-Plan-v1.md` | 3-phase plan to fix PWA to match APK |
 | Sprint 5 Schedule v6 | `docs/Sprint 5 Schedule v6.md` | Detailed task assignments by date |
-| APK Testing Guide V5 | `docs/apk-testing-guide_V5.md` | Step-by-step APK install & test instructions |
+| APK Testing Guide V5.1 | `docs/apk-testing-guide_V5.1.md` | Step-by-step APK install & test instructions |
 | Admin Account Creation Report v1.0 | `docs/Admin Account Creation Implementation Report v1.0.md` | Full implementation report with test results |
 | Jira Update v11 | `docs/Jira Update v11 — Sprint 5 Fixes.md` | Jira board update instructions |
 

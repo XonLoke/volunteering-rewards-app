@@ -1000,7 +1000,7 @@ System Analysis Docs
 | Consolidated Test Report v2.2 | `docs/Consolidated Test Report v2.2.md` |
 | UAT & Remaining Tasks Guide v1.0 | `docs/UAT & Remaining Tasks Guide v1.0.md` |
 | Test Access Points v2.1 | `docs/Test Access Points v2.1.md` |
-| APK Testing Guide V5 | `docs/apk-testing-guide_V5.md` |
+| APK Testing Guide V5.1 | `docs/apk-testing-guide_V5.1.md` |
 | Organiser QR Scanning Guide v1.0 | `docs/Organiser QR Scanning Guide v1.0.md` |
 | Merchant Dashboard — Grace Instructions | `docs/Merchant Dashboard — Grace Instructions.md` |
 | iOS Build Consideration | `docs/iOS Build Consideration for Volunteer Mobile App.md` |
