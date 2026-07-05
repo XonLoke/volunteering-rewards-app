@@ -4,10 +4,10 @@
 
 | | |
 |---|---|
-| **Version** | 5.0 |
-| **Date** | 2 July 2026 |
-| **CI Build** | ✅ Available |
-| **GitHub Release** | ✅ APK uploaded to v1.0.0 |
+| **Version** | 5.1 |
+| **Date** | 5 July 2026 |
+| **CI Build** | ✅ Available (or build locally) |
+| **GitHub Release** | ✅ APK uploaded to v1.1.1 |
 | **PWA-APK Match** | ✅ PWA shows same GUI as APK (KAN-157) |
 | **Non-Android Testers** | ✅ Alternative methods documented |
 
@@ -72,16 +72,21 @@ You should see version info, not "command not found".
 The APK has been uploaded to GitHub Releases. Team members can download it directly:
 
 1. Go to: **[https://github.com/XonLoke/volunteering-rewards-app/releases](https://github.com/XonLoke/volunteering-rewards-app/releases)**
-2. Click on **v1.0.0** (latest release)
-3. Download the attached **`app-release.apk`** file (86 MB)
+2. Click on the latest release (e.g. **v1.1.1**)
+3. Download the attached **`app-debug.apk`** file (133 MB)
+
+> If you need a smaller file, use the **CI Build Artifact** method (Section 2.3) instead.
 
 ### 2.2 Local Build Path (For Developers)
 
 If you built the APK locally, it is at:
 
 ```
-frontend/mobile_app/android/app/build/outputs/apk/release/app-release.apk
+frontend/mobile_app/android/app/build/outputs/apk/debug/app-debug.apk   (debug ~133 MB)
+frontend/mobile_app/android/app/build/outputs/apk/release/app-release.apk (release ~83 MB)
 ```
+
+> ⚠️ The debug APK is larger because it includes debugging symbols. Use the release build for final distribution.
 
 ### 2.3 Download from CI Build Artifacts
 
@@ -418,9 +423,16 @@ Long-press app icon > Uninstall, or **Settings > Apps > Volunteer Rewards > Unin
 
 ---
 
-## 8. Known Issues (Build v1.1.0)
+## 8. Known Issues & Recent Fixes
 
-The CI build is now passing on GitHub Actions. These known issues apply to both the local and CI-built APK:
+### Fixed in v1.1.1 (5 Jul 2026) ✅
+
+- **Registration crash** — `register.tsx` was missing `setAuthToken` import (ReferenceError on every sign-up). Also fixed undefined `response` variable, added `password_confirm` field, aligned password rules with backend (8+ chars, uppercase + number required).
+- **Updated `android/gradle.properties`** — Restored missing `hermesEnabled=true` and `newArchEnabled=false` settings.
+
+### Existing (unresolved)
+
+These apply to both the local and CI-built APK:
 
 - **Missing image assets** — 9 images referenced in `app/home.tsx` do not exist. `getEventImage()` returns a fallback icon.
 - **newArchEnabled=false** — React Native new architecture is disabled to work around Windows MAX_PATH limitation.
