@@ -15,21 +15,23 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ─── Startup Diagnostics ──────────────────────────────────
-console.log("─".repeat(50));
-console.log("Volunteering Rewards API — startup diagnostics");
-console.log("─".repeat(50));
-console.log(`NODE_ENV:          ${process.env.NODE_ENV}`);
-console.log(`PORT:              ${PORT}`);
-console.log(`DB_HOST:           ${process.env.DB_HOST || "(not set)"}`);
-console.log(`DB_PORT:           ${process.env.DB_PORT || "(not set)"}`);
-console.log(`DB_NAME:           ${process.env.DB_NAME || "(not set)"}`);
-console.log(`DB_USER:           ${process.env.DB_USER || "(not set)"}`);
-console.log(`DB_PASSWORD:       ${process.env.DB_PASSWORD ? "***set***" : "(not set)"}`);
-console.log(`DB_SSL:            ${process.env.DB_SSL || "(not set)"}`);
-console.log(`DATABASE_URL:      ${process.env.DATABASE_URL ? "***set***" : "(not set)"}`);
-console.log(`CORS_ORIGINS:      ${process.env.CORS_ORIGINS || "(not set)"}`);
-console.log(`JWT_ACCESS_SECRET: ${process.env.JWT_ACCESS_SECRET ? "***set***" : "(not set)"}`);
-console.log("─".repeat(50));
+if (process.env.NODE_ENV !== "production") {
+  console.log("─".repeat(50));
+  console.log("Volunteering Rewards API — startup diagnostics");
+  console.log("─".repeat(50));
+  console.log(`NODE_ENV:          ${process.env.NODE_ENV}`);
+  console.log(`PORT:              ${PORT}`);
+  console.log(`DB_HOST:           ${process.env.DB_HOST || "(not set)"}`);
+  console.log(`DB_PORT:           ${process.env.DB_PORT || "(not set)"}`);
+  console.log(`DB_NAME:           ${process.env.DB_NAME || "(not set)"}`);
+  console.log(`DB_USER:           ${process.env.DB_USER || "(not set)"}`);
+  console.log(`DB_PASSWORD:       ${process.env.DB_PASSWORD ? "***set***" : "(not set)"}`);
+  console.log(`DB_SSL:            ${process.env.DB_SSL || "(not set)"}`);
+  console.log(`DATABASE_URL:      ${process.env.DATABASE_URL ? "***set***" : "(not set)"}`);
+  console.log(`CORS_ORIGINS:      ${process.env.CORS_ORIGINS || "(not set)"}`);
+  console.log(`JWT_ACCESS_SECRET: ${process.env.JWT_ACCESS_SECRET ? "***set***" : "(not set)"}`);
+  console.log("─".repeat(50));
+}
 
 // ─── Middleware Stack ────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false })); // Disable CSP for dev — enable in prod
@@ -50,17 +52,17 @@ app.use(express.static(path.join(__dirname, "..", "frontend")));
 app.get("/api/health", (_req, res) => {
   const db = require("./src/config/database");
   db.checkConnection().then((ok) => {
-    res.json({
-      status: "ok",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      db_connected: ok,
-      db_host: process.env.DB_HOST || "(not set)",
-      db_name: process.env.DB_NAME || "(not set)",
-      db_user: process.env.DB_USER || "(not set)",
-      db_ssl: process.env.DB_SSL || "(not set)",
-      has_database_url: !!process.env.DATABASE_URL,
-    });
+    // 🔒 SECURITY: Don't leak DB connection details in production
+    const body = { status: "ok", timestamp: new Date().toISOString(), uptime: process.uptime() };
+    if (process.env.NODE_ENV !== "production") {
+      body.db_connected = ok;
+      body.db_host = process.env.DB_HOST || "(not set)";
+      body.db_name = process.env.DB_NAME || "(not set)";
+      body.db_user = process.env.DB_USER || "(not set)";
+      body.db_ssl = process.env.DB_SSL || "(not set)";
+      body.has_database_url = !!process.env.DATABASE_URL;
+    }
+    res.json(body);
   });
 });
 
@@ -148,7 +150,15 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // ─── Seed Data via HTTP (for Render without Shell) ────────
-app.post("/api/debug/seed", async (_req, res) => {
+// 🔒 SECURITY: Debug endpoints are ONLY available in development mode
+function devOnly(_req, _res, next) {
+  if (process.env.NODE_ENV === "production") {
+    return _res.status(404).json({ error: { code: "not_found", message: "Route not found" } });
+  }
+  next();
+}
+
+app.post("/api/debug/seed", devOnly, async (_req, res) => {
   try {
     const { pool } = require("./src/config/database");
     const bcrypt = require("bcrypt");
@@ -243,7 +253,7 @@ app.post("/api/debug/seed", async (_req, res) => {
 // ─── Seed Coupon PINs (for Render without Shell) ───────────
 const { hashPin } = require("./src/services/rewards.service");
 
-app.post("/api/debug/seed-coupon-pins", async (_req, res) => {
+app.post("/api/debug/seed-coupon-pins", devOnly, async (_req, res) => {
   try {
     const { pool } = require("./src/config/database");
     const crypto = require("crypto");
@@ -275,7 +285,7 @@ app.post("/api/debug/seed-coupon-pins", async (_req, res) => {
 });
 
 // ─── Diagnostic: Check DB Schema & Tables ─────────────────
-app.get("/api/debug/db", async (_req, res) => {
+app.get("/api/debug/db", devOnly, async (_req, res) => {
   try {
     const { pool } = require("./src/config/database");
     const schema = await pool.query("SELECT current_database(), current_schema(), inet_server_addr(), version()");
@@ -295,7 +305,7 @@ app.get("/api/debug/db", async (_req, res) => {
       users_table_exists: usersCount.rows[0].cnt > 0,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message, detail: err.stack });
+    res.status(500).json({ error: err.message });
   }
 });
 
