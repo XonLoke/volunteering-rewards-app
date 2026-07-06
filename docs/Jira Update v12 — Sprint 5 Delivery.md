@@ -22,6 +22,8 @@
 | ✅ Created | KAN-172 | Admin Account Creation: Invite User modal + API | Done |
 | ✅ Created | KAN-173 | System Verification: 91/91 tests, 18 endpoints, 5 portals | Done |
 | ✅ Created | KAN-174 | Security Audit: 6 issues found and fixed | Done |
+| ✅ Updated | KAN-171 | Merchant Dashboard — marked as backup build by Xon (Grace assigned but didn't deliver) | Done |
+| ✅ Created | KAN-175 | Grace | Review Merchant Dashboard code built by Xon (post-deadline) | To Do |
 
 ---
 
@@ -71,12 +73,13 @@ Phase 1: Add web deps. Phase 2: Set EXPO_PUBLIC_API_URL. Phase 3: Reconfigure Ve
 
 FreeLLMAPI + Gemini 2.5 Flash. ai.service.js with callLlm(), getAiRecommendations(), getAiFeedbackSummary(). AI-first with Gen1 fallback.
 
-### KAN-171 — Merchant Dashboard ✅
+### KAN-171 — Merchant Dashboard ✅ (Backup Build by Xon)
 | Field | Value |
 |-------|-------|
 | **Priority** | Medium |
+| **Note** | Grace originally assigned but did not deliver. Xon built as backup contingency. |
 
-Backend: dashboard stats, products CRUD, redemptions. Frontend: sidebar layout, Dashboard, Products. Built and committed to main.
+Backend: dashboard stats, products CRUD, redemptions. Frontend: sidebar layout, Dashboard, Products. Built and committed to main. Post-deadline: Grace to review code and take over maintenance (see KAN-175).
 
 ### KAN-172 — Admin Account Creation ✅
 | Field | Value |
@@ -98,6 +101,19 @@ Removed one-click role toggle. Built POST /api/admin/users/create-account. Front
 | **Priority** | High |
 
 6 issues fixed: debug endpoints protected, health endpoint sanitized, .env secrets removed, stack trace leak fixed, startup diagnostics guarded, weak PIN_SECRET replaced. 9 areas verified secure.
+
+### KAN-175 — Grace: Review Merchant Dashboard (New 🆕)
+| Field | Value |
+|-------|-------|
+| **Assignee** | Grace Pang |
+| **Priority** | Medium |
+| **Status** | To Do |
+| **Labels** | merchant, review, post-sprint5 |
+
+Grace was originally assigned to construct the Merchant Dashboard during Sprint 5 but did not deliver by deadline. Xon built a working backup which is deployed. After deadline, Grace needs to:
+1. Review the current Merchant Dashboard code on `main`
+2. Provide feedback or amendments
+3. Take over ownership and future maintenance
 
 ---
 
