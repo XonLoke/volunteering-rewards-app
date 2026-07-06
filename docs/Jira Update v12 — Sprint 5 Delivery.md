@@ -24,6 +24,9 @@
 | ✅ Created | KAN-174 | Security Audit: 6 issues found and fixed | Done |
 | ✅ Updated | KAN-171 | Merchant Dashboard — marked as backup build by Xon (Grace assigned but didn't deliver) | Done |
 | ✅ Created | KAN-175 | Grace | Review Merchant Dashboard code built by Xon (post-deadline) | To Do |
+| ✅ Updated | KAN-107 | F4 Frontend: Hall of Fame Leaderboard UI → Done (podium + 4 categories + ranked list) | Done |
+| ✅ Updated | KAN-140 | UAT-01/02/03 executed → Done (3 scenarios, 12/12 subtests passed) | Done |
+| ✅ Updated | KAN-151 | CI PostgreSQL test database (already configured in ci.yml) → Done | Done |
 
 ---
 
@@ -115,6 +118,45 @@ Grace was originally assigned to construct the Merchant Dashboard during Sprint 
 2. Provide feedback or amendments
 3. Take over ownership and future maintenance
 
+### KAN-107 — F4 Leaderboard Frontend UI 🏆
+| Field | Value |
+|-------|-------|
+| **Priority** | Medium |
+| **Status** | Done |
+
+Frontend leaderboard screen built with:
+- Gold/silver/bronze podium display for top 3 volunteers
+- 4 category tabs: Top Points, Most Events, Most Check-ins, Most Redeemed
+- Ranked list with medal icons
+- Added as "Top" tab in volunteer PWA navigation
+- Loading, error/retry, and empty states handled
+- Backend API was already done
+
+### KAN-140 — User Acceptance Tests (3 scenarios) ✅
+| Field | Value |
+|-------|-------|
+| **Priority** | Medium |
+| **Status** | Done |
+
+UAT-01: Admin onboards organiser — ✅ 3/3 passed
+UAT-02: Admin manages coupons — ✅ 4/4 passed
+UAT-03: Admin configures rewards — ✅ 5/5 passed
+
+All Xon-assigned UAT scenarios completed via live API against production. No bugs found.
+Remaining UAT-04 through UAT-08 assigned to Vivian, Grace, Nurain.
+
+### KAN-151 — CI PostgreSQL Test Database ✅
+| Field | Value |
+|-------|-------|
+| **Priority** | Low |
+| **Status** | Done |
+
+Already configured in `.github/workflows/ci.yml`:
+- PostgreSQL 16-alpine service container with health check
+- Migration runner step (creates schema)
+- Seed script step (populates test data)
+- Test runner with database and JWT environment variables
+
 ---
 
 ## Sprint 5 Updated Status
@@ -131,6 +173,9 @@ Grace was originally assigned to construct the Merchant Dashboard during Sprint 
 | Security Audit | ✅ Done (6 fixed, 9 verified) | 100% |
 | All commits pushed to GitHub | ✅ Done | 100% |
 | Deployment (Render) | ✅ Security fixes live | 100% |
+| F4 Leaderboard Frontend UI | ✅ Done | 100% |
+| UAT (Xon's 3 scenarios) | ✅ Done | 100% |
+| CI PostgreSQL Test DB | ✅ Already configured | 100% |
 | APK Testing (Vivian/Nurain) | ⬜ Pending | 0% |
 | Team Testing (Grace/Vivian/Nurain) | ⬜ Pending | 0% |
 | Documentation / Slides (Nurain) | ⬜ Pending | 0% |
