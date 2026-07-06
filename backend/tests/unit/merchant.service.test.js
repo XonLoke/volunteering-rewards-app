@@ -25,7 +25,8 @@ describe("UT-12: Merchant — Verify Valid PIN", () => {
       }],
     }]);
     const result = await merchantService.verifyPin({ pin: "123456" });
-    assert.equal(result.data.title, "Test Coffee");
+    assert.equal(result.coupon.coupon_title, "Test Coffee");
+    assert.equal(result.coupon.title, "Test Coffee");
   });
 });
 
@@ -104,8 +105,8 @@ describe("redeemCoupon", () => {
     mockPoolConnect(mockClient);
 
     const result = await merchantService.redeemCoupon({ userCouponId: 1 }, 42);
-    assert.equal(result.data.status, "used");
-    assert.equal(result.data.coupon_title, "Coffee");
+    assert.equal(result.redemption.status, "used");
+    assert.equal(result.redemption.coupon_title, "Coffee");
   });
 
   it("should throw 409 for already redeemed coupon", async () => {

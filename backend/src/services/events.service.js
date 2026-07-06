@@ -107,7 +107,7 @@ const registerForEvent = async (eventId, userId) => {
     );
 
     if (registeredResult.rows.length) {
-      throw createError(409, "already_registered");
+      throw createError(409, "already_registered", "You are already registered for this event.");
     }
 
     if (typeof capacity === "number") {
