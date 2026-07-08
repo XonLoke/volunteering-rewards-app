@@ -1,0 +1,8 @@
+1) The mobile UI has three sets:
+  - one for the volunteer users
+  - one is for the on-site scanning for the organiser to scan QR code for to taking attendance and credit points to the participants
+  - one for merchant when the volunteer come to their stores to redeem reward the cashier is to record the redemption of reward  using the app
+
+2) The web UI has two sets:
+  - One is for the organiser to create events
+  - one for admin to assign number of points to the respective events and monitor volunteers redemption for the rewards from merchants using the points.

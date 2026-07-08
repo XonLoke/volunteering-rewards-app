@@ -1,0 +1,37 @@
+Accessing the Admin portal
+(Change following directories to be your own directory that contain your project files)
+
+Step 1 — Start the backend (in one terminal):
+cd /d D:\c3000c\volunteering-rewards-app\backend
+npm run dev
+
+Step 2 — Start the frontend (in another terminal):
+cd /d D:\c3000c\volunteering-rewards-app\frontend\web_portals
+npm run dev
+
+Step 3 — Open in browser:
+http://localhost:5173/admin/login
+
+Login		credentials (from seed data):
+
+Role		Email		Password
+-------------------------------------------
+Admin		carol@test.com	password123
+Organiser	bob@test.com	password123
+Volunteer	alice@test.com	password123
+
+Please note:  logged in more than 15 minutes ago and the token will be expired.
+
+-------------------------------------------------------------
+
+To use the admin portal:
+
+1. Start backend: cd backend && npm run dev
+2. Start frontend: cd frontend/web_portals && npm run dev
+3. Open http://localhost:5173/admin/login
+4. Sign in as carol@test.com / password123
+5. You'll be redirected to the dashboard with live API data
+
+-------------------------------------------------------------
+
+Go to http://localhost:5173/admin/login and sign in as carol@test.com / password123 to see the dashboard live.

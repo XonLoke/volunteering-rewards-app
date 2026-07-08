@@ -1,0 +1,40 @@
+ ME sponsors Person A ---------------
+ ───────────────────────────────────────────────────────────
+ Person A joins → ME earns 10 pts  ← biggest reward for direct recruitment for DIRECT EFFORT
+ Person A earns   0 pts  (just joined)
+
+ Step 2: ME helps Person A sponsor Person B  ---------------
+ ───────────────────────────────────────────────────────────
+ Person B joins → Person A earns   4 pts  ← direct sponsor earns less because of INDIRECT EFFORT
+					    (A will earn 10 pts if he sponsor B directly)
+                  ME earns         6 pts  ← upline earns more for DIRECT EFFORT
+					    (This will promote upline helping downline)
+
+ Step 3a: Person B sponsors Person C (with help from A)  ---------------
+ ───────────────────────────────────────────────────────────
+ Person C joins → Person B earns   4 pts
+                  Person A earns   6 pts
+                  ME               0 pts  ← three levels deep, no further reward
+
+ Step 3b: Person B sponsors Person D (without help)  ---------------
+ ───────────────────────────────────────────────────────────
+ Person D joins → Person B earns   10 pts
+
+------------------------------------------------------------------------------
+
+Referral Registered case 1 - on my profile
+────────────────────────────────────
+Upline 1 -- Parent sponsor's email: (optional, not filled if did not offer help)
+Upline 2 -- Direct sponsor's email: (optional, not filled if you register through app by yourself)
+Your email: [________]
+Downline 1st level -- Number of sponsorship ___
+Downline 2nd level -- Number of sponsorship ___
+
+
+Referral Registration case 2 - on new volunteer's profile
+────────────────────────────────────────
+Upline 1 -- Parent sponsor's email: (optional, not filled if not referred by sponsorship)
+Upline 2 -- Direct sponsor's email: (optional, not filled if he registered himself through app)
+
+
+

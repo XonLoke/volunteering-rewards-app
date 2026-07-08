@@ -1,0 +1,48 @@
+Pulling Files from GitHub
+
+All the team members can pull the files by these command in "command prompt" app:
+
+-------------------------------
+
+git clone https://github.com/XonLoke/volunteering-rewards-app.git
+cd volunteering-rewards-app\backend
+copy .env.example .env   (edit with their own DB password)
+npm install
+npm run migrate
+npm run seed
+npm run dev
+
+-------------------------------
+
+Then open another terminal:
+
+-------------------------------
+
+cd frontend\web_portals
+npm install
+npm run dev
+
+-------------------------------
+
+And we can access:
+
+http://localhost:5173/admin/login — Admin portal (carol@test.com)
+http://localhost:5173/merchant — Merchant portal (diana2@test.com)
+http://localhost:5173/organiser — Organiser portal
+http://localhost:5173/scan — Scanning app
+
+using:
+Login		credentials (from seed data):
+Role		Email		Password
+-------------------------------------------
+Admin		carol@test.com	password123
+Cashier		diana2@test.com	password123
+
+For the mobile app, we need Expo Go on our phone and run npx expo start from frontend\mobile_app.
+
+Role		Email		Password
+-------------------------------------------
+Volunteer	alice@test.com	password123
+
+We just need to make sure PostgreSQL is running on our own machine first.
+

@@ -1,0 +1,9 @@
+Right click on this and run as administrator:
+C:\Users\Lenovo\AppData\Local\Postman\Postman.exe
+
+Open Task Manager (Ctrl + Shift + Esc), find any instances of Postman, right-click, and select "End task"
+
+Delete these folders to resurrect Postman
+C:\Users\Lenovo\AppData\Roaming\Postman
+C:\Users\Lenovo\AppData\Local\SquirrelTemp
+

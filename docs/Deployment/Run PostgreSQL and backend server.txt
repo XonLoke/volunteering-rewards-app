@@ -1,0 +1,48 @@
+To run PostgreSQL and backend server:
+
+To run ProgreSQL and create the dbase volunteering_rewards:
+"C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres volunteering_rewards
+
+This lists all databases:
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -l
+
+A PostgreSQL database is not something you “run” like an app.
+You either:
+- Connect to it using psql
+- Let your backend application connect to it
+Start the PostgreSQL service if it is not running.
+Since your database already exists, the next step is usually to connect to it.
+
+===========================================================================
+
+1) To connect to PostgreSQL:
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d volunteering_rewards
+
+2) To access the volunteer project directory:
+cd /d D:\c3000c\volunteering-rewards-app\backend
+leave the command window, do not close it.
+
+3) Then run backend server:
+npm run dev
+leave the command window, do not close it.
+
+===========================================================================
+
+Exit PostgreSQL:
+\q
+
+===========================================================================
+
+1) Fully close Postman first.
+
+2) Also end any remaining Postman processes in Task Manager:
+Postman.exe
+Update.exe
+
+3) Then run the cmd as administrator.
+To delete these folders before running Postman:
+rmdir /s /q "C:\Users\Lenovo\AppData\Roaming\Postman"
+rmdir /s /q "C:\Users\Lenovo\AppData\Local\SquirrelTemp"
+
+===========================================================================
+
