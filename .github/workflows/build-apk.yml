@@ -109,10 +109,12 @@ jobs:
           echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > android/app/src/main/res/drawable/splashscreen_logo.png
           echo "✅ Splash screen placeholder created"
 
-      - name: Build APK
+      - name: Build APK (with production API URL)
         run: |
           cd android
           chmod +x gradlew
+          export EXPO_PUBLIC_API_URL=https://vol-rewards-api.onrender.com/api
+          echo "EXPO_PUBLIC_API_URL=$EXPO_PUBLIC_API_URL"
           if [ "${{ github.event.inputs.build-type }}" = "release" ]; then
             ./gradlew assembleRelease
           else
