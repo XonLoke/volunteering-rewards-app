@@ -196,12 +196,18 @@ volunteering-rewards-app/
 
 ## Additional Features (F1-F4)
 
+The system implements **two generations of AI** — Gen 1 (non-API rule-based algorithms) acts as the fallback when Gen 2 (LLM via FreeLLMAPI) is unavailable. See [`docs/Development/AI_DEVELOPMENT_GUIDE_V2.1.md`](docs/Development/AI_DEVELOPMENT_GUIDE_V2.1.md) for full detail.
+
 | Feature | Type | Status |
 |---------|------|--------|
-| F1: AI Event Recommendations | Content-based filtering | ✅ Done |
-| F2: AI Feedback Summarizer | Lexicon-based sentiment | ✅ Done |
-| F3: Volunteer Referral Program | Multi-level referral DAG | ✅ Done |
-| F4: Hall of Fame Leaderboard | Gamification / SQL ranking | ✅ Done |
+| F1: AI Event Recommendations | **Two-tier:** LLM via FreeLLMAPI (16+ providers, ~1.7B free tokens/mo) → SQL content-based filtering fallback | ✅ Done |
+| F2: AI Feedback Summarizer | **Two-tier:** LLM via FreeLLMAPI → lexicon-based sentiment analysis fallback | ✅ Done |
+| F3: Volunteer Referral Program | Multi-level referral DAG with direct + parent sponsor points | ✅ Done |
+| F4: Hall of Fame Leaderboard | Gamification / SQL ranking with volunteer leaderboard | ✅ Done |
+
+> **AI Architecture (F1 & F2):** `GET /api/ai/recommendations` and `GET /api/ai/feedback-summary/:eventId` call **FreeLLMAPI** (`localhost:3001`) — a local proxy aggregating free tiers from Google AI Studio (Gemini 2.5 Flash), Groq, Cerebras, Mistral, and 12+ others with auto-failover between providers. Each request has a 15-second timeout. If the LLM is unreachable or all providers are exhausted, the controller falls back to the Gen 1 rule-based algorithms (content-based filtering / lexicon sentiment). Responses include an `ai_generated: true/false` flag.
+
+> **"For You" AI Assistant:** The mobile app also includes a client-side decision engine (`app/ai-recommendations.tsx`) answering 4 fixed questions — "Highest match?", "Best overall?", "Most points?", "Has slots?" — using a deterministic scoring formula on recommendation data.
 
 ---
 
