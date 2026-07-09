@@ -23,7 +23,7 @@ async function findCouponByPin(pin) {
             u.name AS volunteer_name, u.email AS volunteer_email
        FROM user_coupons uc
        JOIN coupons c ON c.id = uc.coupon_id
-       JOIN users u ON u.id = uc.user_id
+       LEFT JOIN users u ON u.id = uc.user_id
       WHERE uc.pin_hash = $1`,
     [pinHash]
   );
