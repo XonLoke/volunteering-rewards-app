@@ -146,11 +146,11 @@ cd android && ./gradlew assembleRelease
 ┌─────────────────┐     HTTPS requests      ┌─────────────────┐
 │   Vercel        │ ─────────────────────▶ │   Render        │
 │   (Frontend)    │ ◀───────────────────── │   (Backend)     │
-│   React/Vite    │     JSON responses     │   Node/Express  │
-└─────────────────┘                        └────────┬────────┘
-                                                    │
-                                                    │ PostgreSQL (SSL)
-                                                    ▼
+│   React/Vite    │     JSON responses      │   Node/Express  │
+└─────────────────┘                         └────────┬────────┘
+                                                     │
+                                                     │ PostgreSQL (SSL)
+                                                     ▼
                                             ┌─────────────────┐
                                             │   Neon          │
                                             │   (Database)    │
