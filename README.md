@@ -4,7 +4,7 @@ A multi-portal volunteering rewards platform where volunteers earn points by att
 
 **Tech Stack:** Node.js / Express / PostgreSQL 16 / React (Vite) · React Native (Android APK + PWA)
 
-**Test Accounts Hosted on:** [Neon](https://neon.tech) (PostgreSQL) · [Render](https://render.com) (Backend API) · [Vercel](https://vercel.com) (Web portals & PWA)
+**Test Account Hosted on:** [Neon](https://neon.tech) (PostgreSQL) · [Render](https://render.com) (Backend API) · [Vercel](https://vercel.com) (Web portals & PWA)
 
 > **Note on Expo:** The React Native app is built with [Expo SDK 54](https://expo.dev). Expo is the underlying build framework that handles:
 > 1. The build toolchain — `expo run:android` and `npx expo export --platform web` produce the APK and PWA respectively
