@@ -1,11 +1,11 @@
-# Consolidated Test Report v2.2
+# Consolidated Test Report v2.3
 
 **Project:** Volunteering Rewards App (C3000C)  
-**Version:** 2.2  
-**Date:** 25 June 2026  
+**Version:** 2.3  
+**Date:** 9 July 2026  
 **Prepared by:** Xon (Team Lead)  
-**Status:** Consolidated — All Automated Testing Complete  
-**Execution Engine:** Node.js `--test` (native) + HTTP API tests (node:http)
+**Status:** Consolidated — Orchestration Testing Complete  
+**Execution Engine:** Node.js `--test` (native) + HTTP API tests (node:http) + Live API orchestration suite
 
 ---
 
@@ -21,11 +21,12 @@
 8. [Phase 5 — Security Tests Results](#8-phase-5--security-tests-results)
 9. [Phase 6 — Performance Tests Results](#9-phase-6--performance-tests-results)
 10. [Phase 7 — User Acceptance Tests Status](#10-phase-7--user-acceptance-tests-status)
-11. [Manual Testing Status (Legacy)](#11-manual-testing-status-legacy)
-12. [Bugs Found & Fixed Log](#12-bugs-found--fixed-log)
-13. [Coverage Gap Analysis](#13-coverage-gap-analysis)
-14. [OpenCode Execution Readiness](#14-opencode-execution-readiness)
-15. [Appendices](#15-appendices)
+11. [Phase 8 — Orchestration Integration Tests (54 tests)](#11-phase-8--orchestration-integration-tests-54-tests)
+12. [Manual Testing Status (Legacy)](#12-manual-testing-status-legacy)
+13. [Bugs Found & Fixed Log](#13-bugs-found--fixed-log)
+14. [Coverage Gap Analysis](#14-coverage-gap-analysis)
+15. [OpenCode Execution Readiness](#15-opencode-execution-readiness)
+16. [Appendices](#16-appendices)
 
 ---
 
@@ -85,6 +86,8 @@ All test-related documents for the Volunteering Rewards App are listed below wit
 | 13 | `Testing_Backlog.md` | 1.0 | 24 Jun 2026 | OpenCode task backlog: 17 tasks, 1 completed | 15 pending, 1 done |
 | 14 | `Online Test Access Points v1.0.md` | 1.0 | 18 Jun 2026 | Portal URLs, test accounts, access matrix | Reference only |
 | 15 | `Sprint 4 & 5 Status Report v1.4.md` | 1.4 | 23 Jun 2026 | Sprint status, deployment, 10 bugs fixed, 8 organiser fixes | 100% tech completion |
+| 16 | **`orchestration-test-report.md`** | **1.0** | **9 Jul 2026** | **Orchestration integration test: 54 tests, 6 phases, 4 bugs found & fixed** | **✅ 54/54 pass** |
+| 17 | **`orchestration-demo-checklist.md`** | **1.0** | **9 Jul 2026** | **Manual demo step-by-step for cross-portal verification** | **Reference only** |
 
 ---
 
@@ -103,13 +106,14 @@ All test-related documents for the Volunteering Rewards App are listed below wit
 | **P5: Security (automated tests)** | 12 | 9 | 0 | 3 (rate-limit) | 0 | **100%** |
 | **P6: Performance** | 17 | 17 | 0 | 0 | 0 | **100%** |
 | **P7: UAT (manual)** | 8 | — | — | — | 8 | — |
-| **Total Automated** | **187** | **188** | **0** | **4** | **0** | **100%** |
-| **Total Planned** | **~195** | **188** | **0** | **4** | **0** | **—** |
+| **P8: Orchestration (cross-portal)** | **54** | **54** | **0** | **0** | **0** | **100%** |
+| **Total Automated** | **241** | **242** | **0** | **4** | **0** | **100%** |
+| **Total Planned** | **~250** | **242** | **0** | **4** | **0** | **—** |
 
 *\*3 security rate-limit tests skipped (would lock the API). ST-03 merchant flow skipped due to pre-condition (volunteer needs redeemed coupon).*
 
-**v2.2 Update — All Automated Phases Complete:**
-All phases from Test Plan v2.0 are now complete except P7 (UAT, manual). In a single session (25 Jun 2026):
+**v2.3 Update — Orchestration Integration Testing Complete:**
+54 cross-portal integration tests added covering all 6 inter-portal data flows. Tests executed against the live production API. See Phase 8 section for detail.
 - All 91 unit tests written and passed
 - F1-F4 integration tests executed — all 11 passing
 - Regression tests — all 5 passing
@@ -484,9 +488,55 @@ Refer to [`Online Test Access Points v1.0.md`](Online Test Access Points v1.0.md
 
 ---
 
-## 11. Manual Testing Status (Legacy)
+## 11. Phase 8 — Orchestration Integration Tests (54 tests)
 
-### 11.1 Sprint 2 Manual Checklist (57 checks — ⬜ All Pending)
+**Added:** 9 July 2026  
+**Purpose:** Verify cross-portal data flows — changes made in one portal correctly reflect in all others  
+**Execution:** Live API test suite against `https://vol-rewards-api.onrender.com/api`  
+**Result:** ✅ **54/54 PASS (100%)** | 0 failures, 1 informational warning  
+**Files:** `backend/tests/integration/orchestration.test.js`, `docs/Testing/orchestration-test-report.md`
+
+### 11.1 Test Phases
+
+| Phase | Workflow | Tests | Result |
+|-------|----------|-------|--------|
+| 0 | Health Check & Authentication | 5 | ✅ All 4 roles login + API health |
+| 1 | Admin ↔ Organiser | 11 | ✅ Create event, verify cross-listing |
+| 2 | Admin ↔ Volunteer | 8 | ✅ User details, role guards (403) |
+| 3 | Admin ↔ Merchant | 6 | ✅ Merchants, coupons, redemptions |
+| 4 | Organiser ↔ Volunteer (Event Lifecycle) | 10 | ✅ Create → register → roster → feedback |
+| 5 | Merchant ↔ Volunteer (Rewards) | 7 | ✅ PIN verify, points, dashboard |
+| 6 | APK Build Verification | 7 | ✅ APK exists, correct API URL, endpoints work |
+
+### 11.2 Bugs Found & Fixed During Orchestration Testing
+
+| Bug | Severity | Root Cause | Fix |
+|-----|----------|------------|-----|
+| Coupon PIN verify fails | 🔴 Critical | `INNER JOIN users` excluded pre-generated PINs (`user_id IS NULL`) | Changed to `LEFT JOIN` in `merchant.service.js:26` |
+| PIN hash mismatch after secret rotation | 🔴 Critical | `PIN_SECRET` not set; re-generated `JWT_ACCESS_SECRET` changed hash outputs | Set fixed `PIN_SECRET` in `render.yaml`, re-hashed 67 PINs |
+| APK pointed to localhost | 🟡 High | `EXPO_PUBLIC_API_URL` not set at build time | Created `.env` with production URL, rebuilt APK |
+| `expo-barcode-scanner` broke build | 🟡 High | Deprecated package incompatible with SDK 54 | Removed unused dependency |
+
+### 11.3 APK & GitHub Release
+
+| Asset | Detail |
+|-------|--------|
+| **APK Path** | `android/app/build/outputs/apk/release/app-release.apk` (118 MB) |
+| **API URL** | `https://vol-rewards-api.onrender.com/api` |
+| **GitHub Release** | [`v1.0.0-demo`](https://github.com/XonLoke/volunteering-rewards-app/releases/tag/v1.0.0-demo) |
+| **CI Workflow** | `.github/workflows/build-apk.yml` — manually triggered |
+
+### 11.4 Key Findings
+
+- **All 6 cross-portal data flows verified**: Admin ↔ Organiser, Admin ↔ Volunteer, Admin ↔ Merchant, Organiser ↔ Volunteer, Merchant ↔ Volunteer, APK ↔ API
+- **Role-based access control** correctly enforced: 403 returned when volunteer accesses admin endpoints, merchant accesses organiser endpoints
+- **PWA and APK share unified source**: `frontend/mobile_app/` produces both the Vercel-deployed PWA and the native APK
+
+---
+
+## 12. Manual Testing Status (Legacy)
+
+### 12.1 Sprint 2 Manual Checklist (57 checks — ⬜ All Pending)
 
 The Sprint 2 manual checklist (`Manual Testing Checklist v2.md`) covers 57 frontend/backend checks across 9 areas. These were never formally executed as the team focused on backend automation.
 
@@ -503,7 +553,7 @@ The Sprint 2 manual checklist (`Manual Testing Checklist v2.md`) covers 57 front
 | 9. Error States | 3 | Everyone | ⬜ | Network/404 testing needed |
 | **Total** | **57** | — | **⬜** | |
 
-### 11.2 Sprint 4 Manual Tests (MT-01–25 — ⬜ All Pending)
+### 12.2 Sprint 4 Manual Tests (MT-01–25 — ⬜ All Pending)
 
 These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobile app, merchant app, organiser scanner, and admin portal.
 
@@ -537,9 +587,9 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 
 ---
 
-## 12. Bugs Found & Fixed Log
+## 13. Bugs Found & Fixed Log
 
-### 12.1 Round 1 — Integration Testing (8 Jun 2026)
+### 13.1 Round 1 — Integration Testing (8 Jun 2026)
 
 | # | Bug | File | Root Cause | Fix | Found By |
 |---|-----|------|-----------|-----|----------|
@@ -551,7 +601,7 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | 6 | Attendance controller was stub | `attendance.controller.js` | Never implemented | Replaced with real implementation | Integration test IT-33 |
 | 7 | Duplicate scan returns 200 | `attendance.service.js` | No duplicate check before insert | Added check-in detection | Integration test IT-34 |
 
-### 12.2 Round 2 — E2E & Performance Testing (16 Jun 2026)
+### 13.2 Round 2 — E2E & Performance Testing (16 Jun 2026)
 
 | # | Bug | Root Cause | Fix | Found By |
 |---|------|-----------|-----|----------|
@@ -560,7 +610,7 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | 10 | Missing `points_spent` in merchant routes | `redeemCoupon()`/`reverseRedemption()` didn't include `points_required` | Added `c.points_required, c.value_cents` to SELECT + INSERT | E2E test |
 | 11 | `events/today` column alias | `events.controller.js` used wrong column name | Aliased `event_date AS start_time` | Performance test PT-05 |
 
-### 12.3 Round 3 — Organiser Portal Fixes (23 Jun 2026)
+### 13.3 Round 3 — Organiser Portal Fixes (23 Jun 2026)
 
 | # | Bug | Root Cause | Fix |
 |---|------|-----------|-----|
@@ -575,13 +625,13 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | 20 | Rate limiting too strict | 100 req/15min too low for development | Increased to 500 req/15min |
 | 21 | Wrong navigation URLs | Routes didn't match sidebar navigation | Fixed all `navigate()` calls |
 
-### 12.4 Round 4 — Unit Test Bug Fix (25 Jun 2026)
+### 13.4 Round 4 — Unit Test Bug Fix (25 Jun 2026)
 
 | # | Bug | File | Root Cause | Fix | Found By |
 |---|------|------|-----------|-----|----------|
 | 22 | `batchSync` checks `error.status` instead of `error.statusCode` | `attendance.service.js` | `createError()` sets `statusCode` but `batchSync` checks `error.status` — the check never matched, so duplicate scans went to `errors[]` instead of `skipped[]` | Changed to `error.statusCode \|\| error.status` for both detection and code propagation | Unit test (attendance service) |
 
-### 12.5 Bug Statistics
+### 13.5 Bug Statistics
 
 | Round | Date | Bugs Found | Bugs Fixed | Fix Rate |
 |-------|------|-----------|-----------|----------|
@@ -593,9 +643,9 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 
 ---
 
-## 13. Coverage Gap Analysis
+## 14. Coverage Gap Analysis
 
-### 13.1 Test Coverage by Module
+### 14.1 Test Coverage by Module
 
 | Module / Service | Unit Tests | Integration Tests | E2E Verified | Status |
 |-----------------|-----------|------------------|-------------|--------|
@@ -615,7 +665,7 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | **Email Service** | ⬜ | ⬜ | ⬜ | **Not tested** |
 | **Sponsorship Config** | ⬜ | ⬜ | ⬜ | **Not tested** |
 
-### 13.2 Gap Summary
+### 14.2 Gap Summary
 
 | Gap | Impact | Action Required | Priority |
 |-----|--------|----------------|----------|
@@ -627,7 +677,7 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 | Manual tests (57 checks, MT-01–25) | Medium (UI not tested) | Team assignment | High |
 | UAT tests (8 scenarios) | Medium (user experience not validated) | Team assignment | High |
 
-### 13.3 What's NOT Covered
+### 14.3 What's NOT Covered
 
 - **Email Service** — No tests of any kind (uses nodemailer mock)
 - **Expo mobile APK** — Build failed (5 attempts), replaced by PWA
@@ -639,11 +689,11 @@ These manual tests from Test Plan v1.2 Section 5d–5g cover the volunteer mobil
 
 ---
 
-## 14. OpenCode Execution Readiness
+## 15. OpenCode Execution Readiness
 
 The test plan v2.0 is designed for OpenCode-driven execution. Below is the readiness matrix.
 
-### 14.1 Phase Readiness
+### 15.1 Phase Readiness
 
 | Phase | Description | Prompt Files | Execution Script | Ready? |
 |-------|-------------|-------------|-----------------|--------|
@@ -656,7 +706,7 @@ The test plan v2.0 is designed for OpenCode-driven execution. Below is the readi
 | **P6** | Run performance tests | Inline in v2.0 plan | `autocannon` commands | ✅ Ready |
 | **P7** | Manual UAT | N/A (human) | N/A | ❌ Needs team assignment |
 
-### 14.2 Quick Start Commands
+### 15.2 Quick Start Commands
 
 ```powershell
 # === 1. Run existing unit tests (baseline verification) ===
@@ -674,7 +724,7 @@ opencode run "$(Get-Content prompts/opencode/tasks/01-events-service.md -Raw)"
 opencode run "$(Get-Content 'docs/Test Plan & Case Spec v2.0.md' -Raw)"
 ```
 
-### 14.3 Pending Task Count
+### 15.3 Pending Task Count
 
 | Phase | Tasks | Automation | Estimated Time |
 |-------|-------|-----------|---------------|
@@ -689,7 +739,7 @@ opencode run "$(Get-Content 'docs/Test Plan & Case Spec v2.0.md' -Raw)"
 
 ---
 
-## 15. Appendices
+## 16. Appendices
 
 ### Appendix A: Test Results Summary Dashboard
 

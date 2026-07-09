@@ -44,7 +44,8 @@ deployed and verified against the production backend.
 | **Organiser Portal** | https://webportals-lovat.vercel.app/organiser/login | ✅ Live |
 | **Merchant Portal** | https://webportals-lovat.vercel.app/merchant | ✅ Live |
 | **Scanner PWA** | https://webportals-lovat.vercel.app/scan | ✅ Live |
-| **Native APK** | `frontend/mobile_app/android/app/build/outputs/apk/release/app-release.apk` | ✅ Built (83 MB) |
+| **Native APK** | `android/app/build/outputs/apk/release/app-release.apk` | ✅ Rebuilt (118 MB, production API) |
+| **APK Download** | [GitHub Release v1.0.0-demo](https://github.com/XonLoke/volunteering-rewards-app/releases/tag/v1.0.0-demo) | ✅ Published 9 Jul |
 
 ---
 
@@ -277,6 +278,43 @@ Render free tier spins down after 15 min idle. First request takes 30–60s to w
 | Organiser | bob@test.com |
 | Merchant | cheryl@test.com |
 | Volunteer | alice@test.com |
+
+---
+
+## 6. Post-Sprint — Orchestration Integration Testing (9 Jul 2026)
+
+After Sprint 5 completion, a comprehensive orchestration integration test was conducted to verify all cross-portal data flows work correctly.
+
+### 6.1 Results
+
+| Phase | Workflow | Tests | Result |
+|-------|----------|-------|--------|
+| 0 | Health & Authentication | 5 | ✅ 5/5 |
+| 1 | Admin ↔ Organiser | 11 | ✅ 11/11 |
+| 2 | Admin ↔ Volunteer | 8 | ✅ 8/8 |
+| 3 | Admin ↔ Merchant | 6 | ✅ 6/6 |
+| 4 | Organiser ↔ Volunteer (Event Lifecycle) | 10 | ✅ 10/10 |
+| 5 | Merchant ↔ Volunteer (Rewards) | 7 | ✅ 7/7 |
+| 6 | APK Build Verification | 7 | ✅ 7/7 |
+| **Total** | | **54** | **✅ 54/54 PASS** |
+
+### 6.2 Bugs Fixed
+
+| Bug | Severity | Fix |
+|-----|----------|-----|
+| Coupon PIN verify failed (INNER JOIN excluded pre-generated PINs) | 🔴 Critical | Changed to `LEFT JOIN` in `merchant.service.js` |
+| PIN hash mismatch after secret rotation | 🔴 Critical | Set `PIN_SECRET` in `render.yaml`, re-hashed 67 PINs |
+| APK pointed to localhost:3000 | 🟡 High | Set `EXPO_PUBLIC_API_URL`, rebuilt APK |
+| `expo-barcode-scanner` broke Gradle build | 🟡 High | Removed unused dependency |
+
+### 6.3 Deliverables
+
+| File | Description |
+|------|-------------|
+| `backend/tests/integration/orchestration.test.js` | Automated test suite (54 tests) |
+| `docs/Testing/orchestration-test-report.md` | Full test report with findings and fixes |
+| `docs/Testing/orchestration-demo-checklist.md` | Step-by-step manual demo script |
+| [GitHub Release v1.0.0-demo](https://github.com/XonLoke/volunteering-rewards-app/releases/tag/v1.0.0-demo) | APK download (118 MB, production API) |
 
 ---
 
