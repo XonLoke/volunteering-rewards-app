@@ -253,6 +253,30 @@ app.post("/api/debug/seed", devOnly, async (_req, res) => {
 // ─── Seed Coupon PINs (for Render without Shell) ───────────
 const { hashPin } = require("./src/services/rewards.service");
 
+// ─── Re-hash PINs after secret rotation ─────────────────
+const { authenticate } = require("./src/middleware/auth.middleware");
+const { roleGuard } = require("./src/middleware/role.middleware");
+const { requireAdmin } = roleGuard(["admin"]);
+
+app.post("/api/debug/rehash-pins", authenticate, requireAdmin, async (_req, res) => {
+  try {
+    const { pool } = require("./src/config/database");
+    const crypto = require("crypto");
+
+    const { rows: pins } = await pool.query("SELECT id, pin_code FROM user_coupons WHERE pin_code IS NOT NULL");
+    let updated = 0;
+    for (const p of pins) {
+      const newHash = hashPin(p.pin_code);
+      await pool.query("UPDATE user_coupons SET pin_hash = $1 WHERE id = $2", [newHash, p.id]);
+      updated++;
+    }
+
+    res.json({ message: "PIN hashes re-generated", count: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/debug/seed-coupon-pins", devOnly, async (_req, res) => {
   try {
     const { pool } = require("./src/config/database");
