@@ -48,6 +48,7 @@ build_page.html
 frontend/mobile_app/android/app/build/
 frontend/mobile_app/android/.gradle/
 frontend/mobile_app/android/build/
+/android/
 
 # ─── Working documents (not committed to GitHub) ─────────
 HANDOFF.md
