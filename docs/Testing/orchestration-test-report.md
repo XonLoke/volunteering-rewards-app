@@ -316,6 +316,16 @@ During multiple test runs, the global rate limiter (500 requests per 15 minutes)
 
 Both the PWA (deployed on Vercel) and the native APK share the same source at `frontend/mobile_app/`. The API URL is configured via `EXPO_PUBLIC_API_URL` (baked at build time for APK, set as Vercel env var for PWA).
 
+### 6.3 GitHub Release & CI
+
+| Asset | Link / Detail |
+|-------|--------------|
+| **GitHub Release** | [`v1.0.0-demo`](https://github.com/XonLoke/volunteering-rewards-app/releases/tag/v1.0.0-demo) |
+| **APK Download** | [`volunteering-rewards-app-release.apk`](https://github.com/XonLoke/volunteering-rewards-app/releases/download/v1.0.0-demo/volunteering-rewards-app-release.apk) |
+| **CI Workflow** | `.github/workflows/build-apk.yml` — manually triggered, builds debug or release |
+| **CI API URL** | `EXPO_PUBLIC_API_URL` set to production API in workflow step |
+| **Release Notes** | Includes install instructions, bug fixes list, and test results |
+
 ---
 
 ## 7. Conclusion & Demo Readiness
