@@ -196,7 +196,7 @@ volunteering-rewards-app/
 
 ## Additional Features (F1-F4)
 
-The system implements **two generations of AI** — Gen 1 (non-API rule-based algorithms) acts as the fallback when Gen 2 (LLM via FreeLLMAPI) is unavailable. See [`docs/Development/AI_DEVELOPMENT_GUIDE_V2.1.md`](docs/Development/AI_DEVELOPMENT_GUIDE_V2.1.md) for full detail.
+The system implements **two generations of AI** — Gen 1 (non-API rule-based algorithms) acts as the fallback when Gen 2 (LLM via [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi)) is unavailable. See [`docs/Development/AI_DEVELOPMENT_GUIDE_V2.1.md`](docs/Development/AI_DEVELOPMENT_GUIDE_V2.1.md) for full detail.
 
 | Feature | Type | Status |
 |---------|------|--------|
