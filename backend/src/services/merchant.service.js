@@ -159,7 +159,7 @@ async function reverseRedemption({ userCouponId, notes } = {}, cashierId, meta =
 
     await client.query(
       `INSERT INTO redemption_logs (user_coupon_id, points_spent, action, action_by, ip_address, created_at, notes)
-       VALUES ($1, $2, 'redeemed', $3, $4, NOW(), $5)`,
+       VALUES ($1, $2, 'reversed', $3, $4, NOW(), $5)`,
       [userCouponId, coupon.points_required || 0, cashierId, meta.ipAddress || null, notes || "Cashier reversed redemption within 5-minute window"]
     );
 
