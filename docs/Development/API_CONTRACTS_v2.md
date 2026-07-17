@@ -2083,3 +2083,63 @@ When provided, the backend automatically:
 }
 ```
 
+---
+
+## Supplement v2.2 — Notifications System
+
+> **Added:** 17 Jul 2026
+> **Purpose:** In-app notification system for volunteers — event updates, points earned, rewards, and system messages.
+
+### Database Table: `notifications`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | SERIAL PK | Notification ID |
+| `user_id` | INTEGER FK → users(id) | Recipient |
+| `title` | VARCHAR(255) | Notification title |
+| `description` | TEXT | Body text |
+| `icon` | VARCHAR(50) | Ionicons icon name |
+| `color` | VARCHAR(20) | Accent colour hex |
+| `is_read` | BOOLEAN DEFAULT FALSE | Read status |
+| `created_at` | TIMESTAMP | When it was created |
+
+### Notifications Endpoints
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| GET | `/api/me/notifications` | JWT | List user's notifications (newest first, max 50) |
+| PATCH | `/api/me/notifications/read` | JWT | Mark all as read |
+| PATCH | `/api/me/notifications/:id/read` | JWT | Mark single notification as read |
+
+**GET /api/me/notifications Response 200:**
+```json
+{
+  "notifications": [
+    {
+      "id": 1,
+      "title": "Points Earned!",
+      "description": "You earned 20 points for attending Beach Cleanup @ East Coast.",
+      "icon": "star-outline",
+      "color": "#f59e0b",
+      "is_read": false,
+      "created_at": "2026-07-17T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+**PATCH /api/me/notifications/read Response 200:**
+```json
+{
+  "message": "All notifications marked as read."
+}
+```
+
+**PATCH /api/me/notifications/:id/read Response 200:**
+```json
+{
+  "message": "Notification marked as read."
+}
+```
+
+**Errors:** `401 unauthorized`, `404 not_found`
