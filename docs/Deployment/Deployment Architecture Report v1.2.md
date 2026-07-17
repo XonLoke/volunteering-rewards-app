@@ -1,7 +1,7 @@
 # Deployment Architecture Report
 
-**Version:** 1.1
-**Date:** 18 June 2026
+**Version:** 1.2
+**Date:** 17 July 2026
 **Project:** Volunteering Rewards App (C3000C)
 **Author:** Xon Loke
 
@@ -243,6 +243,7 @@ The `dist/` folder was deployed to Vercel as a new project. The PWA is served ov
 **Known limitations:**
 - Camera/QR scanning (`scan.tsx`) uses `expo-camera` which requires native access — not available on web
 - In-app notifications available via `GET /api/me/notifications` (backend implemented). Push notifications (FCM/APNs) still Phase 2.
+- Emails sent via Mailgun sandbox domain show a "failed authentication" warning in some clients (e.g., ProtonMail). This is cosmetic — emails are delivered reliably. A production Mailgun domain with DKIM/SPF would resolve this.
 - Ionicons font shows OTS parsing warning on Chrome (cosmetic — text renders correctly)
 
 **Why not just use the web portals for volunteers?**
@@ -279,6 +280,30 @@ The three primary platforms are connected via environment variables and CORS con
 | Render → Neon | PostgreSQL wire protocol (SSL) | `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_SSL=true` |
 | CORS | Render allows Vercel origin | `CORS_ORIGINS=*` (wildcard for development) |
 
+### 4.2 Email Service (Mailgun)
+
+The system sends transactional emails (verification, password reset, contact form) using **Mailgun's REST API**. Configuration is stored in the database (`email_config` table) and can be managed through the Admin Portal, with environment variable fallback.
+
+```
+┌─────────────────┐      HTTPS POST       ┌─────────────────┐
+│   Render        │ ───────────────────▶  │   Mailgun API   │
+│   (Backend)     │ ◀───────────────────  │   (REST API)    │
+│   email.service │    JSON responses     │   api.mailgun   │
+└─────────────────┘                      └────────┬────────┘
+                                                  │
+                                                  │ SMTP / DKIM
+                                                  ▼
+                                          ┌─────────────────┐
+                                          │   ProtonMail     │
+                                          │   (Recipient)    │
+                                          └─────────────────┘
+```
+
+**Design decisions:**
+- REST API is used instead of SMTP because Render's free tier has intermittent SMTP port connectivity. Mailgun's HTTPS API (`api.mailgun.net/v3`) is reliable with no port restrictions.
+- SMTP credentials are stored in DB (not env vars) so admins can change them without redeploying.
+- Supports any Mailgun domain — sandbox (up to 5 authorized recipients) or production (with custom DKIM/SPF).
+
 ### Environment Variables (Render)
 
 ```
@@ -296,7 +321,10 @@ PIN_SECRET=volunteering-rewards-pin-secret-v1
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=100
 CORS_ORIGINS=*
+FRONTEND_URL=https://volunteering-rewards-app.vercel.app
 ```
+
+> **Note:** `EMAIL_USER` and `EMAIL_PASS` are no longer required in env vars — they are configured via the Admin Portal → Email Config page and stored in the database. Env vars are only used as a fallback if the DB record is empty.
 
 ---
 

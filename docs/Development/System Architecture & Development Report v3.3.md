@@ -1,7 +1,7 @@
 # Volunteering Rewards App — System Architecture & Development Report
 
-> **Document Version:** 3.2  
-> **Date:** 3 July 2026  
+> **Document Version:** 3.3  
+> **Date:** 17 July 2026  
 > **Project:** Volunteering Rewards App (C3000C)  
 > **Status:** Sprint 5 — Final Week (Deadline: 6 Jul 2026)
 
@@ -305,6 +305,9 @@ volunteering-rewards-app/
 | POST | `/api/auth/register/organiser` | Register organiser + org | None |
 | POST | `/api/auth/login` | Login → JWT | None |
 | POST | `/api/auth/refresh` | Rotate refresh token | Refresh token |
+| GET | `/api/auth/verify-email` | Verify email (?token=xxx) | None (token) |
+| POST | `/api/auth/forgot-password` | Send password reset email | None |
+| POST | `/api/auth/reset-password` | Reset password with token | None (token) |
 | GET | `/api/auth/me` | Get profile | JWT |
 | PUT | `/api/auth/me` | Update profile | JWT |
 | GET | `/api/auth/profile` | Get profile (legacy) | JWT |
@@ -315,6 +318,10 @@ volunteering-rewards-app/
 - Token storage: mobile → `expo-secure-store` / `AsyncStorage`, web → `localStorage`
 - Password hashing: bcrypt with 12 salt rounds
 - Rate limiting: authStrict (10 req/15min) on login route
+- **Email verification (AUTH-09):** Crypto token (32 bytes, hex) sent on registration. 24-hour expiry. Validated via `GET /api/auth/verify-email?token=xxx`.
+- **Forgot password (AUTH-10):** Generates reset token (32 bytes, hex), stores in DB with 1-hour expiry. Sends email with reset link. Supports `redirect_url` param for portal-specific reset pages.
+- **Reset password (AUTH-11):** Validates token + expiry, then updates `password_hash`. Clears reset token on success.
+- **Email provider:** Mailgun REST API (free sandbox tier). SMTP settings configurable from Admin Portal → Email Config, stored in `email_config` DB table with environment variable fallback.
 
 ---
 
