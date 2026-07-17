@@ -82,6 +82,36 @@ async function registerOrganiser(req, res, next) {
   }
 }
 
+// GET /api/auth/verify-email?token=xxx
+async function verifyEmail(req, res, next) {
+  try {
+    const result = await authService.verifyEmail(req.query.token);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/forgot-password
+async function forgotPassword(req, res, next) {
+  try {
+    const result = await authService.forgotPassword(req.body.email, req.body.redirect_url);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/reset-password
+async function resetPassword(req, res, next) {
+  try {
+    const result = await authService.resetPassword(req.body);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   register,
   registerOrganiser,
@@ -89,4 +119,7 @@ module.exports = {
   refresh,
   getProfile,
   updateProfile,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
 };

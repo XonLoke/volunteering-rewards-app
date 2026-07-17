@@ -65,8 +65,8 @@ export default function Register() {
 
       Alert.alert(
         "Account Created!",
-        "Welcome to Volunteer Rewards! Please sign in.",
-        [{ text: "Sign In Now!", onPress: () => router.push("/login") }]
+        "Welcome! Please check your email for a verification link to activate your account, then sign in.",
+        [{ text: "Sign In", onPress: () => router.push("/login") }]
       );
     } catch (err: any) {
       Alert.alert("Registration failed", err.message || "Something went wrong.");

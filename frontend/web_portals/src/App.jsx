@@ -41,7 +41,49 @@ import MerchantProducts from './pages/merchant/Products';
 import PinVerify from './pages/merchant/PinVerify';
 import History from './pages/merchant/History';
 
+// Shared auth pages
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+
 const router = createBrowserRouter([
+  // ─── Shared Auth Routes (forgot/reset password) ─────
+  {
+    path: '/forgot-password',
+    element: <ForgotPassword />,
+  },
+  {
+    path: '/admin/forgot-password',
+    element: <ForgotPassword />,
+  },
+  {
+    path: '/organiser/forgot-password',
+    element: <ForgotPassword />,
+  },
+  {
+    path: '/merchant/forgot-password',
+    element: <ForgotPassword />,
+  },
+  {
+    path: '/scan/forgot-password',
+    element: <ForgotPassword />,
+  },
+  {
+    path: '/admin/reset-password',
+    element: <ResetPassword />,
+  },
+  {
+    path: '/organiser/reset-password',
+    element: <ResetPassword />,
+  },
+  {
+    path: '/merchant/reset-password',
+    element: <ResetPassword />,
+  },
+  {
+    path: '/scan/reset-password',
+    element: <ResetPassword />,
+  },
+  // ─── Admin Routes ──────────────────────────────────
   {
     path: '/admin/login',
     element: <AdminLogin />,

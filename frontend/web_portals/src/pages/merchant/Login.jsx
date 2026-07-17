@@ -100,6 +100,13 @@ export default function MerchantLogin() {
               'Sign In'
             )}
           </button>
+
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <a href="/merchant/forgot-password" style={{ color: '#f59e0b', fontSize: '13px', textDecoration: 'none' }}
+              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+            >Forgot Password?</a>
+          </div>
         </form>
       </div>
     </div>

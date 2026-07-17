@@ -150,6 +150,13 @@ export default function OrganiserLogin() {
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
+
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <a href="/organiser/forgot-password" style={{ color: '#43e97b', fontSize: '13px', textDecoration: 'none' }}
+              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+            >Forgot Password?</a>
+          </div>
         </form>
 
       </div>

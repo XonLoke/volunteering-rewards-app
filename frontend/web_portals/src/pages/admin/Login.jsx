@@ -150,6 +150,13 @@ export default function AdminLogin() {
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
+
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <a href="/admin/forgot-password" style={{ color: '#667eea', fontSize: '13px', textDecoration: 'none' }}
+              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+            >Forgot Password?</a>
+          </div>
         </form>
 
 	      </div>
