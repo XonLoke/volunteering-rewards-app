@@ -55,8 +55,8 @@ async function updateEmailConfig(data, userId) {
   const smtpPort = parseInt(data.smtp_port, 10) || 465;
   const smtpSecure = data.smtp_secure !== false;
 
-  // Check if a row exists
-  const { rows: existing } = await pool.query("SELECT id FROM email_config LIMIT 1");
+  // Get the latest row (ORDER BY id DESC ensures we don't hit a stale duplicate)
+  const { rows: existing } = await pool.query("SELECT id FROM email_config ORDER BY id DESC LIMIT 1");
 
   if (existing.length === 0) {
     // Insert new row

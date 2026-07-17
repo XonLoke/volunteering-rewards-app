@@ -72,7 +72,7 @@ export default function Login() {
   };
 
   const handleForgotPassword = () => {
-    Alert.alert("Forgot Password", "This will be available soon.");
+    router.push("/forgot-password");
   };
 
   return (

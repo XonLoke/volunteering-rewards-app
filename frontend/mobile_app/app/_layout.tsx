@@ -29,6 +29,8 @@ export default function RootLayout() {
         <Stack.Screen name="help" options={{ headerShown: false }} />
         <Stack.Screen name="contact" options={{ headerShown: false }} />
         <Stack.Screen name="organiser" options={{ headerShown: false }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+        <Stack.Screen name="reset-password" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

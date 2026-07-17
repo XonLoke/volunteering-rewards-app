@@ -142,7 +142,7 @@ export default function LoginScreen() {
   }, [form, validateForm, showToast]);
 
   const handleForgotPassword = useCallback(() => {
-    Alert.alert('Coming Soon', 'Password reset functionality will be available in a future update.');
+    router.push('/(auth)/forgot-password');
   }, []);
 
   const handleSignUp = useCallback(() => {
