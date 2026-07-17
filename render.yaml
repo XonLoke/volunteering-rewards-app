@@ -37,11 +37,10 @@ services:
         value: "73128219d055466ea889d7892370bf68"
       - key: MAX_FILE_SIZE
         value: "1048576"
-      - key: EMAIL_USER
-        value: volunteerrewardsapp@gmail.com
       - key: FRONTEND_URL
         value: https://volunteering-rewards-app.vercel.app
-      # 🔴 EMAIL_PASS must be set in Render Dashboard (Gmail app password)
+      # 🔴 EMAIL_USER and EMAIL_PASS must be set in Render Dashboard.
+      #    Use a Gmail address and its App Password for SMTP.
 
   # ─── Admin Web Portal ─────────────────────────────────────
   - type: web
