@@ -323,6 +323,7 @@ app.use("/api/me", require("./src/routes/me.routes"));
 
 // Referral Program (F3)
 app.use("/api/me", require("./src/routes/referral.routes"));
+app.use("/api/referral", require("./src/routes/referral.routes")); // Alias for Vivian's frontend
 
 // F4: Hall of Fame Leaderboard
 app.use("/api/leaderboard", require("./src/routes/leaderboard.routes"));
