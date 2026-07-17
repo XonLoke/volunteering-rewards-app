@@ -25,6 +25,8 @@ interface RegisterForm {
   phone: string;
   password: string;
   confirmPassword: string;
+  upline_1_email?: string;
+  upline_2_email?: string;
 }
 
 interface FormErrors {
@@ -33,6 +35,8 @@ interface FormErrors {
   phone?: string;
   password?: string;
   confirmPassword?: string;
+  upline_1_email?: string;
+  upline_2_email?: string;
   general?: string;
 }
 
@@ -56,6 +60,8 @@ export default function RegisterScreen() {
     phone: '',
     password: '',
     confirmPassword: '',
+    upline_1_email: '',
+    upline_2_email: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
@@ -137,6 +143,8 @@ export default function RegisterScreen() {
         phone: form.phone.trim(),
         password: form.password,
         password_confirm: form.confirmPassword,
+        upline_1_email: form.upline_1_email?.trim() || undefined,
+        upline_2_email: form.upline_2_email?.trim() || undefined,
       });
 
       // Store auth token
@@ -326,6 +334,38 @@ export default function RegisterScreen() {
               </TouchableOpacity>
             )}
 
+            {/* ── Sponsorship Section (Optional) ── */}
+            <View style={styles.sponsorSection}>
+              <Text style={styles.sponsorTitle}>Sponsorship (Optional)</Text>
+              <Text style={styles.sponsorSubtitle}>
+                Enter the email of the person who referred you to earn them referral points.
+              </Text>
+            </View>
+
+            <Input
+              label="Direct Sponsor Email"
+              value={form.upline_2_email || ''}
+              onChangeText={(text) => updateField('upline_2_email', text)}
+              placeholder="Your referrer's email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              error={errors.upline_2_email}
+              returnKeyType="next"
+            />
+
+            <Input
+              label="Parent Sponsor Email"
+              value={form.upline_1_email || ''}
+              onChangeText={(text) => updateField('upline_1_email', text)}
+              placeholder="Your referrer's sponsor email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              error={errors.upline_1_email}
+              returnKeyType="next"
+            />
+
             {/* Create Account button */}
             <Button
               title="Create Account"
@@ -409,6 +449,21 @@ const styles = StyleSheet.create({
   createAccountButton: {
     width: '100%',
     marginTop: spacing.md,
+  },
+  sponsorSection: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+  },
+  sponsorTitle: {
+    ...typography.subhead,
+    color: colors.text.primary,
+    fontWeight: '600',
+  },
+  sponsorSubtitle: {
+    ...typography.footnote,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
   },
   footer: {
     flexDirection: 'row',
