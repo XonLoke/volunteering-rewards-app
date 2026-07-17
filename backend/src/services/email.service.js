@@ -1,100 +1,163 @@
 /**
- * Email Service — Nodemailer-based email dispatch
+ * Email Service — Multi-provider email dispatch
  *
- * Supports any SMTP provider via environment variables.
- * Works with: Gmail, SendGrid, Mailgun, SMTP2GO, or any custom SMTP server.
+ * Sends via Mailgun REST API (preferred) or SMTP (fallback for other providers).
+ * Configuration is read from DB (email_config table) with env var fallback.
  *
- * Required env vars:
- *   EMAIL_USER             — SMTP username (e.g. your email address)
- *   EMAIL_PASS             — SMTP password or App Password
+ * Mailgun: Uses REST API — faster and more reliable than SMTP from Render.
+ *   email_user  → the full from address (e.g. postmaster@sandbox...mailgun.org)
+ *   email_pass  → Mailgun API key
  *
- * Optional env vars (default to Gmail SMTP):
- *   SMTP_HOST              — SMTP server host   (default: smtp.gmail.com)
- *   SMTP_PORT              — SMTP server port   (default: 587)
- *   SMTP_SECURE            — use TLS?           (default: false)
- *   EMAIL_FROM_NAME        — sender display name (default: "Volunteer Rewards App")
+ * Other SMTP providers (Gmail, SendGrid, SMTP2GO):
+ *   Falls back to standard Nodemailer SMTP transport.
  *
  * Mounted at: src/services/email.service.js
- * Required by: auth.service.js (verification & password reset), contact.routes.js
- *
- * Dependencies: nodemailer (npm)
+ * Required by: auth.service.js, contact.routes.js
  */
 
-const nodemailer = require("nodemailer");
+const https = require("https");
+const querystring = require("querystring");
 
 //-----------------------------------------------------------------------
-// SECTION: Transporter Configuration
-// Purpose: Create reusable Nodemailer transporter from env vars.
-//          Defaults to Gmail SMTP if SMTP_HOST is not set.
-//          Falls back to dry-run mode if no EMAIL_USER/EMAIL_PASS.
+// SECTION: Configuration Loading
+// Purpose: Read email config from DB (or env vars as fallback)
 //-----------------------------------------------------------------------
 
-// Cached DB config so we don't query the DB on every send
+const DB_TABLE = "email_config";
+
 let cachedDbConfig = null;
 
 async function loadDbConfig() {
   try {
     const { pool } = require("../config/database");
     const { rows } = await pool.query(
-      "SELECT smtp_host, smtp_port, smtp_secure, email_user, email_pass, email_from_name FROM email_config ORDER BY id DESC LIMIT 1"
+      `SELECT smtp_host, smtp_port, smtp_secure, email_user, email_pass, email_from_name FROM ${DB_TABLE} ORDER BY id DESC LIMIT 1`
     );
     if (rows.length > 0 && rows[0].email_user) {
-      cachedDbConfig = rows[0];
-      return rows[0];
+      cachedDbConfig = {
+        host: rows[0].smtp_host,
+        port: parseInt(rows[0].smtp_port, 10) || 465,
+        secure: rows[0].smtp_secure !== false,
+        user: rows[0].email_user,
+        pass: rows[0].email_pass,
+        fromName: rows[0].email_from_name || "Volunteer Rewards App",
+        isMailgun: (rows[0].smtp_host || "").includes("mailgun") || (rows[0].email_user || "").includes("mailgun"),
+      };
+      return cachedDbConfig;
     }
   } catch {
-    // DB not ready yet (e.g. during startup/migrations) — fall through to env vars
+    // DB not ready yet — fall through to env vars
   }
   cachedDbConfig = null;
   return null;
 }
 
-async function createTransporter() {
-  let host, port, secure, user, pass, fromName;
+function getEnvConfig() {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  return {
+    host,
+    port: parseInt(process.env.SMTP_PORT || "587", 10),
+    secure: process.env.SMTP_SECURE === "true",
+    user: process.env.EMAIL_USER || "",
+    pass: process.env.EMAIL_PASS || "",
+    fromName: process.env.EMAIL_FROM_NAME || "Volunteer Rewards App",
+    isMailgun: host.includes("mailgun"),
+  };
+}
 
-  // Try DB config first
+async function getConfig() {
   const dbConfig = await loadDbConfig();
+  return dbConfig || getEnvConfig();
+}
 
-  if (dbConfig) {
-    host = dbConfig.smtp_host;
-    port = parseInt(dbConfig.smtp_port, 10) || 465;
-    secure = dbConfig.smtp_secure !== false;
-    user = dbConfig.email_user;
-    pass = dbConfig.email_pass;
-    fromName = dbConfig.email_from_name || "Volunteer Rewards App";
-  } else {
-    // Fall back to environment variables
-    host = process.env.SMTP_HOST || "smtp.gmail.com";
-    port = parseInt(process.env.SMTP_PORT || "587", 10);
-    secure = process.env.SMTP_SECURE === "true";
+//-----------------------------------------------------------------------
+// SECTION: Mailgun REST API Sender
+// Purpose: Send email via Mailgun's HTTP API (more reliable than SMTP)
+//-----------------------------------------------------------------------
 
-    // Gmail default: port 465 with SSL
-    const isGmail = host.includes("gmail.com");
-    if (isGmail && !process.env.SMTP_PORT) {
-      port = 465;
-      secure = true;
-    }
+function extractMailgunDomain(fromEmail) {
+  // Extract domain from email: "postmaster@sandbox123.mailgun.org" → "sandbox123.mailgun.org"
+  const parts = fromEmail.split("@");
+  return parts.length > 1 ? parts[1] : null;
+}
 
-    user = process.env.EMAIL_USER;
-    pass = process.env.EMAIL_PASS;
-    fromName = process.env.EMAIL_FROM_NAME || "Volunteer Rewards App";
+async function sendViaMailgunApi(fromAddress, fromName, to, subject, text, html, replyTo) {
+  const config = cachedDbConfig || await loadDbConfig() || getEnvConfig();
+  const apiKey = config.pass;
+  const domain = extractMailgunDomain(fromAddress);
+
+  if (!domain) {
+    throw new Error(`Could not extract Mailgun domain from: ${fromAddress}`);
   }
 
-  // Store the from name so sendEmail can use it
-  process.env._EMAIL_FROM_NAME = fromName;
+  return new Promise((resolve, reject) => {
+    const postData = querystring.stringify({
+      from: `"${fromName}" <${fromAddress}>`,
+      to,
+      subject,
+      text: text || "",
+      html: html || text || "",
+      ...(replyTo ? { "h:Reply-To": replyTo } : {}),
+    });
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass },
+    const req = https.request({
+      hostname: "api.mailgun.net",
+      path: `/v3/${domain}/messages`,
+      method: "POST",
+      headers: {
+        "Authorization": "Basic " + Buffer.from(`api:${apiKey}`).toString("base64"),
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": Buffer.byteLength(postData),
+      },
+    }, (res) => {
+      let body = "";
+      res.on("data", (chunk) => body += chunk);
+      res.on("end", () => {
+        try {
+          const parsed = JSON.parse(body);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ messageId: parsed.id, message: parsed.message });
+          } else {
+            reject(new Error(parsed.message || `Mailgun API error (${res.statusCode})`));
+          }
+        } catch {
+          reject(new Error(`Mailgun API error (${res.statusCode}): ${body}`));
+        }
+      });
+    });
+
+    req.on("error", reject);
+    req.write(postData);
+    req.end();
   });
 }
 
+//-----------------------------------------------------------------------
+// SECTION: SMTP Sender (Fallback)
+// Purpose: Use Nodemailer SMTP for non-Mailgun providers.
+//-----------------------------------------------------------------------
+
+let nodemailer = null;
 let transporter = null;
 
-async function getTransporter() {
-  if (!transporter) transporter = await createTransporter();
+function getNodemailer() {
+  if (!nodemailer) nodemailer = require("nodemailer");
+  return nodemailer;
+}
+
+async function createSmtpTransporter() {
+  const nm = getNodemailer();
+  const config = getEnvConfig(); // SMTP always uses env vars for non-Mailgun
+  return nm.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: { user: config.user, pass: config.pass },
+  });
+}
+
+async function getSmtpTransporter() {
+  if (!transporter) transporter = await createSmtpTransporter();
   return transporter;
 }
 
@@ -111,17 +174,26 @@ function resetTransporter() {
 //          Returns { messageId } on success.
 //-----------------------------------------------------------------------
 async function sendEmail({ to, subject, text, html, replyTo }) {
-  // Validate credentials exist
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn("[email.service] EMAIL_USER or EMAIL_PASS not set — email not sent.");
+  const config = await getConfig();
+
+  // Validate credentials
+  if (!config.user || !config.pass) {
+    console.warn("[email.service] No email credentials configured — email not sent.");
     console.warn(`[email.service] Would have sent to: ${to}, subject: "${subject}"`);
     return { messageId: "dry-run (no credentials configured)" };
   }
 
-  const fromName = process.env._EMAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || "Volunteer Rewards App";
-  const tp = await getTransporter();
+  if (config.isMailgun) {
+    // Send via Mailgun REST API (reliable, authenticated)
+    const result = await sendViaMailgunApi(config.user, config.fromName, to, subject, text, html, replyTo);
+    return { messageId: result.messageId };
+  }
+
+  // Fallback: send via SMTP for non-Mailgun providers
+  const fromName = config.fromName || "Volunteer Rewards App";
+  const tp = await getSmtpTransporter();
   const info = await tp.sendMail({
-    from: `"${fromName}" <${process.env.EMAIL_USER}>`,
+    from: `"${fromName}" <${config.user}>`,
     to,
     subject,
     text,
