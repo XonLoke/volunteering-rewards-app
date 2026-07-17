@@ -69,10 +69,7 @@ export default function Login() {
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
 
       // Save points separately so Home can show it immediately
-      await AsyncStorage.setItem(
-        "userPoints",
-        String(data.user.points ?? 0)
-      );
+      await AsyncStorage.setItem("userPoints", String(data.user.points_balance ?? data.user.points ?? 0));
 
       // Save user id separately if other pages need it
       await AsyncStorage.setItem(
