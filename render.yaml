@@ -40,7 +40,10 @@ services:
       - key: FRONTEND_URL
         value: https://volunteering-rewards-app.vercel.app
       # 🔴 EMAIL_USER and EMAIL_PASS must be set in Render Dashboard.
-      #    Use a Gmail address and its App Password for SMTP.
+      #    Works with any SMTP provider. Optional overrides:
+      #    SMTP_HOST (default: smtp.gmail.com), SMTP_PORT (default: 587),
+      #    SMTP_SECURE (default: false; true for port 465),
+      #    EMAIL_FROM_NAME (default: "Volunteer Rewards App")
 
   # ─── Admin Web Portal ─────────────────────────────────────
   - type: web

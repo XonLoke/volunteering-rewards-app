@@ -1,11 +1,21 @@
 /**
  * Email Service — Nodemailer-based email dispatch
  *
- * Uses Gmail SMTP via environment variables EMAIL_USER and EMAIL_PASS.
- * Supports: to, subject, text, html, replyTo
+ * Supports any SMTP provider via environment variables.
+ * Works with: Gmail, SendGrid, Mailgun, SMTP2GO, or any custom SMTP server.
+ *
+ * Required env vars:
+ *   EMAIL_USER             — SMTP username (e.g. your email address)
+ *   EMAIL_PASS             — SMTP password or App Password
+ *
+ * Optional env vars (default to Gmail SMTP):
+ *   SMTP_HOST              — SMTP server host   (default: smtp.gmail.com)
+ *   SMTP_PORT              — SMTP server port   (default: 587)
+ *   SMTP_SECURE            — use TLS?           (default: false)
+ *   EMAIL_FROM_NAME        — sender display name (default: "Volunteer Rewards App")
  *
  * Mounted at: src/services/email.service.js
- * Required by: contact.routes.js (support ticket submission)
+ * Required by: auth.service.js (verification & password reset), contact.routes.js
  *
  * Dependencies: nodemailer (npm)
  */
@@ -14,18 +24,41 @@ const nodemailer = require("nodemailer");
 
 //-----------------------------------------------------------------------
 // SECTION: Transporter Configuration
-// Purpose: Create reusable Nodemailer transporter with Gmail SMTP.
-//          Falls back to a log-only mode if SMTP credentials aren't set,
-//          so the app doesn't crash in dev environments without email.
+// Purpose: Create reusable Nodemailer transporter from env vars.
+//          Defaults to Gmail SMTP if SMTP_HOST is not set.
+//          Falls back to dry-run mode if no EMAIL_USER/EMAIL_PASS.
 //-----------------------------------------------------------------------
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+function createTransporter() {
+  const host  = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port  = parseInt(process.env.SMTP_PORT || "587", 10);
+  const secure = process.env.SMTP_SECURE === "true";
+
+  // Gmail specific: if using port 465, secure must be true
+  const isGmail = host.includes("gmail.com");
+
+  return nodemailer.createTransport({
+    host,
+    port: isGmail && !process.env.SMTP_PORT ? 465 : port,
+    secure: isGmail && !process.env.SMTP_SECURE ? true : secure,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+}
+
+let transporter = null;
+
+function getTransporter() {
+  if (!transporter) transporter = createTransporter();
+  return transporter;
+}
+
+// Allow re-creating transporter after env var changes (e.g. in tests)
+function resetTransporter() {
+  transporter = null;
+}
 
 //-----------------------------------------------------------------------
 // SECTION: sendEmail
@@ -41,8 +74,10 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
     return { messageId: "dry-run (no credentials configured)" };
   }
 
-  const info = await transporter.sendMail({
-    from: `"Volunteer Rewards App" <${process.env.EMAIL_USER}>`,
+  const fromName = process.env.EMAIL_FROM_NAME || "Volunteer Rewards App";
+  const tp = getTransporter();
+  const info = await tp.sendMail({
+    from: `"${fromName}" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     text,
@@ -143,4 +178,4 @@ function buildPasswordResetEmailHtml({ name, resetUrl }) {
 </html>`;
 }
 
-module.exports = { sendEmail, buildVerificationEmailHtml, buildPasswordResetEmailHtml };
+module.exports = { sendEmail, buildVerificationEmailHtml, buildPasswordResetEmailHtml, resetTransporter };
