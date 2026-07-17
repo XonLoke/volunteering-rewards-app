@@ -177,7 +177,7 @@ volunteering-rewards-app/
 │   │   ├── routes/             # API route definitions (14 files)
 │   │   ├── services/           # Business logic (13 files)
 │   │   └── utils/              # JWT, migrations, seed
-│   ├── migrations/             # SQL migrations (001-023)
+│   ├── migrations/             # SQL migrations (001-026)
 │   └── tests/                  # Unit, integration, performance
 ├── frontend/
 │   ├── web_portals/            # React + Vite web app
@@ -194,7 +194,7 @@ volunteering-rewards-app/
 
 ---
 
-## Additional Features (F1-F4)
+## Additional Features (F1-F4 & Auth)
 
 The system implements **two generations of AI** — Gen 1 (non-API rule-based algorithms) acts as the fallback when Gen 2 (LLM via [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi)) is unavailable. See [`docs/Development/AI_DEVELOPMENT_GUIDE_V2.1.md`](docs/Development/AI_DEVELOPMENT_GUIDE_V2.1.md) for full detail.
 
@@ -204,8 +204,13 @@ The system implements **two generations of AI** — Gen 1 (non-API rule-based al
 | F2: AI Feedback Summarizer | **Two-tier:** LLM via FreeLLMAPI → lexicon-based sentiment analysis fallback | ✅ Done |
 | F3: Volunteer Referral Program | Multi-level referral DAG with direct + parent sponsor points | ✅ Done |
 | F4: Hall of Fame Leaderboard | Gamification / SQL ranking with volunteer leaderboard | ✅ Done |
+| Email Verification | Crypto-token verification sent on registration (24h expiry) | ✅ Done (AUTH-09) |
+| Forgot / Reset Password | Self-service password reset via email with secure token (1h expiry) | ✅ Done (AUTH-10/11) |
+| Admin Email Config | Configure SMTP / Mailgun settings from Admin Portal UI | ✅ Done |
 
 > **AI Architecture (F1 & F2):** `GET /api/ai/recommendations` and `GET /api/ai/feedback-summary/:eventId` call **FreeLLMAPI** (`localhost:3001`) — a local proxy aggregating free tiers from Google AI Studio (Gemini 2.5 Flash), Groq, Cerebras, Mistral, and 12+ others with auto-failover between providers. Each request has a 15-second timeout. If the LLM is unreachable or all providers are exhausted, the controller falls back to the Gen 1 rule-based algorithms (content-based filtering / lexicon sentiment). Responses include an `ai_generated: true/false` flag.
+> 
+> **Email System:** Registration triggers a verification email with a 24-hour crypto token. Forgot password sends a reset link (1-hour expiry). Emails are sent via Mailgun REST API (free sandbox: 5 authorized recipients) or any SMTP provider configured in the Admin Portal. See `docs/Development/` for email setup guide.
 
 > **"For You" AI Assistant:** The mobile app also includes a client-side decision engine (`app/ai-recommendations.tsx`) answering 4 fixed questions — "Highest match?", "Best overall?", "Most points?", "Has slots?" — using a deterministic scoring formula on recommendation data.
 

@@ -2143,3 +2143,123 @@ When provided, the backend automatically:
 ```
 
 **Errors:** `401 unauthorized`, `404 not_found`
+
+---
+
+## Supplement v2.3 — Email Verification & Password Reset
+
+> **Added:** 17 Jul 2026
+> **Purpose:** Email verification on registration (AUTH-09), forgot password (AUTH-10), and reset password (AUTH-11) endpoints.
+
+### GET /api/auth/verify-email
+
+Verify a user's email address using a verification token sent via email.
+
+```
+No auth required (token-based)
+Query: ?token=<verification_token>
+```
+
+**Response 200 — Success:**
+```json
+{
+  "message": "Email verified successfully! You can now sign in.",
+  "email": "alice@test.com"
+}
+```
+
+**Response 200 — Already Verified:**
+```json
+{
+  "message": "Email already verified. You can sign in.",
+  "email": "alice@test.com"
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| `invalid_token` | 400 | Verification token is required. |
+| `not_found` | 404 | Invalid verification token. Please check your link. |
+| `token_expired` | 400 | Verification link has expired. Please register again. |
+
+### POST /api/auth/forgot-password
+
+Send a password reset email to the user. Always returns success to prevent email enumeration.
+
+```
+No auth required
+Content-Type: application/json
+```
+
+**Request:**
+```json
+{
+  "email": "alice@test.com",
+  "redirect_url": "https://volunteering-rewards-app.vercel.app/reset-password"
+}
+```
+
+`redirect_url` (optional) — specifies where the reset link points. Use different URLs for different portals (volunteer app, admin, organiser, merchant).
+
+**Response 200:**
+```json
+{
+  "message": "If an account with that email exists, a password reset link has been sent."
+}
+```
+
+**Errors:** `400 validation_error`
+
+### POST /api/auth/reset-password
+
+Reset password using a token received via email.
+
+```
+No auth required (token-based)
+Content-Type: application/json
+```
+
+**Request:**
+```json
+{
+  "token": "crypto-random-64-char-hex-string",
+  "password": "NewPassword123",
+  "password_confirm": "NewPassword123"
+}
+```
+
+**Response 200:**
+```json
+{
+  "message": "Password has been reset successfully. You can now sign in."
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| `validation_error` | 400 | Validation failed. |
+| `not_found` | 404 | Invalid reset token. Please request a new password reset. |
+| `token_expired` | 400 | Reset link has expired. Please request a new password reset. |
+
+### Database Changes
+
+**Users table additions (migration 025):**
+| Column | Type | Description |
+|--------|------|-------------|
+| `email_verified` | BOOLEAN DEFAULT FALSE | Whether the user has verified their email |
+| `email_verification_token` | VARCHAR(255) | Crypto token sent in verification email |
+| `email_verification_expires` | TIMESTAMP | Token expiry (24 hours from registration) |
+| `reset_password_token` | VARCHAR(255) | Crypto token for password reset |
+| `reset_password_expires` | TIMESTAMP | Token expiry (1 hour from request) |
+
+**Email config table (migration 026):**
+| Column | Type | Description |
+|--------|------|-------------|
+| `smtp_host` | VARCHAR(255) | SMTP server host (default: smtp.gmail.com) |
+| `smtp_port` | INTEGER | SMTP port (default: 465) |
+| `smtp_secure` | BOOLEAN | SSL/TLS enabled |
+| `email_user` | VARCHAR(255) | SMTP username / from address |
+| `email_pass` | VARCHAR(255) | SMTP password / Mailgun API key |
+| `email_from_name` | VARCHAR(255) | Sender display name |
