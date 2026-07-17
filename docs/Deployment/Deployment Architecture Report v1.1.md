@@ -242,7 +242,7 @@ The `dist/` folder was deployed to Vercel as a new project. The PWA is served ov
 
 **Known limitations:**
 - Camera/QR scanning (`scan.tsx`) uses `expo-camera` which requires native access — not available on web
-- Push notifications require backend API endpoint (`GET /api/notifications` — not yet implemented)
+- In-app notifications available via `GET /api/me/notifications` (backend implemented). Push notifications (FCM/APNs) still Phase 2.
 - Ionicons font shows OTS parsing warning on Chrome (cosmetic — text renders correctly)
 
 **Why not just use the web portals for volunteers?**

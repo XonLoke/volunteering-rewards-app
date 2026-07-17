@@ -243,7 +243,7 @@ backend/
 │       ├── jwt.js              # JWT token generation/verification
 │       ├── migrationRunner.js  # Runs SQL migrations
 │       └── seed.js             # Seeds test data
-├── migrations/                 # SQL migration files (001 → 023)
+├── migrations/                 # SQL migration files (001 → 024)
 └── tests/                      # Unit, integration, performance tests
 ```
 
