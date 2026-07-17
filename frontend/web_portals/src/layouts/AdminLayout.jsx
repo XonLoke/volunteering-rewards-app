@@ -26,6 +26,7 @@ const NAV_ITEMS = [
       { label: 'Coupons', path: '/admin/coupons', icon: 'Cp' },
       { label: 'Rewards Config', path: '/admin/rewards-config', icon: 'R' },
       { label: 'Sponsorship Config', path: '/admin/sponsorship-config', icon: 'Sp' },
+      { label: 'Email Config', path: '/admin/email-config', icon: '@' },
       { label: 'Redemptions', path: '/admin/redemptions', icon: 'Rd' },
     ],
   },

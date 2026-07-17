@@ -29,35 +29,79 @@ const nodemailer = require("nodemailer");
 //          Falls back to dry-run mode if no EMAIL_USER/EMAIL_PASS.
 //-----------------------------------------------------------------------
 
-function createTransporter() {
-  const host  = process.env.SMTP_HOST || "smtp.gmail.com";
-  const port  = parseInt(process.env.SMTP_PORT || "587", 10);
-  const secure = process.env.SMTP_SECURE === "true";
+// Cached DB config so we don't query the DB on every send
+let cachedDbConfig = null;
 
-  // Gmail specific: if using port 465, secure must be true
-  const isGmail = host.includes("gmail.com");
+async function loadDbConfig() {
+  try {
+    const { pool } = require("../config/database");
+    const { rows } = await pool.query(
+      "SELECT smtp_host, smtp_port, smtp_secure, email_user, email_pass, email_from_name FROM email_config ORDER BY id DESC LIMIT 1"
+    );
+    if (rows.length > 0 && rows[0].email_user) {
+      cachedDbConfig = rows[0];
+      return rows[0];
+    }
+  } catch {
+    // DB not ready yet (e.g. during startup/migrations) — fall through to env vars
+  }
+  cachedDbConfig = null;
+  return null;
+}
+
+async function createTransporter() {
+  let host, port, secure, user, pass, fromName;
+
+  // Try DB config first
+  const dbConfig = await loadDbConfig();
+
+  if (dbConfig) {
+    host = dbConfig.smtp_host;
+    port = parseInt(dbConfig.smtp_port, 10) || 465;
+    secure = dbConfig.smtp_secure !== false;
+    user = dbConfig.email_user;
+    pass = dbConfig.email_pass;
+    fromName = dbConfig.email_from_name || "Volunteer Rewards App";
+  } else {
+    // Fall back to environment variables
+    host = process.env.SMTP_HOST || "smtp.gmail.com";
+    port = parseInt(process.env.SMTP_PORT || "587", 10);
+    secure = process.env.SMTP_SECURE === "true";
+
+    // Gmail default: port 465 with SSL
+    const isGmail = host.includes("gmail.com");
+    if (isGmail && !process.env.SMTP_PORT) {
+      port = 465;
+      secure = true;
+    }
+
+    user = process.env.EMAIL_USER;
+    pass = process.env.EMAIL_PASS;
+    fromName = process.env.EMAIL_FROM_NAME || "Volunteer Rewards App";
+  }
+
+  // Store the from name so sendEmail can use it
+  process.env._EMAIL_FROM_NAME = fromName;
 
   return nodemailer.createTransport({
     host,
-    port: isGmail && !process.env.SMTP_PORT ? 465 : port,
-    secure: isGmail && !process.env.SMTP_SECURE ? true : secure,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
+    port,
+    secure,
+    auth: { user, pass },
   });
 }
 
 let transporter = null;
 
-function getTransporter() {
-  if (!transporter) transporter = createTransporter();
+async function getTransporter() {
+  if (!transporter) transporter = await createTransporter();
   return transporter;
 }
 
-// Allow re-creating transporter after env var changes (e.g. in tests)
+// Re-create transporter (call after email config is updated in DB)
 function resetTransporter() {
   transporter = null;
+  cachedDbConfig = null;
 }
 
 //-----------------------------------------------------------------------
@@ -74,8 +118,8 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
     return { messageId: "dry-run (no credentials configured)" };
   }
 
-  const fromName = process.env.EMAIL_FROM_NAME || "Volunteer Rewards App";
-  const tp = getTransporter();
+  const fromName = process.env._EMAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || "Volunteer Rewards App";
+  const tp = await getTransporter();
   const info = await tp.sendMail({
     from: `"${fromName}" <${process.env.EMAIL_USER}>`,
     to,

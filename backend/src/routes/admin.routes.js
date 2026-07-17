@@ -84,4 +84,9 @@ router.post("/merchants/:id/products", controller.createMerchantProduct);
 router.get("/redemptions", controller.listRedemptions);
 router.post("/redemptions/cleanup", controller.cleanupRedemptions);
 
+// Email Config (SMTP settings)
+router.get("/email/config", controller.getEmailConfig);
+router.put("/email/config", controller.updateEmailConfig);
+router.post("/email/test", controller.testEmailConfig);
+
 module.exports = router;

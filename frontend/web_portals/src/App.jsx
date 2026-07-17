@@ -16,6 +16,7 @@ import AdminRedemptions from './pages/admin/Redemptions';
 import AdminSponsorshipConfig from './pages/admin/SponsorshipConfig';
 import AdminQrCodes from './pages/admin/QRCodes';
 import AdminMerchants from './pages/admin/Merchants';
+import AdminEmailConfig from './pages/admin/EmailConfig';
 // Organiser pages
 import OrganiserDashboard from './pages/organiser/Dashboard';
 import OrganiserEvents from './pages/organiser/Events';
@@ -99,6 +100,7 @@ const router = createBrowserRouter([
       { path: 'coupons', element: <AdminCoupons /> },
       { path: 'rewards-config', element: <AdminRewardsConfig /> },
       { path: 'sponsorship-config', element: <AdminSponsorshipConfig /> },
+      { path: 'email-config', element: <AdminEmailConfig /> },
       { path: 'redemptions', element: <AdminRedemptions /> },
       { path: 'qr-codes', element: <AdminQrCodes /> },
       { path: 'merchants', element: <AdminMerchants /> },

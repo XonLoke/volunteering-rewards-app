@@ -3,6 +3,7 @@
  */
 const adminService = require("../services/admin.service");
 const sponsorshipConfigService = require("../services/sponsorshipConfig.service");
+const emailConfigService = require("../services/emailConfig.service");
 
 async function dashboard(req, res, next) {
   try { const [stats, recentActivity] = await Promise.all([adminService.getDashboardStats(), adminService.getRecentActivity()]);
@@ -42,6 +43,9 @@ async function updateProspectStatus(req, res, next) { try { res.json(await admin
 async function createOrganiserAccount(req, res, next) { try { const r = await adminService.createOrganiserAccount(req.body, req.user.id); res.status(201).json(r); } catch (err) { next(err); } }
 async function createMerchantAccount(req, res, next) { try { const r = await adminService.createMerchantAccount(req.body, req.user.id); res.status(201).json(r); } catch (err) { next(err); } }
 async function createUserAccount(req, res, next) { try { const r = await adminService.createUserAccount(req.body, req.user.id); res.status(201).json(r); } catch (err) { next(err); } }
+async function getEmailConfig(req, res, next) { try { res.json(await emailConfigService.getEmailConfig()); } catch (err) { next(err); } }
+async function updateEmailConfig(req, res, next) { try { res.json(await emailConfigService.updateEmailConfig(req.body, req.user.id)); } catch (err) { next(err); } }
+async function testEmailConfig(req, res, next) { try { res.json(await emailConfigService.testEmailConfig(req.body.email, req.user)); } catch (err) { next(err); } }
 
 module.exports = {
   dashboard, listUsers, getUser, updateUser, deactivateUser,
@@ -57,4 +61,5 @@ module.exports = {
   createMerchantAccount,
   createOrganiserAccount, resetPassword,
   createUserAccount,
+  getEmailConfig, updateEmailConfig, testEmailConfig,
 };
