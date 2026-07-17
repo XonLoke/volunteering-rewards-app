@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
 export default function EditProfile() {
   const router = useRouter();
@@ -46,14 +46,20 @@ export default function EditProfile() {
         setPhone(user.phone || "");
 
         try {
-          const response = await fetch(`${BASE_URL}/profile?user_id=${user.id}`);
-          const data = await response.json();
+          const token = await AsyncStorage.getItem("token");
 
-          if (response.ok && data.user) {
-            const updatedUser = {
-              ...user,
-              ...data.user,
-            };
+          const response = await fetch(`${BASE_URL}/me`, {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          });
+
+          const data = await response.json();
+          console.log("Profile load response:", JSON.stringify(data));
+
+          if (response.ok && data.name) {
+            const updatedUser = { ...user, ...data };
 
             setName(updatedUser.name || "");
             setEmail(updatedUser.email || "");
@@ -61,11 +67,11 @@ export default function EditProfile() {
 
             await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
 
-            if (typeof updatedUser.points !== "undefined") {
-              await AsyncStorage.setItem(
-                "userPoints",
-                String(updatedUser.points)
-              );
+            const freshPoints = Number(
+              data.points_balance ?? data.points ?? 0
+            );
+            if (freshPoints > 0) {
+              await AsyncStorage.setItem("userPoints", String(freshPoints));
             }
           }
         } catch (error) {
@@ -83,23 +89,10 @@ export default function EditProfile() {
   const handleSave = async () => {
     try {
       const trimmedName = name.trim();
-      const trimmedEmail = email.trim().toLowerCase();
       const trimmedPhone = phone.trim();
 
       if (!trimmedName) {
         Alert.alert("Missing name", "Please enter your full name.");
-        return;
-      }
-
-      if (!trimmedEmail) {
-        Alert.alert("Missing email", "Please enter your email.");
-        return;
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      if (!emailRegex.test(trimmedEmail)) {
-        Alert.alert("Invalid email", "Please enter a valid email address.");
         return;
       }
 
@@ -112,47 +105,43 @@ export default function EditProfile() {
       }
 
       const user = JSON.parse(stored);
+      const token = await AsyncStorage.getItem("token");
 
       setSaving(true);
 
-      const response = await fetch(`${BASE_URL}/profile`, {
+      const response = await fetch(`${BASE_URL}/auth/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": String(user.id),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          user_id: user.id,
           name: trimmedName,
-          email: trimmedEmail,
-          phone: trimmedPhone,
+          phone: trimmedPhone || undefined,
         }),
       });
 
       const data = await response.json().catch(() => ({}));
-
       console.log("EDIT PROFILE STATUS:", response.status);
-      console.log("EDIT PROFILE DATA:", data);
+      console.log("EDIT PROFILE DATA:", JSON.stringify(data));
 
-      if (!response.ok || data.success === false) {
-        throw new Error(data.message || "Failed to update profile.");
+      if (!response.ok) {
+        throw new Error(
+          data.error?.message || data.message || "Failed to update profile."
+        );
       }
 
       const updatedUser = {
         ...user,
-        ...(data.user || {}),
+        ...(data || {}),
         name: trimmedName,
-        email: trimmedEmail,
         phone: trimmedPhone,
       };
 
       await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
 
       Alert.alert("Saved", "Profile updated successfully.", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
+        { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error: any) {
       console.error("Edit profile error:", error);
@@ -163,31 +152,18 @@ export default function EditProfile() {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.screen, { backgroundColor: theme.colors.background }]}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.topBar}>
           <TouchableOpacity
-            style={[
-              styles.backBtn,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-              },
-            ]}
+            style={[styles.backBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={() => router.back()}
             disabled={saving}
           >
             <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
           </TouchableOpacity>
 
-          <Text style={[styles.pageTitle, { color: theme.colors.text }]}>
-            Edit Profile
-          </Text>
+          <Text style={[styles.pageTitle, { color: theme.colors.text }]}>Edit Profile</Text>
 
           <View style={styles.spacer} />
         </View>
@@ -200,6 +176,9 @@ export default function EditProfile() {
               setter: setName,
               placeholder: "Your full name",
               icon: "person-outline",
+              editable: true,
+              keyboard: "default" as any,
+              capitalize: "words" as any,
             },
             {
               label: "Email",
@@ -207,39 +186,40 @@ export default function EditProfile() {
               setter: setEmail,
               placeholder: "Your email",
               icon: "mail-outline",
+              editable: false, // email cannot be changed
+              keyboard: "email-address" as any,
+              capitalize: "none" as any,
             },
             {
               label: "Phone",
               value: phone,
               setter: setPhone,
-              placeholder: "Your phone number",
+              placeholder: "+65XXXXXXXX",
               icon: "call-outline",
+              editable: true,
+              keyboard: "phone-pad" as any,
+              capitalize: "none" as any,
             },
           ].map((field) => (
             <View key={field.label} style={styles.fieldGroup}>
-              <Text
-                style={[
-                  styles.fieldLabel,
-                  { color: theme.colors.textSecondary },
-                ]}
-              >
+              <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
                 {field.label}
+                {!field.editable && (
+                  <Text style={{ color: theme.colors.textTertiary }}> (cannot be changed)</Text>
+                )}
               </Text>
 
               <View
                 style={[
                   styles.inputWrapper,
                   {
-                    backgroundColor: theme.colors.surface,
+                    backgroundColor: field.editable ? theme.colors.surface : theme.colors.background,
                     borderColor: theme.colors.border,
+                    opacity: field.editable ? 1 : 0.6,
                   },
                 ]}
               >
-                <Ionicons
-                  name={field.icon as any}
-                  size={18}
-                  color={theme.colors.textSecondary}
-                />
+                <Ionicons name={field.icon as any} size={18} color={theme.colors.textSecondary} />
 
                 <TextInput
                   style={[styles.input, { color: theme.colors.text }]}
@@ -247,16 +227,10 @@ export default function EditProfile() {
                   onChangeText={field.setter}
                   placeholder={field.placeholder}
                   placeholderTextColor={theme.colors.textTertiary}
-                  keyboardType={
-                    field.label === "Email"
-                      ? "email-address"
-                      : field.label === "Phone"
-                      ? "phone-pad"
-                      : "default"
-                  }
-                  autoCapitalize={field.label === "Email" ? "none" : "words"}
+                  keyboardType={field.keyboard}
+                  autoCapitalize={field.capitalize}
                   autoCorrect={false}
-                  editable={!saving}
+                  editable={field.editable && !saving}
                 />
               </View>
             </View>
@@ -264,13 +238,7 @@ export default function EditProfile() {
         </View>
 
         <TouchableOpacity
-          style={[
-            styles.saveBtn,
-            {
-              backgroundColor: accent,
-              opacity: saving ? 0.75 : 1,
-            },
-          ]}
+          style={[styles.saveBtn, { backgroundColor: accent, opacity: saving ? 0.75 : 1 }]}
           onPress={handleSave}
           disabled={saving}
           activeOpacity={0.85}
@@ -291,86 +259,25 @@ export default function EditProfile() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-
   scroll: { paddingBottom: 48 },
-
   topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16,
   },
-
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
-
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-  },
-
-  spacer: {
-    width: 40,
-    height: 40,
-  },
-
-  form: {
-    paddingHorizontal: 20,
-    marginTop: 12,
-    gap: 20,
-  },
-
-  fieldGroup: {
-    gap: 8,
-  },
-
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-
+  backBtn: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+  pageTitle: { fontSize: 18, fontWeight: "900", letterSpacing: 0.5 },
+  spacer: { width: 40, height: 40 },
+  form: { paddingHorizontal: 20, marginTop: 12, gap: 20 },
+  fieldGroup: { gap: 8 },
+  fieldLabel: { fontSize: 12, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
   inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    flexDirection: "row", alignItems: "center", gap: 10,
+    borderRadius: 14, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14,
   },
-
-  input: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-
+  input: { flex: 1, fontSize: 15, fontWeight: "600" },
   saveBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginHorizontal: 20,
-    marginTop: 24,
-    borderRadius: 16,
-    paddingVertical: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, marginHorizontal: 20, marginTop: 24, borderRadius: 16, paddingVertical: 16,
   },
-
-  saveBtnText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
+  saveBtnText: { color: "#fff", fontSize: 15, fontWeight: "800", letterSpacing: 0.3 },
 });

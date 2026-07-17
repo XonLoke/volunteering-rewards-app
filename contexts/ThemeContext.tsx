@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 import { useColorScheme } from "react-native";
 
 export type ThemeMode = "light" | "dark";
@@ -57,7 +57,7 @@ export interface Theme {
 interface ThemeContextType {
   theme: Theme;
   themeType: ThemeMode;
-  toggleTheme: () => void; // no-op, system controls theme now
+  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
@@ -67,16 +67,25 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const colorScheme = useColorScheme();
-  const themeType: ThemeMode = colorScheme === "light" ? "light" : "dark";
+  const systemScheme = useColorScheme();
+
+  // start with system preference
+  const [themeType, setThemeType] = useState<ThemeMode>(
+    systemScheme === "light" ? "light" : "dark"
+  );
+
   const colors = themeType === "dark" ? darkColors : lightColors;
+
+  const toggleTheme = () => {
+    setThemeType((prev) => (prev === "dark" ? "light" : "dark"));
+  };
 
   return (
     <ThemeContext.Provider
       value={{
         theme: { mode: themeType, colors },
         themeType,
-        toggleTheme: () => {}, // system controls it now
+        toggleTheme,
       }}
     >
       {children}

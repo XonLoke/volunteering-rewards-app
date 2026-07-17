@@ -15,7 +15,7 @@ import {
 import { useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
 export default function Register() {
   const router = useRouter();
@@ -35,8 +35,12 @@ export default function Register() {
       Alert.alert("Passwords do not match", "Please make sure both passwords match.");
       return;
     }
-    if (password.length < 6) {
-      Alert.alert("Weak password", "Password must be at least 6 characters.");
+    if (password.length < 8) {
+      Alert.alert("Weak password", "Password must be at least 8 characters.");
+      return;
+    }
+    if (!/(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      Alert.alert("Weak password", "Password must contain at least one uppercase letter and one number.");
       return;
     }
 
@@ -49,6 +53,7 @@ export default function Register() {
           name: name.trim(),
           email: email.trim(),
           password,
+          password_confirm: confirmPassword,
         }),
       });
 
@@ -59,7 +64,7 @@ export default function Register() {
       }
 
       Alert.alert(
-        "Account Created! 🎉",
+        "Account Created!",
         "Welcome to Volunteer Rewards! Please sign in.",
         [{ text: "Sign In Now!", onPress: () => router.push("/login") }]
       );
@@ -112,7 +117,7 @@ export default function Register() {
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Min. 6 characters"
+                placeholder="Min. 8 chars, 1 uppercase, 1 number"
                 placeholderTextColor={theme.colors.textSecondary}
                 secureTextEntry
                 style={[styles.input, { borderColor: theme.colors.border, backgroundColor: theme.colors.inputBackground, color: theme.colors.text }]}

@@ -16,7 +16,7 @@ import { useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
 export default function Login() {
   const router = useRouter();
@@ -63,10 +63,7 @@ export default function Login() {
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
 
       // Save points separately so Home can show it immediately
-      await AsyncStorage.setItem(
-        "userPoints",
-        String(data.user.points ?? 0)
-      );
+      await AsyncStorage.setItem("userPoints", String(data.user.points_balance ?? data.user.points ?? 0));
 
       // Save user id separately if other pages need it
       await AsyncStorage.setItem(
