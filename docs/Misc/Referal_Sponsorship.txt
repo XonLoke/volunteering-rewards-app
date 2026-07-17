@@ -1,40 +1,103 @@
+REFERRAL SPONSORSHIP PROGRAM — IMPLEMENTATION SUMMARY
+=====================================================
+
+Last updated: 17 Jul 2026
+
+POINT SYSTEM
+------------
+
  ME sponsors Person A ---------------
- ───────────────────────────────────────────────────────────
- Person A joins → ME earns 10 pts  ← biggest reward for direct recruitment for DIRECT EFFORT
+ Person A joins → ME earns 10 pts  ← biggest reward for direct recruitment (DIRECT EFFORT)
  Person A earns   0 pts  (just joined)
 
  Step 2: ME helps Person A sponsor Person B  ---------------
- ───────────────────────────────────────────────────────────
- Person B joins → Person A earns   4 pts  ← direct sponsor earns less because of INDIRECT EFFORT
-					    (A will earn 10 pts if he sponsor B directly)
+ Person B joins → Person A earns   4 pts  ← direct sponsor earns less because of (INDIRECT EFFORT)
                   ME earns         6 pts  ← upline earns more for DIRECT EFFORT
-					    (This will promote upline helping downline)
+                  (This will promote upline helping downline)
 
  Step 3a: Person B sponsors Person C (with help from A)  ---------------
- ───────────────────────────────────────────────────────────
  Person C joins → Person B earns   4 pts
                   Person A earns   6 pts
                   ME               0 pts  ← three levels deep, no further reward
 
  Step 3b: Person B sponsors Person D (without help)  ---------------
- ───────────────────────────────────────────────────────────
  Person D joins → Person B earns   10 pts
 
-------------------------------------------------------------------------------
+BACKEND IMPLEMENTATION
+----------------------
 
-Referral Registered case 1 - on my profile
-────────────────────────────────────
-Upline 1 -- Parent sponsor's email: (optional, not filled if did not offer help)
-Upline 2 -- Direct sponsor's email: (optional, not filled if you register through app by yourself)
-Your email: [________]
-Downline 1st level -- Number of sponsorship ___
-Downline 2nd level -- Number of sponsorship ___
+Files:
+  backend/src/routes/referral.routes.js   — Route definitions
+  backend/src/controllers/referral.controller.js  — Request handlers
+  backend/src/services/referral.service.js  — Business logic
 
+Route mounting in index.js:
+  app.use("/api/me", require("./src/routes/referral.routes"));
+  app.use("/api/referral", require("./src/routes/referral.routes"));  // Alias
 
-Referral Registration case 2 - on new volunteer's profile
-────────────────────────────────────────
-Upline 1 -- Parent sponsor's email: (optional, not filled if not referred by sponsorship)
-Upline 2 -- Direct sponsor's email: (optional, not filled if he registered himself through app)
+Available endpoints:
+  GET /api/me/sponsorship-profile        (original mount — used by existing frontend)
+  GET /api/referral/sponsorship-profile  (alias — added 17 Jul 2026 for Vivian's frontend)
 
+Both require: Authorization: Bearer <JWT token>
 
+Response shape (GET /api/me/sponsorship-profile):
+{
+  "email": "user@example.com",
+  "upline_1_email": "parent_sponsor@example.com",  // Parent sponsor (who helped recruiter)
+  "upline_2_email": "direct_sponsor@example.com",  // Direct sponsor (who recruited you)
+  "downline_1st_level_count": 3,                    // Number of people you recruited directly
+  "downline_2nd_level_count": 1,                    // Number recruited by your downline
+  "downline_1st_level": "Eve (eve@test.com)\n...",  // Names & emails of direct recruits
+  "downline_2nd_level": "Frank (frank@test.com)\n...",  // Names & emails of indirect recruits
+  "total_sponsorship_points": 50                    // Total points earned from sponsorship
+}
 
+DATABASE TABLES
+---------------
+
+Table: sponsorship_configuration  (configurable point values)
+  id                      SERIAL PRIMARY KEY
+  direct_sponsor_points   INTEGER NOT NULL DEFAULT 10  (self-recruit)
+  helped_sponsor_points   INTEGER NOT NULL DEFAULT 4   (helped recruit)
+  upline_helper_points    INTEGER NOT NULL DEFAULT 6   (upline helping downline)
+  updated_by              INTEGER REFERENCES users(id)
+  updated_at              TIMESTAMP DEFAULT NOW()
+  created_at              TIMESTAMP DEFAULT NOW()
+
+Table: referral_logs  (audit trail)
+  id              SERIAL PRIMARY KEY
+  referrer_id     INTEGER NOT NULL REFERENCES users(id)    — who earned the points
+  referred_id     INTEGER NOT NULL REFERENCES users(id)    — the new recruit
+  level           INTEGER NOT NULL DEFAULT 1               — 1=direct, 2=indirect
+  points_awarded  INTEGER DEFAULT 0                        — points given
+  status          VARCHAR(20) DEFAULT 'pending'            — pending/rewarded
+  created_at      TIMESTAMP DEFAULT NOW()
+
+Users table additions:
+  upline_1_email  VARCHAR(255)  — Parent sponsor's email (optional)
+  upline_2_email  VARCHAR(255)  — Direct sponsor's email (optional)
+
+REGISTRATION FLOW
+-----------------
+
+1. New volunteer fills registration form
+2. Optional fields: Direct Sponsor Email (upline_2) + Parent Sponsor Email (upline_1)
+3. POST /auth/register sends upline_1_email and upline_2_email
+4. auth.service.js → referral.service.linkSponsorship():
+   - Looks up upline email → user IDs
+   - Creates referral_log entries with earned points
+   - Points: helped_sponsor_points (4) for direct sponsor
+             upline_helper_points (6) for parent sponsor
+5. Volunteers can view sponsorship profile via GET /api/me/sponsorship-profile
+
+CONFIGURABLE POINTS (Admin)
+---------------------------
+Admin can change point values via sponsorship_configuration table.
+Default: direct=10, helped=4, upline_helper=6
+
+DEPLOYMENT NOTES
+----------------
+- Backend deploys to Render (auto-deploy from GitHub main branch)
+- Route alias /api/referral/sponsorship-profile added 17 Jul 2026
+- Both /api/me/ and /api/referral/ paths are active

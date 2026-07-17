@@ -2005,3 +2005,81 @@ For quick reference, here is every endpoint grouped by app:
 | POST | `/api/coupons/redeem` | Mark coupon as used |
 | POST | `/api/coupons/reverse` | Undo last redemption |
 | GET | `/api/merchant/history` | Recent redemptions |
+
+---
+---
+
+## Supplement v2.1 — Referral Sponsorship (F3)
+
+> **Added:** 17 Jul 2026
+> **Note:** Original document frozen May 2026. This supplement documents endpoints added after the freeze.
+
+### GET /api/me/sponsorship-profile
+
+Get the authenticated volunteer's sponsorship profile (upline, downline, points).
+
+```
+Role required: volunteer
+```
+
+Also available at: `GET /api/referral/sponsorship-profile` (route alias)
+
+**Response 200 — Sponsorship Profile:**
+```json
+{
+  "email": "alice@test.com",
+  "upline_1_email": "carol@test.com",
+  "upline_2_email": "bob@test.com",
+  "downline_1st_level_count": 3,
+  "downline_2nd_level_count": 1,
+  "downline_1st_level": "Eve (eve@test.com)\nDave (dave@test.com)",
+  "downline_2nd_level": "Frank (frank@test.com)",
+  "total_sponsorship_points": 50
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `upline_2_email` | Direct sponsor — the person who recruited you |
+| `upline_1_email` | Parent sponsor — the person who sponsored your recruiter |
+| `downline_1st_level_count` | Number of volunteers you recruited directly |
+| `downline_2nd_level_count` | Number of volunteers recruited by your downline |
+| `total_sponsorship_points` | Total points earned from referrals |
+
+**Errors:** `401 unauthorized` (no/invalid token), `404 not_found`
+
+### Auth Registration — Additional Fields
+
+**POST /api/auth/register**
+
+Two new optional fields were added to the registration endpoint:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `upline_1_email` | string | No | Parent sponsor's email (who sponsored my sponsor) |
+| `upline_2_email` | string | No | Direct sponsor's email (who recruited me) |
+
+When provided, the backend automatically:
+1. Looks up the email → user ID
+2. Awards `helped_sponsor_points` (default 4) to the direct sponsor
+3. Awards `upline_helper_points` (default 6) to the parent sponsor
+4. Creates `referral_log` audit entries
+
+**Errors (new):** No new errors — invalid sponsor emails are silently ignored.
+
+### Sponsorship Configuration (Admin)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/admin/sponsorship/config` | Get current sponsorship points config |
+| PUT | `/api/admin/sponsorship/config` | Update sponsorship points config |
+
+**Sponsorship configuration shape:**
+```json
+{
+  "direct_sponsor_points": 10,
+  "helped_sponsor_points": 4,
+  "upline_helper_points": 6
+}
+```
+
