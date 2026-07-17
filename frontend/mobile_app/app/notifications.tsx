@@ -67,15 +67,7 @@ export default function Notifications() {
       const user = JSON.parse(stored);
       setUserId(user.id);
 
-      const res = await api.get("/me/events");
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(
-          data.message || data.error || "Failed to fetch notifications."
-        );
-      }
-
+      const data = await api.get<{ notifications: Notification[] }>("/me/notifications");
       setNotifications(data.notifications || []);
     } catch (err: any) {
       console.error("Failed to fetch notifications:", err);
@@ -117,18 +109,7 @@ export default function Notifications() {
     try {
       setMarkingAll(true);
 
-      const res = await fetch(
-        "/me/events",
-        {
-          method: "PATCH",
-        }
-      );
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data.message || data.error || "Failed to mark all read.");
-      }
+      await api.patch("/me/notifications/read");
 
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch (err: any) {
@@ -151,15 +132,7 @@ export default function Notifications() {
     );
 
     try {
-      const res = await api.post(`/notifications/${id}/read`, {
-        method: "PATCH",
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data.message || data.error || "Failed to mark read.");
-      }
+      await api.patch(`/me/notifications/${id}/read`);
     } catch (err) {
       console.error("Failed to mark read:", err);
 
