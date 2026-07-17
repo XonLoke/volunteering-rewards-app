@@ -2,12 +2,14 @@
  * Me Routes — Volunteer-specific data
  *
  * Endpoints:
- *   GET   /api/me/events       — My upcoming/past events
- *   GET   /api/me/qr-code      — My QR code data
- *   GET   /api/me/points       — Points balance + history
- *   GET   /api/me/coupons      — My redeemed coupons + PINs
- *   GET   /api/me/favorites    — My favorite events
- *   GET   /api/me/notifications — My notification preferences
+ *   GET   /api/me/events             — My upcoming/past events
+ *   GET   /api/me/qr-code            — My QR code data
+ *   GET   /api/me/points             — Points balance + history
+ *   GET   /api/me/coupons            — My redeemed coupons + PINs
+ *   GET   /api/me/favorites          — My favorite events
+ *   GET   /api/me/notifications      — My notifications list
+ *   PATCH /api/me/notifications/read          — Mark all notifications as read
+ *   PATCH /api/me/notifications/:id/read      — Mark one notification as read
  *
  * Mounted at: /api/me (see index.js)
  */
@@ -28,30 +30,42 @@ router.get("/points", controller.myPoints);
 router.get("/coupons", controller.myCoupons);
 router.get("/favorites", controller.myFavorites);
 
-// GET /api/me/notifications — Get notification preferences
+// GET /api/me/notifications — List notifications for current user
 router.get("/notifications", async (req, res, next) => {
   try {
-    const userId = req.user.id;
-    let result = await pool.query(
-      `SELECT push_notifications, email_notifications, expo_push_token
-       FROM user_settings WHERE user_id = $1`,
-      [userId]
+    const { rows } = await pool.query(
+      `SELECT id, title, description, icon, color, is_read, created_at
+       FROM notifications
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [req.user.id]
     );
+    res.json({ notifications: rows });
+  } catch (err) { next(err); }
+});
 
-    // Auto-create defaults if missing
-    if (result.rows.length === 0) {
-      result = await pool.query(
-        `INSERT INTO user_settings (user_id)
-         VALUES ($1)
-         RETURNING push_notifications, email_notifications, expo_push_token`,
-        [userId]
-      );
-    }
+// PATCH /api/me/notifications/read — Mark all as read
+router.patch("/notifications/read", async (req, res, next) => {
+  try {
+    await pool.query(
+      "UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE",
+      [req.user.id]
+    );
+    res.json({ message: "All notifications marked as read." });
+  } catch (err) { next(err); }
+});
 
-    res.json({ data: result.rows[0] });
-  } catch (err) {
-    next(err);
-  }
+// PATCH /api/me/notifications/:id/read — Mark one as read
+router.patch("/notifications/:id/read", async (req, res, next) => {
+  try {
+    const { rowCount } = await pool.query(
+      "UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2 AND is_read = FALSE",
+      [req.params.id, req.user.id]
+    );
+    if (rowCount === 0) return res.status(404).json({ error: { code: "not_found", message: "Notification not found or already read." } });
+    res.json({ message: "Notification marked as read." });
+  } catch (err) { next(err); }
 });
 
 module.exports = router;
