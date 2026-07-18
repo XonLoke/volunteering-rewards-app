@@ -64,7 +64,58 @@ npm run dev
 
 ---
 
-## Test Accounts Deployed URLs
+## Deployment for New Developers
+
+When deploying your own instance, set the following environment variables so the **Forgot Password** and **Email Verification** flows link back to **your** deployed URLs — not the demo URLs.
+
+### 1. Backend (Render)
+
+In your Render dashboard → Environment Variables:
+
+| Variable | Value |
+|----------|-------|
+| `FRONTEND_URL` | Your PWA URL, e.g. `https://my-app.vercel.app` |
+| `EMAIL_USER` | SMTP username or Mailgun from address |
+| `EMAIL_PASS` | SMTP password or Mailgun sending key |
+
+The backend uses this priority:
+1. **`redirect_url`** sent from the frontend (highest priority)
+2. **`FRONTEND_URL`** env var fallback
+3. Hardcoded `https://volunteering-rewards-app.vercel.app` (last resort — change this)
+
+### 2. Mobile Apps (Expo)
+
+In `frontend/mobile_app/.env` and `frontend/organiser_mobile_app/.env`:
+
+```bash
+EXPO_PUBLIC_API_URL=https://your-backend.onrender.com/api
+EXPO_PUBLIC_FRONTEND_URL=https://my-app.vercel.app
+```
+
+The forgot-password screens pass `redirect_url: "${EXPO_PUBLIC_FRONTEND_URL}/reset-password"` to the backend. If the env var is not set, it falls back to the demo URL.
+
+### 3. Web Portals (auto-detected — no config needed)
+
+The web portals (`ForgotPassword.jsx`) use `window.location.origin` to detect their own URL at runtime. The reset link always points back to the same portal the user came from.
+
+### 4. Email Setup (Mailgun / SMTP)
+
+**Option A: Mailgun API (recommended)**
+1. Create a free [Mailgun](https://www.mailgun.com) account
+2. Go to **Domains** → copy your sandbox domain
+3. In **Admin Portal** → **Email Config** → click **Mailgun** preset
+4. Enter `postmaster@<your-sandbox>.mailgun.org` as Email User
+5. Enter your Mailgun **sending key** as Email Pass
+6. Click **Save** → **Send Test**
+7. Add your email as an **Authorized Recipient** in Mailgun dashboard
+
+**Option B: Any SMTP provider**
+1. In **Admin Portal** → **Email Config** → enter your SMTP credentials
+2. Supported: Gmail (App Password), SendGrid, SMTP2GO, Brevo
+
+
+
+---
 
 ### Web Portals (Vercel)
 
