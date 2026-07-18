@@ -15,6 +15,8 @@ import Button from '../../src/components/Button';
 import { api } from '../../src/services/api';
 import { colors, spacing, typography } from '../../src/theme';
 
+const FRONTEND_URL = process.env.EXPO_PUBLIC_FRONTEND_URL || "https://volunteering-rewards-app.vercel.app";
+
 export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
@@ -38,6 +40,7 @@ export default function ForgotPasswordScreen() {
     try {
       await api.post('/auth/forgot-password', {
         email: email.trim().toLowerCase(),
+        redirect_url: `${FRONTEND_URL}/reset-password`,
       });
       setSent(true);
     } catch (err: any) {

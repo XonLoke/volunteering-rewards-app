@@ -23,6 +23,8 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
+  const FRONTEND_URL = process.env.EXPO_PUBLIC_FRONTEND_URL || "https://volunteering-rewards-app.vercel.app";
+
   const handleSubmit = async () => {
     if (!email.trim()) {
       Alert.alert("Missing field", "Please enter your email address.");
@@ -33,6 +35,7 @@ export default function ForgotPassword() {
     try {
       await api.post("/auth/forgot-password", {
         email: email.trim().toLowerCase(),
+        redirect_url: `${FRONTEND_URL}/reset-password`,
       });
       setSent(true);
     } catch (err: any) {

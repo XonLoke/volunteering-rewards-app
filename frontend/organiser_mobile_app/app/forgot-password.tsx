@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import { apiPost } from "../lib/api";
 
+const FRONTEND_URL = process.env.EXPO_PUBLIC_FRONTEND_URL || "https://volunteering-rewards-app.vercel.app";
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,7 @@ export default function ForgotPassword() {
       setLoading(true);
       await apiPost("/api/auth/forgot-password", {
         email: email.trim().toLowerCase(),
+        redirect_url: `${FRONTEND_URL}/reset-password`,
       });
       setSent(true);
     } catch (error: any) {
