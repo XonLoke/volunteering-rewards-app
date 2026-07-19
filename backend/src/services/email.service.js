@@ -34,6 +34,9 @@ async function loadDbConfig() {
       `SELECT smtp_host, smtp_port, smtp_secure, email_user, email_pass, email_from_name FROM ${DB_TABLE} ORDER BY id DESC LIMIT 1`
     );
     if (rows.length > 0 && rows[0].email_user) {
+      const mailgunHost = (rows[0].smtp_host || "").toLowerCase();
+      const mailgunUser = (rows[0].email_user || "").toLowerCase();
+      const mailgunPass = rows[0].email_pass || "";
       cachedDbConfig = {
         host: rows[0].smtp_host,
         port: parseInt(rows[0].smtp_port, 10) || 465,
@@ -41,7 +44,9 @@ async function loadDbConfig() {
         user: rows[0].email_user,
         pass: rows[0].email_pass,
         fromName: rows[0].email_from_name || "Volunteer Rewards App",
-        isMailgun: (rows[0].smtp_host || "").includes("mailgun") || (rows[0].email_user || "").includes("mailgun"),
+        // Only use Mailgun REST API when the password looks like an API key (starts with "key-").
+        // SMTP credentials stored via Admin Portal won't work against the REST API endpoint.
+        isMailgun: (mailgunHost.includes("mailgun") || mailgunUser.includes("mailgun")) && mailgunPass.startsWith("key-"),
       };
       return cachedDbConfig;
     }
@@ -54,14 +59,16 @@ async function loadDbConfig() {
 
 function getEnvConfig() {
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const pass = process.env.EMAIL_PASS || "";
   return {
     host,
     port: parseInt(process.env.SMTP_PORT || "587", 10),
     secure: process.env.SMTP_SECURE === "true",
     user: process.env.EMAIL_USER || "",
-    pass: process.env.EMAIL_PASS || "",
+    pass,
     fromName: process.env.EMAIL_FROM_NAME || "Volunteer Rewards App",
-    isMailgun: host.includes("mailgun"),
+    // Only use Mailgun REST API when the pass looks like an API key ("key-...")
+    isMailgun: host.includes("mailgun") && pass.startsWith("key-"),
   };
 }
 
@@ -145,9 +152,9 @@ function getNodemailer() {
   return nodemailer;
 }
 
-async function createSmtpTransporter() {
+async function createSmtpTransporter(overrides) {
   const nm = getNodemailer();
-  const config = getEnvConfig(); // SMTP always uses env vars for non-Mailgun
+  const config = overrides || getEnvConfig();
   return nm.createTransport({
     host: config.host,
     port: config.port,
@@ -156,7 +163,9 @@ async function createSmtpTransporter() {
   });
 }
 
-async function getSmtpTransporter() {
+async function getSmtpTransporter(overrides) {
+  // If using overrides (e.g. from DB config), create a one-off transport
+  if (overrides) return createSmtpTransporter(overrides);
   if (!transporter) transporter = await createSmtpTransporter();
   return transporter;
 }
@@ -190,8 +199,9 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
   }
 
   // Fallback: send via SMTP for non-Mailgun providers
+  // Use config from DB (or env vars) directly so stored SMTP credentials work
   const fromName = config.fromName || "Volunteer Rewards App";
-  const tp = await getSmtpTransporter();
+  const tp = await getSmtpTransporter(config);
   const info = await tp.sendMail({
     from: `"${fromName}" <${config.user}>`,
     to,
