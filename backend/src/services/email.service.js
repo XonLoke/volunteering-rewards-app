@@ -34,9 +34,6 @@ async function loadDbConfig() {
       `SELECT smtp_host, smtp_port, smtp_secure, email_user, email_pass, email_from_name FROM ${DB_TABLE} ORDER BY id DESC LIMIT 1`
     );
     if (rows.length > 0 && rows[0].email_user) {
-      const mailgunHost = (rows[0].smtp_host || "").toLowerCase();
-      const mailgunUser = (rows[0].email_user || "").toLowerCase();
-      const mailgunPass = rows[0].email_pass || "";
       cachedDbConfig = {
         host: rows[0].smtp_host,
         port: parseInt(rows[0].smtp_port, 10) || 465,
@@ -44,9 +41,10 @@ async function loadDbConfig() {
         user: rows[0].email_user,
         pass: rows[0].email_pass,
         fromName: rows[0].email_from_name || "Volunteer Rewards App",
-        // Only use Mailgun REST API when the password looks like an API key (starts with "key-").
-        // SMTP credentials stored via Admin Portal won't work against the REST API endpoint.
-        isMailgun: (mailgunHost.includes("mailgun") || mailgunUser.includes("mailgun")) && mailgunPass.startsWith("key-"),
+        // When host/user indicates Mailgun, use REST API (more reliable from Render).
+        // sendViaMailgunApi auto-prepends "key-" if missing from the password.
+        isMailgun: (rows[0].smtp_host || "").toLowerCase().includes("mailgun")
+          || (rows[0].email_user || "").toLowerCase().includes("mailgun"),
       };
       return cachedDbConfig;
     }
@@ -67,8 +65,7 @@ function getEnvConfig() {
     user: process.env.EMAIL_USER || "",
     pass,
     fromName: process.env.EMAIL_FROM_NAME || "Volunteer Rewards App",
-    // Only use Mailgun REST API when the pass looks like an API key ("key-...")
-    isMailgun: host.includes("mailgun") && pass.startsWith("key-"),
+    isMailgun: host.toLowerCase().includes("mailgun"),
   };
 }
 
@@ -90,7 +87,9 @@ function extractMailgunDomain(fromEmail) {
 
 async function sendViaMailgunApi(fromAddress, fromName, to, subject, text, html, replyTo) {
   const config = cachedDbConfig || await loadDbConfig() || getEnvConfig();
-  const apiKey = config.pass;
+  // Mailgun API keys need the "key-" prefix — auto-add it if missing
+  let apiKey = config.pass;
+  if (apiKey && !apiKey.startsWith("key-")) apiKey = `key-${apiKey}`;
   const domain = extractMailgunDomain(fromAddress);
 
   if (!domain) {
