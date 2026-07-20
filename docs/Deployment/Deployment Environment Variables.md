@@ -16,9 +16,15 @@ For Render deployment — set these in Render dashboard or via `render.yaml`:
 | `JWT_ACCESS_EXPIRES_IN` | `15m` | Token lifetime |
 | `JWT_REFRESH_EXPIRES_IN` | `7d` | Refresh token lifetime |
 | `CORS_ORIGINS` | `https://your-frontend.onrender.com` | Comma-separated |
-| `RATE_LIMIT_WINDOW_MS` | `900000` | 15 min window |
-| `RATE_LIMIT_MAX` | `100` | Max requests per window |
+| `RATE_LIMIT_WINDOW_MS` | `900000` | 15 min window for global limiter |
+| `RATE_LIMIT_MAX` | `100` | Max requests per window (global) |
+| `AUTH_STRICT_WINDOW_MS` | `60000` | 1 min window for login/forgot-password |
+| `AUTH_STRICT_MAX` | `10` | Max login attempts per window |
+| `AUTH_REGISTER_WINDOW_MS` | `60000` | 1 min window for registration |
+| `AUTH_REGISTER_MAX` | `5` | Max registration attempts per window |
 | `MAX_FILE_SIZE` | `1048576` | 1 MB upload limit |
+
+> **⚠️ DO NOT set `DISABLE_RATE_LIMIT=true` in production.** That env var is for local dev only (see `backend/.env`).
 
 ## Secrets NOT to commit
 
