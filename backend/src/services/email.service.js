@@ -130,6 +130,10 @@ async function sendViaMailgunApi(fromAddress, fromName, to, subject, text, html,
       });
     });
 
+    req.setTimeout(15000, () => {
+      req.destroy();
+      reject(new Error("Mailgun API request timed out after 15s"));
+    });
     req.on("error", reject);
     req.write(postData);
     req.end();
