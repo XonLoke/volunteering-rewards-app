@@ -8,11 +8,11 @@ services:
   # ─── Backend API ──────────────────────────────────────────
   - type: web
     name: volunteering-rewards-api
-    env: node
+    env: docker
     repo: https://github.com/XonLoke/volunteering-rewards-app
     branch: main
-    buildCommand: cd backend && npm ci
-    startCommand: cd backend && node index.js
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV

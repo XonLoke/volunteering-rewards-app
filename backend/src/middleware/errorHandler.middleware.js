@@ -14,7 +14,7 @@ function errorHandler(err, _req, res, _next) {
   const body = {
     error: {
       code: err.code || "internal_error",
-      message: statusCode >= 500 && process.env.NODE_ENV === "production"
+      message: statusCode >= 500 && process.env.NODE_ENV === "production" && !err.code
         ? "Internal server error"
         : err.message || "An unexpected error occurred",
     },
