@@ -31,6 +31,8 @@ export default function EmailConfig() {
   const [hasChanges, setHasChanges] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [usingEnv, setUsingEnv] = useState(false);
+  const [mailgunApiKey, setMailgunApiKey] = useState('');
+  const [discovering, setDiscovering] = useState(false);
 
   const fetchConfig = useCallback(async () => {
     setLoading(true);
@@ -71,6 +73,29 @@ export default function EmailConfig() {
       smtp_secure: preset.secure,
     }));
     setHasChanges(true);
+  };
+
+  const handleDiscoverMailgun = async () => {
+    if (!mailgunApiKey.trim()) { toast('Enter your Mailgun API key first.', 'error'); return; }
+    setDiscovering(true);
+    try {
+      const res = await apiPost('/admin/email/discover-mailgun', { api_key: mailgunApiKey.trim() });
+      setConfig((prev) => ({
+        ...prev,
+        smtp_host: res.smtp_host,
+        smtp_port: res.smtp_port,
+        smtp_secure: res.smtp_secure,
+        email_user: res.email_user,
+        email_pass: res.email_pass,
+        email_from_name: res.email_from_name,
+      }));
+      setHasChanges(true);
+      toast(`Found Mailgun domain: ${res.domain_name} (${res.domain_type})`, 'success');
+    } catch (err) {
+      toast(err.message || 'Failed to discover Mailgun settings', 'error');
+    } finally {
+      setDiscovering(false);
+    }
   };
 
   const handleSave = async () => {
@@ -155,6 +180,28 @@ export default function EmailConfig() {
           </div>
           <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>
             {FREE_PROVIDERS.find(p => p.host === config.smtp_host)?.note || 'Select a provider above for recommended settings.'}
+          </div>
+        </div>
+
+        {/* Mailgun Auto-Discover — just need API key, no SMTP knowledge required */}
+        <div className="card" style={{ padding: 24, borderRadius: 12, border: '1px solid #7c3aed', marginBottom: 20, background: '#f5f3ff' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 16, color: '#5b21b6' }}>⚡ Mailgun Auto-Discover</h3>
+          <p style={{ fontSize: 13, color: '#555', margin: '0 0 16px', lineHeight: 1.5 }}>
+            Don't know your SMTP login? Just paste your <strong>Mailgun API key</strong> below
+            and we'll find your domain and fill in everything automatically.
+          </p>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input className="form-input" type="password" value={mailgunApiKey}
+              onChange={(e) => setMailgunApiKey(e.target.value)}
+              placeholder="Paste your Mailgun API key (e.g. 5de8e306...)"
+              style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+            <button className="btn btn-secondary" onClick={handleDiscoverMailgun} disabled={discovering}
+              style={{ whiteSpace: 'nowrap', background: '#7c3aed', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 6, fontSize: 14, fontWeight: 600, opacity: discovering ? 0.7 : 1 }}>
+              {discovering ? '🔍 Looking up...' : '🔍 Auto-Discover'}
+            </button>
+          </div>
+          <div style={{ fontSize: 12, color: '#6d28d9', marginTop: 8 }}>
+            💡 Your API key is only sent to Mailgun's API — never shared. The SMTP login and domain are fetched automatically.
           </div>
         </div>
 

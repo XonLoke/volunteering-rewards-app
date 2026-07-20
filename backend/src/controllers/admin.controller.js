@@ -46,6 +46,7 @@ async function createUserAccount(req, res, next) { try { const r = await adminSe
 async function getEmailConfig(req, res, next) { try { res.json(await emailConfigService.getEmailConfig()); } catch (err) { next(err); } }
 async function updateEmailConfig(req, res, next) { try { res.json(await emailConfigService.updateEmailConfig(req.body, req.user.id)); } catch (err) { next(err); } }
 async function testEmailConfig(req, res, next) { try { res.json(await emailConfigService.testEmailConfig(req.body.email, req.user)); } catch (err) { next(err); } }
+async function discoverMailgun(req, res, next) { try { res.json(await emailConfigService.discoverMailgun(req.body.api_key)); } catch (err) { next(err); } }
 
 module.exports = {
   dashboard, listUsers, getUser, updateUser, deactivateUser,
@@ -61,5 +62,5 @@ module.exports = {
   createMerchantAccount,
   createOrganiserAccount, resetPassword,
   createUserAccount,
-  getEmailConfig, updateEmailConfig, testEmailConfig,
+  getEmailConfig, updateEmailConfig, testEmailConfig, discoverMailgun,
 };

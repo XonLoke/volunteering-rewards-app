@@ -88,5 +88,6 @@ router.post("/redemptions/cleanup", controller.cleanupRedemptions);
 router.get("/email/config", controller.getEmailConfig);
 router.put("/email/config", controller.updateEmailConfig);
 router.post("/email/test", controller.testEmailConfig);
+router.post("/email/discover-mailgun", controller.discoverMailgun);
 
 module.exports = router;

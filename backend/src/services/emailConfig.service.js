@@ -117,4 +117,58 @@ async function testEmailConfig(email, adminUser) {
   return { message: "Test email sent successfully. Check your inbox." };
 }
 
-module.exports = { getEmailConfig, updateEmailConfig, testEmailConfig };
+async function discoverMailgun(apiKey) {
+  if (!apiKey || !apiKey.trim()) {
+    throw createError(400, "validation_error", "Mailgun API key is required.");
+  }
+
+  const https = require("https");
+  const cleanKey = apiKey.trim();
+
+  // Call Mailgun API to list domains
+  const domains = await new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: "api.mailgun.net",
+      path: "/v3/domains",
+      method: "GET",
+      headers: {
+        "Authorization": "Basic " + Buffer.from(`api:${cleanKey}`).toString("base64"),
+      },
+    }, (res) => {
+      let body = "";
+      res.on("data", (chunk) => body += chunk);
+      res.on("end", () => {
+        try {
+          const parsed = JSON.parse(body);
+          if (res.statusCode >= 200 && res.statusCode < 300) resolve(parsed);
+          else reject(new Error(parsed.message || `Mailgun API error (${res.statusCode})`));
+        } catch { reject(new Error(`Mailgun API error (${res.statusCode}): ${body}`)); }
+      });
+    });
+    req.setTimeout(15000, () => { req.destroy(); reject(new Error("Mailgun API timed out")); });
+    req.on("error", reject);
+    req.end();
+  });
+
+  const items = domains?.domains || [];
+  const active = items.filter(d => d.state === "active");
+  const domain = active.find(d => d.type !== "sandbox") || active[0];
+
+  if (!domain) {
+    throw createError(404, "no_domain", "No active Mailgun domains found on this account.");
+  }
+
+  // SMTP login for any Mailgun domain is always postmaster@{domain}
+  return {
+    smtp_host: "smtp.mailgun.org",
+    smtp_port: 587,
+    smtp_secure: false,
+    email_user: `postmaster@${domain.name}`,
+    email_pass: cleanKey,
+    email_from_name: "Volunteer Rewards App",
+    domain_name: domain.name,
+    domain_type: domain.type,
+  };
+}
+
+module.exports = { getEmailConfig, updateEmailConfig, testEmailConfig, discoverMailgun };
