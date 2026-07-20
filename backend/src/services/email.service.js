@@ -87,9 +87,7 @@ function extractMailgunDomain(fromEmail) {
 
 async function sendViaMailgunApi(fromAddress, fromName, to, subject, text, html, replyTo) {
   const config = cachedDbConfig || await loadDbConfig() || getEnvConfig();
-  // Mailgun API keys need the "key-" prefix — auto-add it if missing
-  let apiKey = config.pass;
-  if (apiKey && !apiKey.startsWith("key-")) apiKey = `key-${apiKey}`;
+  const apiKey = config.pass;
   const domain = extractMailgunDomain(fromAddress);
 
   if (!domain) {
