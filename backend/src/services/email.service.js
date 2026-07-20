@@ -1,15 +1,10 @@
 /**
  * Email Service — Multi-provider email dispatch
  *
- * Sends via Mailgun REST API (preferred) or SMTP (fallback for other providers).
- * Configuration is read from DB (email_config table) with env var fallback.
- *
- * Mailgun: Uses REST API — faster and more reliable than SMTP from Render.
- *   email_user  → the full from address (e.g. postmaster@sandbox...mailgun.org)
- *   email_pass  → Mailgun API key
- *
- * Other SMTP providers (Gmail, SendGrid, SMTP2GO):
- *   Falls back to standard Nodemailer SMTP transport.
+ * Sends via SMTP using credentials from DB (email_config table) or env vars.
+ * Previously used Mailgun REST API, but Render's network blocks outbound
+ * HTTPS to api.mailgun.net, so SMTP (smtp.mailgun.org) is used instead.
+ * The Mailgun REST API code (sendViaMailgunApi) is kept for non-Render deploys.
  *
  * Mounted at: src/services/email.service.js
  * Required by: auth.service.js, contact.routes.js
@@ -41,10 +36,7 @@ async function loadDbConfig() {
         user: rows[0].email_user,
         pass: rows[0].email_pass,
         fromName: rows[0].email_from_name || "Volunteer Rewards App",
-        // When host/user indicates Mailgun, use REST API (more reliable from Render).
-        // sendViaMailgunApi auto-prepends "key-" if missing from the password.
-        isMailgun: (rows[0].smtp_host || "").toLowerCase().includes("mailgun")
-          || (rows[0].email_user || "").toLowerCase().includes("mailgun"),
+        isMailgun: false, // SMTP works reliably; REST API blocked from Render
       };
       return cachedDbConfig;
     }
@@ -65,7 +57,7 @@ function getEnvConfig() {
     user: process.env.EMAIL_USER || "",
     pass,
     fromName: process.env.EMAIL_FROM_NAME || "Volunteer Rewards App",
-    isMailgun: host.toLowerCase().includes("mailgun"),
+    isMailgun: false, // SMTP always; REST API blocked from Render
   };
 }
 
@@ -164,6 +156,8 @@ async function createSmtpTransporter(overrides) {
     connectionTimeout: 10000,   // 10s — fail fast instead of hanging
     greetingTimeout: 10000,
     socketTimeout: 15000,
+    requireTLS: true,           // enforce STARTTLS for port 587
+    tls: { rejectUnauthorized: true },
   });
 }
 
