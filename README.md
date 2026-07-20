@@ -312,3 +312,4 @@ cd backend && node src/utils/migrationRunner.js  # Run migrations
 
 - **Cold starts:** Render's free tier spins down after 15 min of inactivity. First request may take 30-60s to wake up.
 - **Documentation:** See the `docs/` folder for full deployment guides, test plans, and architecture reports.
+ 
