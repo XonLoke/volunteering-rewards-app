@@ -60,7 +60,7 @@ const QR_PREFIX = "VR_VOLUNTEER:";
 
 const API_BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
-const POLLING_INTERVAL_MS = 2500;
+const POLLING_INTERVAL_MS = 6000; // ← was 2500, widened to reduce rate-limit risk
 
 export default function Scan() {
   const router = useRouter();
@@ -89,7 +89,7 @@ export default function Scan() {
   }, []);
 
   /*
-   * Silently check the backend every 2.5 seconds.
+   * Silently check the backend every 6 seconds.
    *
    * When attendance is recorded, the volunteer phone
    * automatically navigates to /scan-success.
@@ -114,9 +114,16 @@ export default function Scan() {
 
       try {
         const after = encodeURIComponent(qrOpenedAtRef.current);
+        const token = await AsyncStorage.getItem("token");
 
 const response = await authFetch(
           `${API_BASE_URL}/attendance/volunteer/${user.id}/latest?after=${after}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          },
         );
 
         const responseText = await response.text();

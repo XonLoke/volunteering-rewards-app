@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -11,10 +10,10 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Ionicons } from "@expo/vector-icons";
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
@@ -24,89 +23,110 @@ export default function ForgotPassword() {
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async () => {
     if (!email.trim()) {
-      Alert.alert("Missing field", "Please enter your email address.");
+      Alert.alert("Missing email", "Please enter your email address.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+      const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+        }),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (!res.ok) {
-        throw new Error(data.error?.message || "Request failed.");
+      if (!response.ok) {
+        throw new Error(data.error?.message || data.message || "Something went wrong.");
       }
 
-      setSent(true);
+      // Backend intentionally always returns the same generic message
+      // regardless of whether the email exists (prevents enumeration),
+      // so we just show it and flip to the "submitted" state.
+      setSubmitted(true);
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Something went wrong. Please try again.");
+      Alert.alert(
+        "Request failed",
+        err.message || "Could not send reset link. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView
+      style={[styles.screen, { backgroundColor: theme.colors.background }]}
+    >
       <KeyboardAvoidingView
         style={styles.screen}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView contentContainerStyle={styles.container}>
-          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            {/* Back button */}
-            <TouchableOpacity
-              style={[styles.backBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={22} color={theme.colors.text} />
-            </TouchableOpacity>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              Forgot Password
+            </Text>
 
-            {sent ? (
-              // ── Success state ───────────────────────────
+            {submitted ? (
               <>
-                <View style={styles.iconWrap}>
-                  <Ionicons name="mail-outline" size={48} color={theme.colors.primary} />
-                </View>
-
-                <Text style={[styles.title, { color: theme.colors.text }]}>Check Your Email</Text>
-                <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-                  If an account exists for{"\n"}
-                  <Text style={{ fontWeight: "700" }}>{email}</Text>
-                  {"\n\n"}
-                  a password reset link has been sent. Please check your inbox and follow the instructions.
+                <Text
+                  style={[
+                    styles.subtitle,
+                    { color: theme.colors.textSecondary },
+                  ]}
+                >
+                  If an account with that email exists, a password reset
+                  link has been sent. Check your inbox.
                 </Text>
 
                 <TouchableOpacity
-                  style={[styles.button, { backgroundColor: theme.colors.primary }]}
-                  onPress={() => router.push("/login")}
+                  style={[
+                    styles.loginButton,
+                    { backgroundColor: theme.colors.primary },
+                  ]}
+                  onPress={() => router.replace("/login")}
                 >
-                  <Text style={styles.buttonText}>Back to Sign In</Text>
+                  <Text style={[styles.loginButtonText, { color: "#fff" }]}>
+                    BACK TO LOGIN
+                  </Text>
                 </TouchableOpacity>
               </>
             ) : (
-              // ── Email input state ───────────────────────
               <>
-                <View style={styles.iconWrap}>
-                  <Ionicons name="lock-closed-outline" size={40} color={theme.colors.primary} />
-                </View>
-
-                <Text style={[styles.title, { color: theme.colors.text }]}>Forgot Password?</Text>
-                <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-                  Enter your email address and we'll send you a link to reset your password.
+                <Text
+                  style={[
+                    styles.subtitle,
+                    { color: theme.colors.textSecondary },
+                  ]}
+                >
+                  Enter the email linked to your account and we&apos;ll
+                  send you a reset link.
                 </Text>
 
                 <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Email address</Text>
+                  <Text style={[styles.label, { color: theme.colors.text }]}>
+                    Email address
+                  </Text>
+
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -115,29 +135,49 @@ export default function ForgotPassword() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
-                    style={[styles.input, { borderColor: theme.colors.border, backgroundColor: theme.colors.inputBackground, color: theme.colors.text }]}
+                    style={[
+                      styles.input,
+                      {
+                        color: theme.colors.text,
+                        backgroundColor: theme.colors.surfaceSecondary,
+                        borderColor: theme.colors.surfaceSecondary,
+                      },
+                    ]}
                   />
                 </View>
 
                 <TouchableOpacity
-                  style={[styles.button, { backgroundColor: theme.colors.primary, opacity: loading ? 0.7 : 1 }]}
+                  style={[
+                    styles.loginButton,
+                    {
+                      backgroundColor: theme.colors.primary,
+                      opacity: loading ? 0.7 : 1,
+                    },
+                  ]}
                   onPress={handleSubmit}
                   disabled={loading}
                 >
                   {loading ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.buttonText}>Send Reset Link</Text>
+                    <Text style={[styles.loginButtonText, { color: "#fff" }]}>
+                      SEND RESET LINK
+                    </Text>
                   )}
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.backLink}
-                  onPress={() => router.push("/login")}
-                >
-                  <Ionicons name="chevron-back" size={16} color={theme.colors.primary} />
-                  <Text style={[styles.backLinkText, { color: theme.colors.primary }]}> Back to Sign In</Text>
-                </TouchableOpacity>
+                <View style={styles.footer}>
+                  <TouchableOpacity onPress={() => router.back()}>
+                    <Text
+                      style={[
+                        styles.signUpText,
+                        { color: theme.colors.primaryLight },
+                      ]}
+                    >
+                      Back to Login
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </>
             )}
           </View>
@@ -148,18 +188,71 @@ export default function ForgotPassword() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  container: { flex: 1, justifyContent: "center", paddingHorizontal: 20 },
-  card: { borderRadius: 24, padding: 28, borderWidth: 1, alignItems: "center" },
-  backBtn: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, alignSelf: "flex-start", marginBottom: 16 },
-  iconWrap: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: 16, marginTop: 8 },
-  title: { fontSize: 22, fontWeight: "900", textAlign: "center", marginBottom: 8, letterSpacing: -0.5 },
-  subtitle: { fontSize: 14, fontWeight: "600", textAlign: "center", lineHeight: 22, marginBottom: 24 },
-  inputGroup: { width: "100%", marginBottom: 20 },
-  label: { fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 },
-  input: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: "600" },
-  button: { width: "100%", borderRadius: 14, paddingVertical: 16, alignItems: "center", marginBottom: 16 },
-  buttonText: { color: "#fff", fontSize: 15, fontWeight: "800", letterSpacing: 0.5 },
-  backLink: { flexDirection: "row", alignItems: "center", padding: 8 },
-  backLinkText: { fontSize: 14, fontWeight: "600" },
+  screen: {
+    flex: 1,
+  },
+  container: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: 24,
+  },
+  card: {
+    borderRadius: 32,
+    padding: 28,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: {
+      width: 0,
+      height: 16,
+    },
+    elevation: 8,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "800",
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 28,
+    lineHeight: 22,
+  },
+  inputGroup: {
+    marginBottom: 18,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  input: {
+    width: "100%",
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    fontSize: 15,
+  },
+  loginButton: {
+    borderRadius: 18,
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 22,
+  },
+  loginButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  signUpText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
 });

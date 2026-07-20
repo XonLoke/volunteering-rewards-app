@@ -16,8 +16,6 @@ import * as ImagePicker from "expo-image-picker";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { authFetch, actionSheet, confirmAndAct } from "./api";
-
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
@@ -37,6 +35,14 @@ const menuItems = [
     sub: "Track points earned and used",
     route: "/points-history",
     color: "#f59e0b",
+  },
+  {
+    id: "2.5",
+    icon: "people-outline",
+    label: "Referral Program",
+    sub: "Invite friends and earn bonus points",
+    route: "/referral",
+    color: "#a855f7",
   },
   {
     id: "3",
@@ -120,16 +126,21 @@ export default function Profile() {
       setUser(parsedUser);
       setAvatarUri(parsedUser.avatar_url || null);
 
-      try {
-        const response = await authFetch(
-          `${BASE_URL}/profile`
-        );
-        const profileData = await response.json();
+      const token = await AsyncStorage.getItem("token"); // ← fetch once, reuse for all three calls
 
-        if (response.ok && profileData.user) {
+      try {
+        const profileRes = await fetch(`${BASE_URL}/me`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const profileData = await profileRes.json();
+
+        if (profileRes.ok && profileData.name) {
           const updatedUser = {
             ...parsedUser,
-            ...profileData.user,
+            ...profileData,
           };
 
           setUser(updatedUser);
@@ -137,8 +148,11 @@ export default function Profile() {
 
           await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
 
-          if (typeof updatedUser.points !== "undefined") {
-            await AsyncStorage.setItem("userPoints", String(updatedUser.points));
+          const freshPoints = Number(
+            profileData.points_balance ?? profileData.points ?? 0
+          );
+          if (freshPoints > 0) {
+            await AsyncStorage.setItem("userPoints", String(freshPoints));
           }
         }
       } catch (profileErr) {
@@ -146,24 +160,32 @@ export default function Profile() {
       }
 
       try {
-        const scansRes = await authFetch(`${BASE_URL}/scans`);
+        const scansRes = await fetch(`${BASE_URL}/scans?user_id=${parsedUser.id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
         const scansData = await scansRes.json();
 
         if (scansRes.ok) {
-          setScansCount((scansData.scans || []).length);
+          setScansCount((scansData.scans || scansData.data || []).length);
         }
       } catch (scanErr) {
         console.log("Scans count skipped:", scanErr);
       }
 
       try {
-        const response = await authFetch(
-          `${BASE_URL}/my-coupons`
-        );
-        const couponsData = await response.json();
+        const couponsRes = await fetch(`${BASE_URL}/me/coupons`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const couponsData = await couponsRes.json();
 
-        if (response.ok) {
-          setCouponsCount((couponsData.coupons || []).length);
+        if (couponsRes.ok) {
+          setCouponsCount((couponsData.coupons || couponsData.data || []).length);
         }
       } catch (couponErr) {
         console.log("Coupons count skipped:", couponErr);
@@ -185,27 +207,24 @@ export default function Profile() {
   };
 
   const confirmLogout = () => {
-    confirmAndAct("Log out?", "You will need to log in again to continue.", handleLogout);
+    Alert.alert("Log out?", "You will need to log in again to continue.", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: handleLogout,
+      },
+    ]);
   };
 
   const handleLogout = async () => {
-    // Clear all cached user data
-    const keys = [
-      "user",
-      "token",
-      "userPoints",
-      "userId",
-      "bookedEvents",
-      "cancelledBookingIds",
-      "userAvatar",
-    ];
-    await Promise.all(keys.map((k) => AsyncStorage.removeItem(k)));
-    // Force full page reload to reset app state (works in PWA/web)
-    if (typeof window !== "undefined") {
-      window.location.href = "/";
-    } else {
-      router.replace("/");
-    }
+    await AsyncStorage.removeItem("user");
+    await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("userPoints");
+    router.replace("/login" as any);
   };
 
   const uploadProfilePhoto = async (localUri: string) => {
@@ -228,7 +247,7 @@ export default function Profile() {
         type: "image/jpeg",
       } as any);
 
-      const response = await authFetch(`${BASE_URL}/profile/avatar`, {
+      const response = await fetch(`${BASE_URL}/profile/avatar`, {
         method: "POST",
         body: formData,
       });
@@ -257,9 +276,9 @@ export default function Profile() {
   };
 
   const handleChangePhoto = async () => {
-    actionSheet("Profile Photo", "Choose how to update your photo", [
+    Alert.alert("Profile Photo", "Choose how to update your photo", [
       {
-        label: "Take Photo",
+        text: "Take Photo",
         onPress: async () => {
           const { granted } = await ImagePicker.requestCameraPermissionsAsync();
 
@@ -280,7 +299,7 @@ export default function Profile() {
         },
       },
       {
-        label: "Choose from Library",
+        text: "Choose from Library",
         onPress: async () => {
           const { granted } =
             await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -304,6 +323,10 @@ export default function Profile() {
             await uploadProfilePhoto(result.assets[0].uri);
           }
         },
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
       },
     ]);
   };

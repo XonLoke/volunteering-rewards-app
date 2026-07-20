@@ -79,9 +79,9 @@ export default function AIRecommendations() {
         );
       }
 
-      setEvents(data.recommendations || []);
-      setCategories(data.preferred_categories || []);
-      setAssistantAnswer(null);
+      // ← backend wraps the list in "data" — was missing this fallback
+      setEvents(data.recommendations || data.events || data.data || []);
+      setCategories(data.preferred_categories || data.categories || []);
     } catch (error: any) {
       console.error("Recommendation error:", error);
       Alert.alert("Error", error.message || "Failed to load recommendations.");
