@@ -1,4 +1,4 @@
-# Email Setup Guide — Mailgun (Free Tier)
+# Email Setup Guide — Mailgun (Free Tier) — v2.0
 
 ## Overview
 
