@@ -160,6 +160,9 @@ async function createSmtpTransporter(overrides) {
     port: config.port,
     secure: config.secure,
     auth: { user: config.user, pass: config.pass },
+    connectionTimeout: 10000,   // 10s — fail fast instead of hanging
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 }
 
@@ -201,17 +204,23 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
   // Fallback: send via SMTP for non-Mailgun providers
   // Use config from DB (or env vars) directly so stored SMTP credentials work
   const fromName = config.fromName || "Volunteer Rewards App";
-  const tp = await getSmtpTransporter(config);
-  const info = await tp.sendMail({
-    from: `"${fromName}" <${config.user}>`,
-    to,
-    subject,
-    text,
-    html,
-    replyTo,
-  });
-
-  return { messageId: info.messageId };
+  try {
+    const tp = await getSmtpTransporter(config);
+    const info = await tp.sendMail({
+      from: `"${fromName}" <${config.user}>`,
+      to,
+      subject,
+      text,
+      html,
+      replyTo,
+    });
+    return { messageId: info.messageId };
+  } catch (smtpErr) {
+    console.error(`[email.service] SMTP send failed: ${smtpErr.message}`);
+    const { createError } = require("../middleware/errorHandler.middleware");
+    throw createError(502, "email_delivery_failed",
+      `Failed to send email via ${config.host}: ${smtpErr.message}`);
+  }
 }
 
 //-----------------------------------------------------------------------
