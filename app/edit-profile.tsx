@@ -17,6 +17,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
+// Singapore mobile: +65 followed by 8 digits starting with 6, 8, or 9
+const SG_PHONE_REGEX = /^\+65[689]\d{7}$/;
+
 export default function EditProfile() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -93,6 +96,15 @@ export default function EditProfile() {
 
       if (!trimmedName) {
         Alert.alert("Missing name", "Please enter your full name.");
+        return;
+      }
+
+      // ← phone is optional, but if provided it must match +65XXXXXXXX
+      if (trimmedPhone && !SG_PHONE_REGEX.test(trimmedPhone)) {
+        Alert.alert(
+          "Invalid phone number",
+          "Phone number must be in the format +65 followed by 8 digits, starting with 6, 8, or 9 (e.g. +6591234567)."
+        );
         return;
       }
 

@@ -17,7 +17,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
 const menuItems = [
   {
@@ -35,6 +35,14 @@ const menuItems = [
     sub: "Track points earned and used",
     route: "/points-history",
     color: "#f59e0b",
+  },
+  {
+    id: "2.5",
+    icon: "people-outline",
+    label: "Referral Program",
+    sub: "Invite friends and earn bonus points",
+    route: "/referral",
+    color: "#a855f7",
   },
   {
     id: "3",
@@ -118,16 +126,21 @@ export default function Profile() {
       setUser(parsedUser);
       setAvatarUri(parsedUser.avatar_url || null);
 
+      const token = await AsyncStorage.getItem("token"); // ← fetch once, reuse for all three calls
+
       try {
-        const profileRes = await fetch(
-          `${BASE_URL}/profile?user_id=${parsedUser.id}`
-        );
+        const profileRes = await fetch(`${BASE_URL}/me`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
         const profileData = await profileRes.json();
 
-        if (profileRes.ok && profileData.user) {
+        if (profileRes.ok && profileData.name) {
           const updatedUser = {
             ...parsedUser,
-            ...profileData.user,
+            ...profileData,
           };
 
           setUser(updatedUser);
@@ -135,8 +148,11 @@ export default function Profile() {
 
           await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
 
-          if (typeof updatedUser.points !== "undefined") {
-            await AsyncStorage.setItem("userPoints", String(updatedUser.points));
+          const freshPoints = Number(
+            profileData.points_balance ?? profileData.points ?? 0
+          );
+          if (freshPoints > 0) {
+            await AsyncStorage.setItem("userPoints", String(freshPoints));
           }
         }
       } catch (profileErr) {
@@ -144,24 +160,32 @@ export default function Profile() {
       }
 
       try {
-        const scansRes = await fetch(`${BASE_URL}/scans?user_id=${parsedUser.id}`);
+        const scansRes = await fetch(`${BASE_URL}/scans?user_id=${parsedUser.id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
         const scansData = await scansRes.json();
 
         if (scansRes.ok) {
-          setScansCount((scansData.scans || []).length);
+          setScansCount((scansData.scans || scansData.data || []).length);
         }
       } catch (scanErr) {
         console.log("Scans count skipped:", scanErr);
       }
 
       try {
-        const couponsRes = await fetch(
-          `${BASE_URL}/my-coupons?user_id=${parsedUser.id}`
-        );
+        const couponsRes = await fetch(`${BASE_URL}/me/coupons`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
         const couponsData = await couponsRes.json();
 
         if (couponsRes.ok) {
-          setCouponsCount((couponsData.coupons || []).length);
+          setCouponsCount((couponsData.coupons || couponsData.data || []).length);
         }
       } catch (couponErr) {
         console.log("Coupons count skipped:", couponErr);

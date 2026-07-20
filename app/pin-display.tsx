@@ -21,6 +21,9 @@ export default function PINDisplay() {
   const pinString = (params.pin as string) || "000000";
   const PIN = pinString.split("");
 
+  const remainingPoints = (params.newBalance as string) || "0";
+  const pointsCost = (params.pointsCost as string) || "0";
+
   const handleCopyPIN = () => {
     Clipboard.setString(pinString);
     Alert.alert("Copied!", "PIN copied to clipboard.");
@@ -28,6 +31,18 @@ export default function PINDisplay() {
 
   const handleLocations = () => {
     Alert.alert("Locations", "Find participating locations near you.");
+  };
+
+  const handleDone = () => {
+    router.push({
+      pathname: "/redeem-success",
+      params: {
+        title: coupon.title,
+        pin: pinString,
+        remainingPoints,
+        pointsCost,
+      },
+    });
   };
 
   return (
@@ -104,7 +119,7 @@ export default function PINDisplay() {
         {/* Done button */}
         <TouchableOpacity
           style={[styles.doneBtn, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}
-          onPress={() => router.push("/home")}
+          onPress={handleDone}
           activeOpacity={0.85}
         >
           <Text style={[styles.doneBtnText, { color: theme.colors.text }]}>DONE</Text>

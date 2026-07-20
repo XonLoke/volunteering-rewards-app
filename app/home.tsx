@@ -10,6 +10,7 @@ import {
   Modal,
   Pressable,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useState, useCallback } from "react";
@@ -131,6 +132,7 @@ export default function Home() {
   const { theme } = useTheme();
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [userName, setUserName] = useState("Volunteer");
   const [userPoints, setUserPoints] = useState(0);
   const [activeCoupons, setActiveCoupons] = useState(0);
@@ -239,7 +241,6 @@ export default function Home() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
       const stored = await AsyncStorage.getItem("user");
       if (!stored) {
         setUserName("Volunteer"); setUserPoints(0); setActiveCoupons(0);
@@ -278,7 +279,8 @@ export default function Home() {
         });
         const couponsData = await couponsRes.json();
         if (couponsRes.ok) {
-          const allCoupons = couponsData.coupons || couponsData.user_coupons || [];
+          // ← backend wraps the list in "data" — was missing this fallback
+          const allCoupons = couponsData.coupons || couponsData.user_coupons || couponsData.data || [];
           setActiveCoupons(allCoupons.filter((c: any) => c.status === "unused").length);
         }
       } catch (couponsErr) { console.log("Coupons refresh skipped:", couponsErr); }
@@ -300,17 +302,34 @@ export default function Home() {
       console.error("Failed to load home data:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  useFocusEffect(useCallback(() => { loadData(); }, []));
+  useFocusEffect(useCallback(() => { setLoading(true); loadData(); }, []));
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadData();
+  }, []);
 
   const visibleBookedEvents = bookedEvents.slice(0, 3);
   const hiddenBookingCount = Math.max(bookedEvents.length - visibleBookedEvents.length, 0);
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.page}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.page}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
+      >
         <View style={styles.header}>
           <View>
             <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>{getGreeting()}, {userName}</Text>

@@ -23,7 +23,7 @@ interface Coupon {
   coupon_id: number;
   title: string;
   description: string;
-  pin_hash: string;
+  pin_code: string;
   status: string;
   expiry_date: string;
   redeemed_at: string | null;
@@ -191,13 +191,13 @@ export default function MyCoupons() {
     router.push({
       pathname: "/pin-display",
       params: {
-        pin: coupon.pin_hash,
+        pin: coupon.pin_code,
         title: coupon.title,
         description: coupon.description,
         color: style.color,
         emoji: style.icon,
         validUntil: expiryDate,
-        code: `VR-${coupon.pin_hash}`,
+        code: `VR-${coupon.pin_code}`,
         userCouponId: String(coupon.id),
       },
     } as any);

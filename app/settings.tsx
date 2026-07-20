@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.72.201:3000/api";
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 const accent = "#22d3a5";
 
 export default function Settings() {

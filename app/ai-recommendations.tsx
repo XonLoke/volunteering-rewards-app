@@ -119,7 +119,8 @@ export default function AIRecommendations() {
         throw new Error(data.error?.message || data.message || "Failed to fetch recommendations.");
       }
 
-      setEvents(data.recommendations || data.events || []);
+      // ← backend wraps the list in "data" — was missing this fallback
+      setEvents(data.recommendations || data.events || data.data || []);
       setCategories(data.preferred_categories || data.categories || []);
     } catch (error: any) {
       console.error("Recommendation error:", error);

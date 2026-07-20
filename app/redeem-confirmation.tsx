@@ -64,18 +64,20 @@ export default function RedeemConfirmation() {
       });
 
       const data = await response.json().catch(() => ({}));
+      const payload = data.data ?? data; // unwrap the "data" envelope if present
+
       console.log("Redeem status:", response.status);
-      console.log("Redeem response:", JSON.stringify(data));
+      console.log("Redeem response:", JSON.stringify(payload));
 
       if (!response.ok) {
         throw new Error(
-          data.error?.message || data.message || "Failed to redeem reward."
+          payload.error?.message || payload.message || "Failed to redeem reward."
         );
       }
 
       // update points in storage
       const newPoints = Number(
-        data.points_balance ?? data.remaining_points ?? data.new_balance ?? newBalance
+        payload.points_balance ?? payload.remaining_points ?? payload.new_balance ?? newBalance
       );
       await AsyncStorage.setItem("userPoints", String(newPoints));
 
@@ -86,12 +88,13 @@ export default function RedeemConfirmation() {
       };
       await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
 
-      // get the pin from response
+      // get the pin from response — backend field is "pin_code"
       const pin =
-        data.pin ||
-        data.coupon?.pin ||
-        data.coupon?.pin_hash ||
-        data.pin_hash ||
+        payload.pin_code ||
+        payload.pin ||
+        payload.coupon?.pin_code ||
+        payload.coupon?.pin ||
+        payload.pin_hash ||
         "------";
 
       router.replace({
@@ -104,8 +107,9 @@ export default function RedeemConfirmation() {
           emoji: coupon.icon,
           validUntil: coupon.validUntil,
           code: `VR-${pin}`,
-          userCouponId: String(data.coupon?.id || data.id || ""),
+          userCouponId: String(payload.coupon?.id || payload.id || ""),
           newBalance: String(newPoints),
+          pointsCost: String(coupon.pointsCost),
         },
       } as any);
     } catch (err: any) {
