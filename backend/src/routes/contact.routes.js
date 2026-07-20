@@ -56,7 +56,8 @@ router.post("/", async (req, res, next) => {
     }
 
     const user = userResult.rows[0];
-    const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || "support@volunteerrewards.app";
+    // Support email must be an authorized Mailgun recipient for sandbox accounts.
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || "xiaoai.assistant@proton.me";
 
     // Send support email
     await sendEmail({
