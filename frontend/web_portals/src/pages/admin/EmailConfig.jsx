@@ -192,6 +192,16 @@ export default function EmailConfig() {
             <label className="form-label">Email User *</label>
             <input className="form-input" value={config.email_user} onChange={handleChange('email_user')}
               placeholder="your@email.com" style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }} />
+            <div style={{ fontSize: 12, color: '#666', marginTop: 4, lineHeight: 1.5 }}>
+              Your <strong>SMTP login username</strong> from your email provider — <em>not</em> your personal email.<br />
+              {config.smtp_host?.includes('mailgun')
+                ? '📌 Mailgun: find this under Sending → Domains → your domain → SMTP Credentials. It looks like postmaster@yourdomain.mailgun.org'
+                : config.smtp_host?.includes('gmail')
+                  ? '📌 Gmail: use your full Gmail address'
+                  : config.smtp_host?.includes('sendgrid')
+                    ? '📌 SendGrid: use "apikey" as the username'
+                    : '📌 Check your provider\'s SMTP settings page for the login username.'}
+            </div>
           </div>
 
           <div style={{ marginBottom: 16 }}>
