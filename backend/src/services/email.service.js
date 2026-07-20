@@ -36,7 +36,9 @@ async function loadDbConfig() {
         user: rows[0].email_user,
         pass: rows[0].email_pass,
         fromName: rows[0].email_from_name || "Volunteer Rewards App",
-        isMailgun: false, // SMTP works reliably; REST API blocked from Render
+        // Try Mailgun REST API first; fall back to SMTP if it fails
+        isMailgun: (rows[0].smtp_host || "").toLowerCase().includes("mailgun")
+          || (rows[0].email_user || "").toLowerCase().includes("mailgun"),
       };
       return cachedDbConfig;
     }
@@ -57,7 +59,7 @@ function getEnvConfig() {
     user: process.env.EMAIL_USER || "",
     pass,
     fromName: process.env.EMAIL_FROM_NAME || "Volunteer Rewards App",
-    isMailgun: false, // SMTP always; REST API blocked from Render
+    isMailgun: host.toLowerCase().includes("mailgun"),
   };
 }
 
@@ -122,9 +124,9 @@ async function sendViaMailgunApi(fromAddress, fromName, to, subject, text, html,
       });
     });
 
-    req.setTimeout(15000, () => {
+    req.setTimeout(30000, () => {
       req.destroy();
-      reject(new Error("Mailgun API request timed out after 15s"));
+      reject(new Error("Mailgun API request timed out after 30s"));
     });
     req.on("error", reject);
     req.write(postData);
@@ -190,15 +192,21 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
     return { messageId: "dry-run (no credentials configured)" };
   }
 
+  const fromName = config.fromName || "Volunteer Rewards App";
+  let lastErr = null;
+
+  // Try 1: Mailgun REST API (if applicable)
   if (config.isMailgun) {
-    // Send via Mailgun REST API (reliable, authenticated)
-    const result = await sendViaMailgunApi(config.user, config.fromName, to, subject, text, html, replyTo);
-    return { messageId: result.messageId };
+    try {
+      const result = await sendViaMailgunApi(config.user, config.fromName, to, subject, text, html, replyTo);
+      return { messageId: result.messageId };
+    } catch (apiErr) {
+      console.warn(`[email.service] Mailgun REST API failed (${apiErr.message}), falling back to SMTP...`);
+      lastErr = apiErr;
+    }
   }
 
-  // Fallback: send via SMTP for non-Mailgun providers
-  // Use config from DB (or env vars) directly so stored SMTP credentials work
-  const fromName = config.fromName || "Volunteer Rewards App";
+  // Try 2: SMTP (fallback for all providers)
   try {
     const tp = await getSmtpTransporter(config);
     const info = await tp.sendMail({
@@ -211,10 +219,11 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
     });
     return { messageId: info.messageId };
   } catch (smtpErr) {
-    console.error(`[email.service] SMTP send failed: ${smtpErr.message}`);
+    console.error(`[email.service] SMTP also failed: ${smtpErr.message}`);
+    const detail = lastErr ? `REST API: ${lastErr.message} | SMTP: ${smtpErr.message}` : smtpErr.message;
     const { createError } = require("../middleware/errorHandler.middleware");
     throw createError(502, "email_delivery_failed",
-      `Failed to send email via ${config.host}: ${smtpErr.message}`);
+      `Failed to send email via ${config.host}: ${detail}`);
   }
 }
 
