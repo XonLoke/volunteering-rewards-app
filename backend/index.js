@@ -350,6 +350,22 @@ app.use("/api/contact", require("./src/routes/contact.routes"));
 // AI — LLM-powered recommendations & feedback summary (Gen 2)
 app.use("/api/ai", require("./src/routes/ai.routes"));
 
+// ─── Debug: Direct email test (REMOVE AFTER DEBUGGING) ──
+app.get("/api/debug/email-test", async (_req, res) => {
+  try {
+    const { sendEmail } = require("./src/services/email.service");
+    const result = await sendEmail({
+      to: "xiaoai.assistant@proton.me",
+      subject: "Debug test from Render",
+      text: "If you receive this, SMTP works from Render!",
+    });
+    res.json({ ok: true, result });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message, stack: err.stack?.split("\n").slice(0, 3).join("\\n") });
+  }
+});
+// ────────────────────────────────────────────────────────
+
 // ─── 404 Handler ─────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({ error: { code: "not_found", message: "Route not found" } });
