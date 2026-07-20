@@ -61,6 +61,43 @@ To send to any email address (not just 5 authorized recipients):
 | 500 error sending | Invalid credentials | Re-check API key in Admin Email Config |
 | "Failed domain auth" warning | Sandbox without DKIM/SPF | Normal for sandbox — safe to ignore |
 
+## 4. Contact Form — Support Email Recipient
+
+The **Contact Us** form sends messages **TO** the support/admin email, with the user's email as `replyTo`.
+
+### Configuration (priority order)
+
+```js
+// backend/src/routes/contact.routes.js (line ~60)
+const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || "volunteerrewardsapp@gmail.com";
+```
+
+| Priority | Source | How to Set |
+|----------|--------|------------|
+| 1st | `SUPPORT_EMAIL` env var | Set in Render Dashboard → Environment Variables |
+| 2nd | `EMAIL_USER` env var | Same env var used for SMTP auth |
+| 3rd | Hardcoded fallback | Edit `backend/src/routes/contact.routes.js` |
+
+### Mailgun Sandbox Restriction
+
+The recipient email **must be an authorized recipient** in your Mailgun dashboard (sandbox accounts can only send to 5 pre-approved addresses):
+
+1. Log into [Mailgun](https://app.mailgun.com) → **Sending** → **Authorized Recipients**
+2. Click **Add Authorized Recipient**
+3. Enter the email where contact form messages should land (e.g. `admin@yourorg.org`)
+4. Confirm the verification email from Mailgun
+
+Without this step, Mailgun will reject the email and the sender gets a 500 error.
+
+> ⚠️ **Important:** The contact form recipient is the **admin's email** — NOT the end user who submits the form. Only this one address needs to be authorized, not every user who submits a contact message.
+
+### Changing the Recipient
+
+1. Add the new email to Mailgun's Authorized Recipients (see above)
+2. **Option A (quick):** Set `SUPPORT_EMAIL` as a Render env var
+3. **Option B (permanent):** Change the hardcoded default in `backend/src/routes/contact.routes.js`
+4. Test by submitting a contact form — check `201` response includes `sentTo: your@email.com`
+
 ## Free Alternatives
 
 | Provider | Free Tier Limits | SMTP Host |
