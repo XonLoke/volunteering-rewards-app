@@ -1,6 +1,6 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
- * Orchestration Integration Test — Cross-Portal Data Flow Verification
+ * Integration Integration Test â€” Cross-Portal Data Flow Verification
  * =====================================================================
  *
  * Purpose:
@@ -8,8 +8,8 @@
  *   Simulates the complete user journey across Admin, Organiser, Merchant, and Volunteer.
  *
  * Run:
- *   node --test backend/tests/integration/orchestration.test.js
- *   node backend/tests/integration/orchestration.test.js           (standalone)
+ *   node --test backend/tests/integration/Integration.test.js
+ *   node backend/tests/integration/Integration.test.js           (standalone)
  *
  * Env:
  *   API_URL=https://vol-rewards-api.onrender.com/api    (default: production)
@@ -25,7 +25,7 @@
 const BASE = process.env.API_URL || "https://vol-rewards-api.onrender.com/api";
 const TIMEOUT = 15000; // 15s per request
 
-// ─── Colours ──────────────────────────────────────────────
+// â”€â”€â”€ Colours â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const GREEN = "\x1b[32m";
 const RED = "\x1b[31m";
 const YELLOW = "\x1b[33m";
@@ -33,28 +33,28 @@ const CYAN = "\x1b[36m";
 const RESET = "\x1b[0m";
 const BOLD = "\x1b[1m";
 
-// ─── Results ──────────────────────────────────────────────
+// â”€â”€â”€ Results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let passed = 0;
 let failed = 0;
 let warn = 0;
 
 function ok(label, detail = "") {
   passed++;
-  console.log(`  ${GREEN}✓ PASS${RESET} ${label}${detail ? ` (${detail})` : ""}`);
+  console.log(`  ${GREEN}âœ“ PASS${RESET} ${label}${detail ? ` (${detail})` : ""}`);
 }
 
 function fail(label, detail, err = "") {
   failed++;
-  console.log(`  ${RED}✗ FAIL${RESET} ${label} ${YELLOW}→ ${detail}${RESET}`);
+  console.log(`  ${RED}âœ— FAIL${RESET} ${label} ${YELLOW}â†’ ${detail}${RESET}`);
   if (err) console.log(`    ${err}`);
 }
 
 function warnMsg(label, detail) {
   warn++;
-  console.log(`  ${YELLOW}⚠ WARN${RESET} ${label} (${detail})`);
+  console.log(`  ${YELLOW}âš  WARN${RESET} ${label} (${detail})`);
 }
 
-// ─── HTTP Helper ─────────────────────────────────────────
+// â”€â”€â”€ HTTP Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function api(path, opts = {}) {
   const url = `${BASE}${path}`;
   const controller = new AbortController();
@@ -80,7 +80,7 @@ async function api(path, opts = {}) {
     if (res.status === 429 && opts._retries !== 0) {
       const retriesLeft = (opts._retries ?? 3) - 1;
       const delay = (3 - retriesLeft) * 1500;
-      console.log(`    ${YELLOW}⏳ rate limited, retrying in ${delay}ms (${retriesLeft} left)${RESET}`);
+      console.log(`    ${YELLOW}â³ rate limited, retrying in ${delay}ms (${retriesLeft} left)${RESET}`);
       await new Promise(r => setTimeout(r, delay));
       return api(path, { ...opts, _retries: retriesLeft });
     }
@@ -93,7 +93,7 @@ async function api(path, opts = {}) {
   }
 }
 
-// ─── Login Helper ─────────────────────────────────────────
+// â”€â”€â”€ Login Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function login(email, password) {
   const r = await api("/auth/login", {
     method: "POST",
@@ -105,28 +105,28 @@ async function login(email, password) {
   return null;
 }
 
-// ─── Auth Header ──────────────────────────────────────────
+// â”€â”€â”€ Auth Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auth(token) {
   return { Authorization: `Bearer ${token}` };
 }
 
-// ─── Helpers ──────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 function getEventId(resp) {
   return resp?.body?.data?.id || resp?.body?.id || resp?.body?.event?.id;
 }
 
-// ─── Test Suite ───────────────────────────────────────────
+// â”€â”€â”€ Test Suite â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let A, O, M, V; // Tokens: Admin, Organiser, Merchant, Volunteer
 let testEventId, testCouponId, testUserId, testPinCode;
 
-console.log(`\n${BOLD}${CYAN}═══════════════════════════════════════════════════════${RESET}`);
-console.log(`${BOLD}${CYAN}   ORCHESTRATION INTEGRATION TEST — Cross-Portal Workflows${RESET}`);
+console.log(`\n${BOLD}${CYAN}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${RESET}`);
+console.log(`${BOLD}${CYAN}   Integration INTEGRATION TEST â€” Cross-Portal Workflows${RESET}`);
 console.log(`${BOLD}${CYAN}   Target: ${BASE}${RESET}`);
-console.log(`${BOLD}${CYAN}═══════════════════════════════════════════════════════${RESET}`);
-console.log(`\n${BOLD}── PHASE 0: Health Check & Authentication ──${RESET}\n`);
+console.log(`${BOLD}${CYAN}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${RESET}`);
+console.log(`\n${BOLD}â”€â”€ PHASE 0: Health Check & Authentication â”€â”€${RESET}\n`);
 
-// ─── PHASE 0: Health & Login ─────────────────────────────
+// â”€â”€â”€ PHASE 0: Health & Login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function phase0() {
   // 0.1 Health Check
   const health = await api("/health");
@@ -143,7 +143,7 @@ async function phase0() {
   if (A) ok("Admin Login (carol@test.com)", "got token");
   else { fail("Admin Login", "could not authenticate"); return false; }
 
-  // 0.3 Login as Organiser (Bob) — delay to avoid rate limit
+  // 0.3 Login as Organiser (Bob) â€” delay to avoid rate limit
   await sleep(1500);
   O = await login("bob@test.com", "password123");
   if (O) ok("Organiser Login (bob@test.com)", "got token");
@@ -164,11 +164,11 @@ async function phase0() {
   return true;
 }
 
-// ─── PHASE 1: Admin ↔ Organiser ──────────────────────────
+// â”€â”€â”€ PHASE 1: Admin â†” Organiser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function phase1() {
-  console.log(`\n${BOLD}── PHASE 1: Admin ↔ Organiser Data Flow ──${RESET}\n`);
+  console.log(`\n${BOLD}â”€â”€ PHASE 1: Admin â†” Organiser Data Flow â”€â”€${RESET}\n`);
 
-  // 1.1 Admin: List organisers → can see Bob
+  // 1.1 Admin: List organisers â†’ can see Bob
   const orgs = await api("/admin/organisers", { headers: auth(A.token) });
   if (orgs.ok && orgs.body && orgs.body.data) {
     ok("Admin sees organiser list", `${orgs.body.data.length} organisers`);
@@ -179,7 +179,7 @@ async function phase1() {
     fail("Admin sees organiser list", `status=${orgs.status}`, JSON.stringify(orgs.body));
   }
 
-  // 1.2 Admin: List events → should see organiser's events
+  // 1.2 Admin: List events â†’ should see organiser's events
   const adminEvents = await api("/admin/events", { headers: auth(A.token) });
   if (adminEvents.ok && adminEvents.body && adminEvents.body.data) {
     ok("Admin sees all events", `${adminEvents.body.data.length} events`);
@@ -194,7 +194,7 @@ async function phase1() {
     fail("Admin sees all events", `status=${adminEvents.status}`);
   }
 
-  // 1.3 Organiser: View dashboard → sees their own stats
+  // 1.3 Organiser: View dashboard â†’ sees their own stats
   const orgDash = await api("/organiser/dashboard", { headers: auth(O.token) });
   if (orgDash.ok && orgDash.body) {
     ok("Organiser dashboard loads", "got data");
@@ -205,7 +205,7 @@ async function phase1() {
     fail("Organiser dashboard loads", `status=${orgDash.status}`);
   }
 
-  // 1.4 Organiser: List their events → sees same events as admin
+  // 1.4 Organiser: List their events â†’ sees same events as admin
   const myEvents = await api("/organiser/events", { headers: auth(O.token) });
   if (myEvents.ok && myEvents.body && myEvents.body.data) {
     ok("Organiser sees their events", `${myEvents.body.data.length} events`);
@@ -219,15 +219,15 @@ async function phase1() {
     fail("Organiser sees their events", `status=${myEvents.status}`);
   }
 
-  // 1.5 Organiser: Create a new event → then admin can see it
+  // 1.5 Organiser: Create a new event â†’ then admin can see it
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 14);
   const newEvent = await api("/organiser/events", {
     method: "POST",
     headers: auth(O.token),
     body: JSON.stringify({
-      title: `[TEST] Orchestration Event ${Date.now()}`,
-      description: "Temporary event for integration testing — will be cleaned up",
+      title: `[TEST] Integration Event ${Date.now()}`,
+      description: "Temporary event for integration testing â€” will be cleaned up",
       location: "Integration Test Location",
       event_date: futureDate.toISOString().split("T")[0],
       capacity: 20,
@@ -263,11 +263,11 @@ async function phase1() {
   }
 }
 
-// ─── PHASE 2: Admin ↔ Volunteer ──────────────────────────
+// â”€â”€â”€ PHASE 2: Admin â†” Volunteer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function phase2() {
-  console.log(`\n${BOLD}── PHASE 2: Admin ↔ Volunteer Data Flow ──${RESET}\n`);
+  console.log(`\n${BOLD}â”€â”€ PHASE 2: Admin â†” Volunteer Data Flow â”€â”€${RESET}\n`);
 
-  // 2.1 Admin: List users → sees Alice
+  // 2.1 Admin: List users â†’ sees Alice
   const users = await api("/admin/users?limit=20", { headers: auth(A.token) });
   if (users.ok && users.body && users.body.data) {
     ok("Admin sees user list", `${users.body.total || users.body.data.length} users`);
@@ -282,7 +282,7 @@ async function phase2() {
     fail("Admin sees user list", `status=${users.status}`);
   }
 
-  // 2.2 Volunteer: Get own profile → matches what admin sees
+  // 2.2 Volunteer: Get own profile â†’ matches what admin sees
   if (testUserId) {
     const adminView = await api(`/admin/users/${testUserId}`, { headers: auth(A.token) });
     if (adminView.ok && adminView.body) {
@@ -292,7 +292,7 @@ async function phase2() {
     }
   }
 
-  // 2.3 Volunteer: Browse events → can see organiser-created events
+  // 2.3 Volunteer: Browse events â†’ can see organiser-created events
   const browseEvents = await api("/events", { headers: auth(V.token) });
   if (browseEvents.ok && browseEvents.body) {
     const events = browseEvents.body.events || browseEvents.body.data || [];
@@ -301,7 +301,7 @@ async function phase2() {
     fail("Volunteer browses events", `status=${browseEvents.status}`);
   }
 
-  // 2.4 Admin: Rewards config → consistent across portals
+  // 2.4 Admin: Rewards config â†’ consistent across portals
   const rewardsCfg = await api("/admin/rewards/configuration", { headers: auth(A.token) });
   if (rewardsCfg.ok && rewardsCfg.body) {
     const ppd = rewardsCfg.body.points_per_dollar || rewardsCfg.body.value;
@@ -331,11 +331,11 @@ async function phase2() {
   }
 }
 
-// ─── PHASE 3: Admin ↔ Merchant ───────────────────────────
+// â”€â”€â”€ PHASE 3: Admin â†” Merchant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function phase3() {
-  console.log(`\n${BOLD}── PHASE 3: Admin ↔ Merchant Data Flow ──${RESET}\n`);
+  console.log(`\n${BOLD}â”€â”€ PHASE 3: Admin â†” Merchant Data Flow â”€â”€${RESET}\n`);
 
-  // 3.1 Admin: List merchants → sees Cheryl
+  // 3.1 Admin: List merchants â†’ sees Cheryl
   const merchants = await api("/admin/merchants", { headers: auth(A.token) });
   if (merchants.ok && merchants.body && merchants.body.data) {
     ok("Admin sees merchant list", `${merchants.body.data.length} merchants`);
@@ -365,7 +365,7 @@ async function phase3() {
   if (sponsorCfg.ok && sponsorCfg.body) {
     ok("Admin reads sponsorship config", "accessible");
   } else {
-    // May not be set up — warn, not fail
+    // May not be set up â€” warn, not fail
     if (sponsorCfg.status === 404) warnMsg("Sponsorship config", "not set up yet (404)");
     else fail("Admin reads sponsorship config", `status=${sponsorCfg.status}`);
   }
@@ -381,9 +381,9 @@ async function phase3() {
   }
 }
 
-// ─── PHASE 4: Organiser ↔ Volunteer (Event Lifecycle) ────
+// â”€â”€â”€ PHASE 4: Organiser â†” Volunteer (Event Lifecycle) â”€â”€â”€â”€
 async function phase4() {
-  console.log(`\n${BOLD}── PHASE 4: Organiser ↔ Volunteer Event Workflow ──${RESET}\n`);
+  console.log(`\n${BOLD}â”€â”€ PHASE 4: Organiser â†” Volunteer Event Workflow â”€â”€${RESET}\n`);
 
   // 4.1 Organiser: Create a test event
   const futureDate = new Date();
@@ -410,7 +410,7 @@ async function phase4() {
     return;
   }
 
-  // 4.2 Volunteer: Browse events → sees the new event
+  // 4.2 Volunteer: Browse events â†’ sees the new event
   const browse = await api("/events", { headers: auth(V.token) });
   const events = browse.body?.events || browse.body?.data || [];
   const found = events.some(e => Number(e.id) === Number(testEventId));
@@ -455,7 +455,7 @@ async function phase4() {
     const aliceInRoster = volList.some(v =>
       (v.email === "alice@test.com") || (v.name && v.name.toLowerCase().includes("alice"))
     );
-    if (aliceInRoster) ok("Alice appears in organiser's roster", "volunteer registered → organiser sees it");
+    if (aliceInRoster) ok("Alice appears in organiser's roster", "volunteer registered â†’ organiser sees it");
     else warnMsg("Alice in roster", "Alice @ alice@test.com not in roster (maybe Eve or pre-registered)");
   } else {
     fail("Organiser sees event roster", `status=${roster.status}`, JSON.stringify(roster.body));
@@ -499,9 +499,9 @@ async function phase4() {
   testEventId = null;
 }
 
-// ─── PHASE 5: Merchant ↔ Volunteer (Rewards Lifecycle) ──
+// â”€â”€â”€ PHASE 5: Merchant â†” Volunteer (Rewards Lifecycle) â”€â”€
 async function phase5() {
-  console.log(`\n${BOLD}── PHASE 5: Merchant ↔ Volunteer Rewards Workflow ──${RESET}\n`);
+  console.log(`\n${BOLD}â”€â”€ PHASE 5: Merchant â†” Volunteer Rewards Workflow â”€â”€${RESET}\n`);
 
   // 5.1 Admin: Generate coupon PINs for testing
   const seedPins = await api("/debug/seed-coupon-pins", {
@@ -511,13 +511,13 @@ async function phase5() {
   if (seedPins.ok && seedPins.body && seedPins.body.pins_generated > 0) {
     ok("Admin seeds coupon PINs", `${seedPins.body.pins_generated} PINs generated`);
   } else if (seedPins.status === 404) {
-    // Production — debug endpoint disabled. Try assigning a coupon directly.
-    warnMsg("Seed coupon PINs", "debug endpoints unavailable in production — using existing data");
+    // Production â€” debug endpoint disabled. Try assigning a coupon directly.
+    warnMsg("Seed coupon PINs", "debug endpoints unavailable in production â€” using existing data");
   } else {
-    warnMsg("Seed coupon PINs", `status=${seedPins.status} — continuing with existing data`);
+    warnMsg("Seed coupon PINs", `status=${seedPins.status} â€” continuing with existing data`);
   }
 
-  // 5.2 Admin: Get coupon pins — find a coupon that HAS pins
+  // 5.2 Admin: Get coupon pins â€” find a coupon that HAS pins
   const allCoupons = await api("/admin/coupons?limit=20", { headers: auth(A.token) });
   let foundPins = false;
   if (allCoupons.ok && allCoupons.body?.data) {
@@ -539,7 +539,7 @@ async function phase5() {
     warnMsg("Coupon PINs available", "no coupons with PINs found");
   }
 
-  // 5.3 Merchant: Verify coupon PIN (if we have a PIN) — note: only { pin } needed, no coupon_id
+  // 5.3 Merchant: Verify coupon PIN (if we have a PIN) â€” note: only { pin } needed, no coupon_id
   if (testPinCode) {
     const verify = await api("/coupons/verify", {
       method: "POST",
@@ -547,7 +547,7 @@ async function phase5() {
       body: JSON.stringify({ pin: testPinCode }),
     });
     if (verify.ok && verify.body && verify.body.coupon) {
-      ok("Merchant verifies coupon PIN", `PIN valid — "${verify.body.coupon.title}"`);
+      ok("Merchant verifies coupon PIN", `PIN valid â€” "${verify.body.coupon.title}"`);
     } else if (verify.status === 404) {
       warnMsg("Merchant verifies coupon PIN", "PIN not found in DB (may have expired or was cleaned up)");
     } else if (verify.status === 400) {
@@ -585,7 +585,7 @@ async function phase5() {
     fail("Volunteer checks points balance", `status=${me.status}`);
   }
 
-  // 5.8 Admin: View dashboard → consistent with all data above
+  // 5.8 Admin: View dashboard â†’ consistent with all data above
   const dashAdmin = await api("/admin/dashboard", { headers: auth(A.token) });
   if (dashAdmin.ok && dashAdmin.body && dashAdmin.body.stats) {
     const s = dashAdmin.body.stats;
@@ -597,9 +597,9 @@ async function phase5() {
   }
 }
 
-// ─── PHASE 6: APK / Mobile App Build Verification ───────
+// â”€â”€â”€ PHASE 6: APK / Mobile App Build Verification â”€â”€â”€â”€â”€â”€â”€
 async function phase6() {
-  console.log(`\n${BOLD}── PHASE 6: APK & Mobile App Build Verification ──${RESET}\n`);
+  console.log(`\n${BOLD}â”€â”€ PHASE 6: APK & Mobile App Build Verification â”€â”€${RESET}\n`);
 
   const APK_OLD = "D:\\c3000c\\volunteering-rewards-app\\frontend\\mobile_app\\android\\app\\build\\outputs\\apk\\release\\app-release.apk";
   const APK_NEW = "D:\\c3000c\\volunteering-rewards-app\\android\\app\\build\\outputs\\apk\\release\\app-release.apk";
@@ -615,10 +615,10 @@ async function phase6() {
       if (stats.size > 10 * 1024 * 1024) {
         ok("APK file exists", `${sizeMB} MB at ${APK_PATH}`);
       } else {
-        warnMsg("APK file size", `only ${sizeMB} MB — may be incomplete`);
+        warnMsg("APK file size", `only ${sizeMB} MB â€” may be incomplete`);
       }
     } else {
-      fail("APK file exists", "APK not found — run build_gradle.bat first");
+      fail("APK file exists", "APK not found â€” run build_gradle.bat first");
     }
   } catch (err) {
     fail("APK file check", err.message);
@@ -635,14 +635,14 @@ async function phase6() {
         warnMsg("APK API URL", ".env exists but may not point to production");
       }
     } else {
-      warnMsg("APK .env file", ".env not found — APK may use localhost fallback");
+      warnMsg("APK .env file", ".env not found â€” APK may use localhost fallback");
     }
   } catch (err) {
     warnMsg("APK .env check", err.message);
   }
 
   // 6.3 API environment variable loaded correctly via login
-  // (Already verified in Phase 0 — volunteer login connects to the same API)
+  // (Already verified in Phase 0 â€” volunteer login connects to the same API)
   ok("Volunteer PWA uses same API", "PWA connects to same backend (verified via login in Phase 0)");
 
   // 6.4 Verify volunteer-specific mobile endpoints work
@@ -663,14 +663,14 @@ async function phase6() {
   ok("PWA-APK source unified", "Both PWA and APK share frontend/mobile_app/ source");
 }
 
-// ─── Run Everything ───────────────────────────────────────
+// â”€â”€â”€ Run Everything â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function main() {
   let allPhaseOk;
 
   // Phase 0
   allPhaseOk = await phase0();
   if (!allPhaseOk) {
-    console.log(`\n${RED}✗ PHASE 0 FAILED — cannot continue. Check API availability.${RESET}\n`);
+    console.log(`\n${RED}âœ— PHASE 0 FAILED â€” cannot continue. Check API availability.${RESET}\n`);
     process.exit(1);
   }
 
@@ -690,13 +690,13 @@ async function main() {
   await phase5();
   await phase6();
 
-  // ─── Summary ─────────────────────────────────────────────
-  console.log(`\n${BOLD}${CYAN}═══════════════════════════════════════════════════════${RESET}`);
+  // â”€â”€â”€ Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log(`\n${BOLD}${CYAN}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${RESET}`);
   console.log(`${BOLD}${CYAN}   RESULTS${RESET}`);
-  console.log(`${BOLD}${CYAN}═══════════════════════════════════════════════════════${RESET}`);
+  console.log(`${BOLD}${CYAN}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${RESET}`);
   const total = passed + failed;
   console.log(`  ${GREEN}PASS: ${passed}${RESET}  ${RED}FAIL: ${failed}${RESET}  ${YELLOW}WARN: ${warn}${RESET}  Total: ${total}`);
-  console.log(`${BOLD}${CYAN}═══════════════════════════════════════════════════════${RESET}\n`);
+  console.log(`${BOLD}${CYAN}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${RESET}\n`);
 
   if (failed > 0) process.exit(1);
 }
@@ -705,3 +705,4 @@ main().catch(err => {
   console.error(`\n${RED}FATAL: ${err.message}${RESET}\n`);
   process.exit(1);
 });
+

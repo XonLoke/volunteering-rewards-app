@@ -4,8 +4,8 @@
 **Version:** 2.3  
 **Date:** 9 July 2026  
 **Prepared by:** Xon (Team Lead)  
-**Status:** Consolidated — Orchestration Testing Complete  
-**Execution Engine:** Node.js `--test` (native) + HTTP API tests (node:http) + Live API orchestration suite
+**Status:** Consolidated — Integration Testing Complete  
+**Execution Engine:** Node.js `--test` (native) + HTTP API tests (node:http) + Live API integration suite
 
 ---
 
@@ -21,7 +21,7 @@
 8. [Phase 5 — Security Tests Results](#8-phase-5--security-tests-results)
 9. [Phase 6 — Performance Tests Results](#9-phase-6--performance-tests-results)
 10. [Phase 7 — User Acceptance Tests Status](#10-phase-7--user-acceptance-tests-status)
-11. [Phase 8 — Orchestration Integration Tests (54 tests)](#11-phase-8--orchestration-integration-tests-54-tests)
+11. [Phase 8 — Integration Tests (54 tests)](#11-phase-8--integration-integration-tests-54-tests)
 12. [Manual Testing Status (Legacy)](#12-manual-testing-status-legacy)
 13. [Bugs Found & Fixed Log](#13-bugs-found--fixed-log)
 14. [Coverage Gap Analysis](#14-coverage-gap-analysis)
@@ -86,8 +86,8 @@ All test-related documents for the Volunteering Rewards App are listed below wit
 | 13 | `Testing_Backlog.md` | 1.0 | 24 Jun 2026 | OpenCode task backlog: 17 tasks, 1 completed | 15 pending, 1 done |
 | 14 | `Online Test Access Points v1.0.md` | 1.0 | 18 Jun 2026 | Portal URLs, test accounts, access matrix | Reference only |
 | 15 | `Sprint 4 & 5 Status Report v1.4.md` | 1.4 | 23 Jun 2026 | Sprint status, deployment, 10 bugs fixed, 8 organiser fixes | 100% tech completion |
-| 16 | **`orchestration-test-report.md`** | **1.0** | **9 Jul 2026** | **Orchestration integration test: 54 tests, 6 phases, 4 bugs found & fixed** | **✅ 54/54 pass** |
-| 17 | **`orchestration-demo-checklist.md`** | **1.0** | **9 Jul 2026** | **Manual demo step-by-step for cross-portal verification** | **Reference only** |
+| 16 | **`integration-test-report.md`** | **1.0** | **9 Jul 2026** | **Integration test: 54 tests, 6 phases, 4 bugs found & fixed** | **✅ 54/54 pass** |
+| 17 | **`integration-demo-checklist.md`** | **1.0** | **9 Jul 2026** | **Manual demo step-by-step for cross-portal verification** | **Reference only** |
 
 ---
 
@@ -106,13 +106,13 @@ All test-related documents for the Volunteering Rewards App are listed below wit
 | **P5: Security (automated tests)** | 12 | 9 | 0 | 3 (rate-limit) | 0 | **100%** |
 | **P6: Performance** | 17 | 17 | 0 | 0 | 0 | **100%** |
 | **P7: UAT (manual)** | 8 | — | — | — | 8 | — |
-| **P8: Orchestration (cross-portal)** | **54** | **54** | **0** | **0** | **0** | **100%** |
+| **P8: Integration (cross-portal)** | **54** | **54** | **0** | **0** | **0** | **100%** |
 | **Total Automated** | **241** | **242** | **0** | **4** | **0** | **100%** |
 | **Total Planned** | **~250** | **242** | **0** | **4** | **0** | **—** |
 
 *\*3 security rate-limit tests skipped (would lock the API). ST-03 merchant flow skipped due to pre-condition (volunteer needs redeemed coupon).*
 
-**v2.3 Update — Orchestration Integration Testing Complete:**
+**v2.3 Update — Integration Testing Complete:**
 54 cross-portal integration tests added covering all 6 inter-portal data flows. Tests executed against the live production API. See Phase 8 section for detail.
 - All 91 unit tests written and passed
 - F1-F4 integration tests executed — all 11 passing
@@ -488,13 +488,13 @@ Refer to [`Online Test Access Points v1.0.md`](Online Test Access Points v1.0.md
 
 ---
 
-## 11. Phase 8 — Orchestration Integration Tests (54 tests)
+## 11. Phase 8 — Integration Tests (54 tests)
 
 **Added:** 9 July 2026  
 **Purpose:** Verify cross-portal data flows — changes made in one portal correctly reflect in all others  
 **Execution:** Live API test suite against `https://vol-rewards-api.onrender.com/api`  
 **Result:** ✅ **54/54 PASS (100%)** | 0 failures, 1 informational warning  
-**Files:** `backend/tests/integration/orchestration.test.js`, `docs/Testing/orchestration-test-report.md`
+**Files:** `backend/tests/integration/integration.test.js`, `docs/Testing/integration-test-report.md`
 
 ### 11.1 Test Phases
 
@@ -508,7 +508,7 @@ Refer to [`Online Test Access Points v1.0.md`](Online Test Access Points v1.0.md
 | 5 | Merchant ↔ Volunteer (Rewards) | 7 | ✅ PIN verify, points, dashboard |
 | 6 | APK Build Verification | 7 | ✅ APK exists, correct API URL, endpoints work |
 
-### 11.2 Bugs Found & Fixed During Orchestration Testing
+### 11.2 Bugs Found & Fixed During Integration Testing
 
 | Bug | Severity | Root Cause | Fix |
 |-----|----------|------------|-----|

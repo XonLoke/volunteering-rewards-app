@@ -44,7 +44,7 @@ Anyone with the URL can open `https://volunteering-rewards-app.vercel.app/home` 
 | API Health | `https://vol-rewards-api.onrender.com/api/health` |
 | Build Status | `https://expo.dev/accounts/xonloke/projects/vol-app/builds/09147766-5839-46c5-bc18-942e5f569db3` |
 | **APK Download** | [GitHub Release v1.0.0-demo](https://github.com/XonLoke/volunteering-rewards-app/releases/tag/v1.0.0-demo) |
-| **Test Suite** | `node backend/tests/integration/orchestration.test.js` (54 tests) |
+| **Test Suite** | `node backend/tests/integration/integration.test.js` (54 tests) |
 
 ---
 
