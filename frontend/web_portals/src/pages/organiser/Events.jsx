@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../../components/Topbar';
 import StatusBadge from '../../components/StatusBadge';
-import { apiGet, apiDel } from '../../services/api';
+import { apiGet } from '../../services/api';
 
 const FILTER_OPTIONS = [
   { key: '', label: 'All' },
@@ -80,17 +80,6 @@ export default function Events() {
       return timeStr;
     }
   };
-
-  const handleDelete = useCallback(async (eventId, eventTitle) => {
-    if (!window.confirm(`Delete "${eventTitle}"? This action cannot be undone.`)) return;
-    try {
-      await apiDel(`/organiser/events/${eventId}`);
-      setEvents((prev) => prev.filter((e) => e.id !== eventId));
-      setTotal((prev) => prev - 1);
-    } catch (err) {
-      alert(err.message || 'Failed to delete event.');
-    }
-  }, []);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -226,13 +215,6 @@ export default function Events() {
                             onClick={() => navigate(`/organiser/event-edit/${row.id}`)}
                           >
                             Edit
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDelete(row.id, row.title)}
-                            style={{ color: '#ef4444' }}
-                          >
-                            Delete
                           </button>
                         </div>
                       </td>
