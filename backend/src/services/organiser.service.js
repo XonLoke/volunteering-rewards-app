@@ -83,11 +83,34 @@ async function updateEvent(organiserId, eventId, data) {
 }
 
 async function deleteEvent(organiserId, eventId) {
-  const { rows } = await pool.query(
-    "DELETE FROM events WHERE id = $1 AND organizer_id = $2 RETURNING id", [eventId, organiserId]
-  );
-  if (rows.length === 0) throw createError(404, "not_found", "Event not found.");
-  return rows[0];
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Verify ownership first
+    const ownerCheck = await client.query(
+      "SELECT id FROM events WHERE id = $1 AND organizer_id = $2", [eventId, organiserId]
+    );
+    if (ownerCheck.rows.length === 0) throw createError(404, "not_found", "Event not found.");
+
+    // Delete related records in order to avoid FK violations
+    await client.query("DELETE FROM event_feedback WHERE event_id = $1", [eventId]);
+    await client.query("DELETE FROM event_qna WHERE event_id = $1", [eventId]);
+    await client.query("DELETE FROM attendance_logs WHERE event_id = $1", [eventId]);
+    await client.query("DELETE FROM event_registrations WHERE event_id = $1", [eventId]);
+
+    const { rows } = await client.query(
+      "DELETE FROM events WHERE id = $1 RETURNING id", [eventId]
+    );
+
+    await client.query("COMMIT");
+    return rows[0];
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 async function getRoster(organiserId, eventId) {

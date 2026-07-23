@@ -35,12 +35,33 @@ describe("createEvent", () => {
 
 describe("deleteEvent", () => {
   it("should delete and return event id", async () => {
-    mq([{ rows: [{ id: 1 }] }]);
+    const queries = [];
+    const client = {
+      query: (sql) => {
+        queries.push(sql);
+        if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return {};
+        if (sql.includes("DELETE FROM events")) return { rows: [{ id: 1 }] };
+        return { rows: [{ id: 1 }] };
+      },
+      release: () => {},
+    };
+    mock.method(pool, "connect", () => Promise.resolve(client));
     const r = await organiserService.deleteEvent(1, 1);
     assert.equal(r.id, 1);
+    assert.ok(queries.includes("BEGIN"));
+    assert.ok(queries.includes("COMMIT"));
   });
   it("should throw 404 if not found or not owner", async () => {
-    mq([{ rows: [] }]);
+    const client = {
+      query: (sql) => {
+        if (sql === "BEGIN") return {};
+        if (sql.includes("SELECT id FROM events")) return { rows: [] };
+        if (sql === "ROLLBACK") return {};
+        return {};
+      },
+      release: () => {},
+    };
+    mock.method(pool, "connect", () => Promise.resolve(client));
     try { await organiserService.deleteEvent(1, 999); assert.fail(); }
     catch (err) { assert.equal(err.statusCode || err.status, 404); }
   });
