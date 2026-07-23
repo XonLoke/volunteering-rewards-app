@@ -341,9 +341,23 @@ async function getEventParticipation(eventId) {
     [eventId]
   );
 
+  // Fetch registered participants with check-in status
+  const { rows: participants } = await pool.query(
+    `SELECT u.id, u.name, u.email,
+            er.status AS registration_status,
+            al.scanned_at AS checked_in_at
+     FROM event_registrations er
+     JOIN users u ON u.id = er.user_id
+     LEFT JOIN attendance_logs al ON al.event_id = er.event_id AND al.user_id = u.id AND al.scan_type = 'check_in'
+     WHERE er.event_id = $1
+     ORDER BY u.name`,
+    [eventId]
+  );
+
   return {
     event: eventRows[0],
     participation: partRows[0] || { total_registered: 0, total_checked_in: 0, average_rating: 0, feedback_count: 0 },
+    participants,
   };
 }
 

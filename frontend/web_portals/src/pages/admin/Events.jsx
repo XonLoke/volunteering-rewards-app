@@ -17,6 +17,7 @@ function ParticipationPanel({ eventId, onClose }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
+  const [view, setView] = useState(null); // null, 'registered', 'checked_in'
 
   useEffect(() => {
     if (!eventId) return;
@@ -57,6 +58,66 @@ function ParticipationPanel({ eventId, onClose }) {
 
   if (!data) return null;
 
+  const participants = data.participants || [];
+
+  // Show participant list if a view is selected
+  if (view) {
+    const filtered = view === 'checked_in'
+      ? participants.filter((p) => p.checked_in_at)
+      : participants;
+
+    return (
+      <div style={{ padding: 16, borderTop: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <h4 style={{ fontSize: 14, fontWeight: 600 }}>
+              {view === 'checked_in' ? 'Checked-In Participants' : 'Registered Participants'}
+            </h4>
+            <p style={{ fontSize: 12, color: 'var(--muted)' }}>
+              {data.event?.title} &middot; {filtered.length} {view === 'checked_in' ? 'checked in' : 'registered'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setView(null)}>
+              Back to Summary
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+        {filtered.length === 0 ? (
+          <div className="empty-state">
+            <p>No {view === 'checked_in' ? 'check-ins' : 'registrations'} yet.</p>
+          </div>
+        ) : (
+          <div className="data-table-wrapper">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Checked In</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p) => (
+                  <tr key={p.id}>
+                    <td style={{ fontWeight: 500 }}>{p.name}</td>
+                    <td>{p.email}</td>
+                    <td>{p.registration_status || 'registered'}</td>
+                    <td>{p.checked_in_at ? new Date(p.checked_in_at).toLocaleString() : '--'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: 16, borderTop: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -75,17 +136,17 @@ function ParticipationPanel({ eventId, onClose }) {
         </button>
       </div>
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-        <div className="stat-card" style={{ padding: 16, textAlign: 'center' }}>
-          <div className="stat-value" style={{ fontSize: 24 }}>
+        <div className="stat-card" style={{ padding: 16, textAlign: 'center', cursor: 'pointer' }} onClick={() => setView('registered')}>
+          <div className="stat-value" style={{ fontSize: 24, color: 'var(--accent)', textDecoration: 'underline' }}>
             {data.participation?.total_registered ?? 0}
           </div>
-          <div className="stat-label">Registered</div>
+          <div className="stat-label">Registered (click)</div>
         </div>
-        <div className="stat-card" style={{ padding: 16, textAlign: 'center' }}>
-          <div className="stat-value" style={{ fontSize: 24 }}>
+        <div className="stat-card" style={{ padding: 16, textAlign: 'center', cursor: 'pointer' }} onClick={() => setView('checked_in')}>
+          <div className="stat-value" style={{ fontSize: 24, color: 'var(--accent)', textDecoration: 'underline' }}>
             {data.participation?.total_checked_in ?? 0}
           </div>
-          <div className="stat-label">Checked In</div>
+          <div className="stat-label">Checked In (click)</div>
         </div>
         <div className="stat-card" style={{ padding: 16, textAlign: 'center' }}>
           <div className="stat-value" style={{ fontSize: 24 }}>
@@ -278,8 +339,40 @@ export default function Events() {
                         style={{ background:'none', border:'none', padding:0, fontSize:13, fontWeight:500, color:'var(--accent)', cursor:'pointer', textDecoration:'underline' }}>
                         {row.organiser_name || '--'}</button></td>
                       <td>{row.date ? new Date(row.date).toLocaleDateString() : '--'}</td>
-                      <td>{row.registered_count ?? 0}</td>
-                      <td>{row.checked_in_count ?? 0}</td>
+                      <td>
+                        <button
+                          onClick={() => handleToggleExpand(row.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: 'var(--accent)',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          {row.registered_count ?? 0}
+                        </button>
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleToggleExpand(row.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: 'var(--accent)',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          {row.checked_in_count ?? 0}
+                        </button>
+                      </td>
                       <td>{getStatusBadge(row.status)}</td>
                       <td>
                         <button
