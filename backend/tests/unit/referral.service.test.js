@@ -30,16 +30,22 @@ describe("getConfig", () => {
 describe("linkSponsorship", () => {
   it("should link upline sponsors on registration", async () => {
     const mockFn = mockPoolQuery([
-      { rows: [{ id: 2, name: "Alice", email: "alice@test.com" }] },
-      { rows: [{ id: 1, name: "Carol", email: "carol@test.com" }] },
-      { rows: [{ direct_sponsor_points: 10, helped_sponsor_points: 4, upline_helper_points: 6, max_depth: 2 }] },
+      { rows: [{ name: "NewUser" }] },  // new user name lookup
+      { rows: [{ id: 2, name: "Alice", email: "alice@test.com" }] },  // upline2 lookup
+      { rows: [{ id: 1, name: "Carol", email: "carol@test.com" }] },  // upline1 lookup
+      {},  // UPDATE user (upline emails)
+      { rows: [{ direct_sponsor_points: 10, helped_sponsor_points: 4, upline_helper_points: 6, max_depth: 2 }] },  // config
+      {},  // INSERT referral_log level 1
+      {},  // INSERT notification for upline2
+      {},  // INSERT referral_log level 2
+      {},  // INSERT notification for upline1
     ]);
 
     const result = await referralService.linkSponsorship(3, "alice@test.com", "carol@test.com");
 
     assert.equal(result.upline2Id, 2);
     assert.equal(result.upline1Id, 1);
-    assert.equal(mockFn.mock.calls.length, 6); // 2 lookups + update + config + 2 inserts
+    assert.equal(mockFn.mock.calls.length, 9); // name lookup + 2 lookups + update + config + 2 inserts + 2 notifications
   });
 
   it("should handle missing upline emails gracefully", async () => {
