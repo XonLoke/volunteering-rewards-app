@@ -1,6 +1,7 @@
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
 const { hashPin } = require("./rewards.service");
+const { createNotification } = require("./notification.service");
 
 function toPositiveInt(value, fallback) {
   const parsed = Number.parseInt(value, 10);
@@ -63,7 +64,7 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
     let query;
     let params;
     if (userCouponId) {
-      query = `SELECT uc.id AS user_coupon_id, uc.status, uc.expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
+      query = `SELECT uc.id AS user_coupon_id, uc.user_id AS volunteer_user_id, uc.status, uc.expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
                  FROM user_coupons uc
                  JOIN coupons c ON c.id = uc.coupon_id
                  JOIN users u ON u.id = uc.user_id
@@ -71,7 +72,7 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
                 FOR UPDATE`;
       params = [userCouponId];
     } else {
-      query = `SELECT uc.id AS user_coupon_id, uc.status, uc.expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
+      query = `SELECT uc.id AS user_coupon_id, uc.user_id AS volunteer_user_id, uc.status, uc.expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
                  FROM user_coupons uc
                  JOIN coupons c ON c.id = uc.coupon_id
                  JOIN users u ON u.id = uc.user_id
@@ -105,6 +106,15 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
     );
 
     await client.query("COMMIT");
+
+    // Notify the volunteer that their coupon was used — non-blocking
+    createNotification({
+      userId: coupon.volunteer_user_id,
+      title: "Coupon Used!",
+      description: `Your "${coupon.title}" has been redeemed at the merchant.`,
+      icon: "checkmark-circle-outline",
+      color: "#10b981",
+    }).catch(() => {});
 
     return {
       redemption: {

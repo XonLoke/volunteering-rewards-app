@@ -21,10 +21,11 @@ function mockPoolConnect(client) {
 describe("scanQR", () => {
   it("should successfully scan QR and award points", async () => {
     const client = makeMockClient([
-      { rows: [{ id: 1, points_reward: 20 }] },
+      { rows: [{ id: 1, title: "Beach Cleanup", points_reward: 20 }] },
       { rows: [{ id: 42 }] },
       { rows: [] },
       { rows: [{ id: 1, event_id: 1, user_id: 42, points_awarded: 20 }] },
+      {},
       {},
     ]);
     mockPoolConnect(client);
@@ -80,7 +81,7 @@ describe("scanQR", () => {
       query: (sql) => {
         sqlCalls.push(sql);
         if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return {};
-        if (sql.includes("SELECT id, COALESCE")) return { rows: [{ id: 1, points_reward: 10 }] };
+        if (sql.includes("points_reward")) return { rows: [{ id: 1, title: "Test Event", points_reward: 10 }] };
         if (sql.includes("SELECT id FROM users")) return { rows: [{ id: 42 }] };
         if (sql.includes("SELECT 1 FROM attendance_logs")) return { rows: [] };
         if (sql.includes("INSERT INTO attendance_logs")) return { rows: [{ id: 1 }] };

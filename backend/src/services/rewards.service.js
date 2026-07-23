@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
+const { createNotification } = require("./notification.service");
 
 const PIN_SECRET = process.env.PIN_SECRET || process.env.JWT_SECRET || "dev-pin-secret-change-me";
 
@@ -156,6 +157,15 @@ async function redeemReward(rewardId, userId, meta = {}) {
     }
 
     await client.query("COMMIT");
+
+    // Non-blocking notification — failure does not roll back the redemption
+    createNotification({
+      userId,
+      title: "Coupon Redeemed!",
+      description: `You redeemed ${coupon.title} for ${coupon.points_required} points. Show your 6-digit PIN to the merchant.`,
+      icon: "pricetag-outline",
+      color: "#8b5cf6",
+    }).catch(() => {});
 
     return {
       data: {

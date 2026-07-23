@@ -1,9 +1,10 @@
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
+const { createNotification } = require("./notification.service");
 
 const awardPointsForEvent = async (client, eventId, volunteerId) => {
   const eventResult = await client.query(
-    `SELECT id, COALESCE(points_value, 0)::int AS points_reward FROM events WHERE id = $1 FOR SHARE`,
+    `SELECT id, title, COALESCE(points_value, 0)::int AS points_reward FROM events WHERE id = $1 FOR SHARE`,
     [eventId]
   );
 
@@ -52,6 +53,7 @@ const awardPointsForEvent = async (client, eventId, volunteerId) => {
   return {
     attendance: insertLog.rows[0],
     awardedPoints: points,
+    eventTitle: eventResult.rows[0].title,
   };
 };
 
@@ -62,6 +64,15 @@ const scanQR = async (eventId, volunteerId) => {
     await client.query("BEGIN");
     const result = await awardPointsForEvent(client, eventId, volunteerId);
     await client.query("COMMIT");
+
+    // Non-blocking: notify volunteer of points earned
+    createNotification({
+      userId: volunteerId,
+      title: "Points Earned!",
+      description: `You earned ${result.awardedPoints} points for attending ${result.eventTitle}.`,
+      icon: "star-outline",
+      color: "#f59e0b",
+    }).catch(() => {});
 
     // Note: Sponsorship points (F3) are awarded at registration time
     // via linkSponsorship() in the auth service, not on attendance.
