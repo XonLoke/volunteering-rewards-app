@@ -47,9 +47,9 @@ async function getMyEvents(organiserId, { page = 1, limit = 20, status } = {}) {
 
   params.push(limit, offset);
   const { rows } = await pool.query(
-    `SELECT e.id, e.title, e.description, e.location, e.event_date, e.capacity, e.points_value, e.status, e.category, e.created_at,
-      (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id) AS volunteers,
-      (SELECT COUNT(*) FROM attendance_logs al WHERE al.event_id = e.id) AS attended
+    `SELECT e.id, e.title, e.description, e.location, e.event_date, e.capacity AS spots_total, e.points_value, e.status, e.category, e.created_at,
+      (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id) AS registered_count,
+      (SELECT COUNT(*) FROM attendance_logs al WHERE al.event_id = e.id AND al.scan_type = 'check_in') AS checked_in_count
      FROM events e
      ${where}
      ORDER BY e.event_date DESC
