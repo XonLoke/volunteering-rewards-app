@@ -130,9 +130,9 @@ export default function Roster() {
           <div style={{ display: 'flex', gap: 32, alignItems: 'center', flexWrap: 'wrap' }}>
             <div>
               <div className="stat-value" style={{ fontSize: 24 }}>
-                {totalCheckedIn} / {totalRegistered}
+                {totalRegistered} / {totalCheckedIn}
               </div>
-              <div className="stat-label">Volunteers Checked In</div>
+              <div className="stat-label">Registered / Checked In</div>
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div
