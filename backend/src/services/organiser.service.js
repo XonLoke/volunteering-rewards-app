@@ -114,8 +114,12 @@ async function deleteEvent(organiserId, eventId) {
 }
 
 async function getRoster(organiserId, eventId) {
+  // Check-in status comes from attendance_logs (written by QR scan), NOT
+  // er.check_in_time — that column is never written by any code path.
   const { rows } = await pool.query(
-    `SELECT u.id, u.name, u.email, er.status, er.check_in_time
+    `SELECT u.id, u.name, u.email, er.status, er.created_at AS registered_at,
+            (SELECT MAX(al.scanned_at) FROM attendance_logs al
+             WHERE al.event_id = er.event_id AND al.user_id = u.id AND al.scan_type = 'check_in') AS check_in_time
      FROM event_registrations er
      JOIN users u ON u.id = er.user_id
      JOIN events e ON e.id = er.event_id

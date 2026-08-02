@@ -35,7 +35,11 @@ async function getDashboardStats() {
     total_merchants: pool.query("SELECT COUNT(*) FROM merchants"),
     no_show_count: pool.query(`SELECT COUNT(*) FROM event_registrations er
       JOIN events e ON er.event_id = e.id
-      WHERE e.event_date < NOW() AND er.check_in_time IS NULL AND er.status = 'registered'`),
+      WHERE e.event_date < NOW() AND er.status = 'registered'
+        AND NOT EXISTS (
+          SELECT 1 FROM attendance_logs al
+          WHERE al.event_id = er.event_id AND al.user_id = er.user_id AND al.scan_type = 'check_in'
+        )`),
     coupon_today: pool.query("SELECT COUNT(*) FROM user_coupons WHERE created_at::date = CURRENT_DATE"),
     redemption_today: pool.query("SELECT COUNT(*) FROM redemption_logs WHERE created_at::date = CURRENT_DATE"),
     users_30d: pool.query("SELECT COUNT(*) FROM users WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'"),

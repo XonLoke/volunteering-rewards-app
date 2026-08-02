@@ -23,6 +23,18 @@ const awardPointsForEvent = async (client, eventId, volunteerId) => {
     throw createError(404, "user_not_found");
   }
 
+  // Verify the volunteer is registered for this event — prevents orphan
+  // check-ins (attendance_logs without an event_registration), which made
+  // admin/organiser detail views show stale counts while lists were correct.
+  const registration = await client.query(
+    `SELECT 1 FROM event_registrations WHERE event_id = $1 AND user_id = $2 AND status = 'registered'`,
+    [eventId, volunteerId]
+  );
+
+  if (!registration.rows.length) {
+    throw createError(400, "not_registered", "Volunteer is not registered for this event.");
+  }
+
   const existing = await client.query(
     `SELECT 1 FROM attendance_logs WHERE event_id = $1 AND user_id = $2`,
     [eventId, volunteerId]

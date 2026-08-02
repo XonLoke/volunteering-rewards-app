@@ -23,8 +23,8 @@ export default function Roster() {
         name: v.name,
         email: v.email,
         phone: '--',
-        registered_at: null,
-        is_checked_in: v.status === 'checked_in' || v.check_in_time !== null,
+        registered_at: v.registered_at || null,
+        is_checked_in: v.check_in_time !== null,
         checked_in_at: v.check_in_time || null,
       }));
       setData({
