@@ -180,9 +180,9 @@ export default function Roster() {
                   <div style={styles.volInfo}>
                     <p style={styles.volName}>{vol.name || 'Unknown'}</p>
                     <p style={styles.volEmail}>{vol.email || ''}</p>
-                    {vol.is_checked_in && vol.checked_in_at && (
+                    {vol.is_checked_in && (vol.checked_in_at || vol.check_in_time) && (
                       <p style={styles.checkedInTime}>
-                        Checked in at {formatCheckinTime(vol.checked_in_at)}
+                        Checked in at {formatCheckinTime(vol.checked_in_at || vol.check_in_time)}
                       </p>
                     )}
                   </div>

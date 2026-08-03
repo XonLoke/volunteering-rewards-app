@@ -31,13 +31,14 @@ export default function PointsHistory() {
         const user = JSON.parse(stored);
         setTotalPoints(user.points || 0);
 
-        const res = await api.get("/me/points");
-        const data = await res.json();
-        const scans = (data.scans || []).map((s: any) => ({
+        // /me/points returns { points_balance, history } — history rows are
+        // { id, points, description, created_at } (me.service.js)
+        const data = await api.get("/me/points");
+        const scans = (data.history || []).map((s: any) => ({
           id: s.id,
-          event_title: s.event_title,
-          points_awarded: s.points_awarded,
-          scanned_at: s.scanned_at,
+          event_title: s.description || "Volunteer Event",
+          points_awarded: s.points ?? 0,
+          scanned_at: s.created_at,
           type: "earn",
         }));
         setHistory(scans);

@@ -64,8 +64,9 @@ export default function Profile() {
       };
 
       setUser(merged);
-      setScansCount((pointsData.scans || []).length);
-      setCouponsCount((couponsData.coupons || []).length);
+      // /me/points returns { history }, /me/coupons returns { data } — me.service.js
+      setScansCount((pointsData.history || []).length);
+      setCouponsCount((couponsData.data || []).length);
 
       // Update AsyncStorage cache for offline use
       const cached = await AsyncStorage.getItem("user");

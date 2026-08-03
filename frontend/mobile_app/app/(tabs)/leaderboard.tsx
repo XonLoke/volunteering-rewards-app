@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import { useState, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
-import { useTheme } from "../contexts/ThemeContext";
-import { api } from "../src/services/api";
+import { useTheme } from "../../contexts/ThemeContext";
+import { api } from "../../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;

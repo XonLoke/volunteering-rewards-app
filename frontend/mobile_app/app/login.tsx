@@ -48,9 +48,10 @@ export default function Login() {
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
 
       // Save points separately so Home can show it immediately
+      // (backend sends user.points_balance — auth.service.js login)
       await AsyncStorage.setItem(
         "userPoints",
-        String(data.user.points ?? 0)
+        String(data.user.points_balance ?? data.user.points ?? 0)
       );
 
       // Save user id separately if other pages need it

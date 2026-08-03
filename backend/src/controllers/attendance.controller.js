@@ -52,12 +52,20 @@ async function scan(req, res, next) {
 
     const result = await attendanceService.scanQR(event_id, volunteerId);
 
+    // Enrich with volunteer name + balance for the scanner UI (additive —
+    // existing clients only read message/data.points_awarded, which are unchanged).
+    const volResult = await pool.query(
+      `SELECT id, name, COALESCE(points, 0)::int AS points_balance FROM users WHERE id = $1`,
+      [volunteerId]
+    );
+
     res.status(201).json({
       message: "Check-in recorded successfully.",
       data: {
         attendance_id: result.attendance.id,
         points_awarded: result.awardedPoints,
       },
+      volunteer: volResult.rows[0] || null,
     });
   } catch (err) { next(err); }
 }

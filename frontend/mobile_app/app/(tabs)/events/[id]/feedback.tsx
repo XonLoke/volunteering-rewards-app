@@ -11,12 +11,12 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-import { colors, spacing, borderRadius, typography } from '../../../src/theme';
-import Button from '../../../src/components/Button';
-import LoadingSpinner from '../../../src/components/LoadingSpinner';
-import ErrorState from '../../../src/components/ErrorState';
-import Toast from '../../../src/components/Toast';
-import { api, ApiError } from '../../../src/services/api';
+import { colors, spacing, borderRadius, typography } from '../../../../src/theme';
+import Button from '../../../../src/components/Button';
+import LoadingSpinner from '../../../../src/components/LoadingSpinner';
+import ErrorState from '../../../../src/components/ErrorState';
+import Toast from '../../../../src/components/Toast';
+import { api, ApiError } from '../../../../src/services/api';
 
 type LoadingState = 'idle' | 'loading' | 'error' | 'success';
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error';

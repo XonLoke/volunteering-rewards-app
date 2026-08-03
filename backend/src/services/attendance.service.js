@@ -114,7 +114,10 @@ const batchSync = async (scans = []) => {
     await client.query("BEGIN");
 
     for (const scan of scans) {
-      const { eventId, volunteerId } = scan || {};
+      // Accept both camelCase (API contract) and snake_case (scanner PWA's
+      // stored offline scans) — additive normalisation, no client breakage.
+      const eventId = scan?.eventId ?? scan?.event_id;
+      const volunteerId = scan?.volunteerId ?? scan?.volunteer_id;
 
       if (!eventId || !volunteerId) {
         results.errors.push({ scan, code: "invalid_scan", message: "eventId and volunteerId are required" });

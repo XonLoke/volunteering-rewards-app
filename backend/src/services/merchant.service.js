@@ -288,6 +288,7 @@ async function getDashboardStats(userId) {
       merchant_name: "Your Store",
       today_redemptions: 0,
       today_value: 0,
+      today_value_cents: 0, // match the success branch + Dashboard.jsx shape
       active_products: 0,
       total_redemptions: 0,
       popular_items: [],
