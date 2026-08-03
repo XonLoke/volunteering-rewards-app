@@ -42,7 +42,7 @@ export default function Events() {
 
         <TouchableOpacity
           style={styles.plus}
-          onPress={() => router.push("/(tabs)/eventForm")}
+          onPress={() => router.push("/organiser/eventForm")}
         >
           <Ionicons name="add" size={24} color="#fff" />
         </TouchableOpacity>
@@ -72,7 +72,7 @@ export default function Events() {
           <TouchableOpacity
             key={index}
             style={styles.eventCard}
-            onPress={() => router.push("/(tabs)/eventForm")}
+            onPress={() => router.push("/organiser/eventForm")}
           >
             <View style={styles.imageBox}>
               <Ionicons name="calendar-outline" size={26} color="#6A00E8" />
