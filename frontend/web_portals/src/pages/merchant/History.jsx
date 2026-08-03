@@ -142,9 +142,12 @@ export default function History() {
   );
 
   const statusConfig = (item) => {
-    if (item.reversed_at) return { status: 'reversed', label: 'Reversed' };
-    if (item.status === 'used' || item.status === 'approved') return { status: 'approved', label: 'Used' };
-    return { status: item.status || 'pending', label: item.status || 'Pending' };
+    // Backend returns coupon_status (unused/used/expired), status alias and
+    // reversed_at (set on the log row where action = 'reversed').
+    if (item.reversed_at) return { status: 'rejected', label: 'Reversed' };
+    const s = item.coupon_status || item.status || 'pending';
+    if (s === 'used' || s === 'approved') return { status: 'approved', label: 'Used' };
+    return { status: s === 'unused' ? 'pending' : s, label: s === 'unused' ? 'Pending' : s };
   };
 
   return (
@@ -241,17 +244,17 @@ export default function History() {
                       <tr key={item.id || idx}>
                         <td style={styles.td}>
                           <span style={{ fontFamily: "ui-monospace, 'SF Mono', monospace" }}>
-                            {maskPin(item.user_coupon_id || item.id)}
+                            {maskPin(item.pin_code)}
                           </span>
                         </td>
                         <td style={styles.td}>{item.coupon_title || item.title || item.coupon_type || '-'}</td>
                         <td style={styles.td}>
                           <span style={{ fontWeight: 600 }}>
-                            {
-                              item.points_required
-                                ? `${item.points_required} pts`
-                                : formatValue(item.value_cents)
-                            }
+                            {item.value_cents != null && Number(item.value_cents) > 0
+                              ? formatValue(item.value_cents)
+                              : item.points_spent != null
+                              ? `${item.points_spent} pts`
+                              : '-'}
                         </span>
                         </td>
                         <td style={styles.td}>
@@ -277,18 +280,18 @@ export default function History() {
                     <div style={styles.mobileCardHeader}>
                       <span style={styles.mobileCouponType}>{item.coupon_title || item.title || item.coupon_type || '-'}</span>
                       <span style={styles.mobileValue}>
-                        {
-                           item.points_required
-                             ? `${item.points_required} pts`
-                             : formatValue(item.value_cents)
-                        }
+                        {item.value_cents != null && Number(item.value_cents) > 0
+                          ? formatValue(item.value_cents)
+                          : item.points_spent != null
+                          ? `${item.points_spent} pts`
+                          : '-'}
                     </span>
                     </div>
                     <div style={styles.mobileCardBody}>
                       <div style={styles.mobileRow}>
                         <span style={styles.mobileLabel}>PIN</span>
                         <span style={{ fontFamily: "ui-monospace, 'SF Mono', monospace" }}>
-                          {maskPin(item.user_coupon_id || item.id)}
+                          {maskPin(item.pin_code)}
                         </span>
                       </div>
                       <div style={styles.mobileRow}>

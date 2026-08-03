@@ -355,22 +355,9 @@ export default function Coupons() {
     }
   };
 
-  const maskPin = (pin) => {
-    if (!pin) return '******';
-    if (pin.length <= 4) return '*'.repeat(pin.length);
-    return pin.slice(0, 2) + '****' + pin.slice(-2);
-  };
-
   const totalPages = Math.ceil(total / pageSize);
 
   const columns = [
-    {
-      key: 'pin_code',
-      label: 'PIN Code',
-      render: (val) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{maskPin(val)}</span>
-      ),
-    },
     { key: 'title', label: 'Coupon Type' },
     {
       key: 'points_cost',

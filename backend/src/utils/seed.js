@@ -23,7 +23,7 @@ const SALT_ROUNDS = 12;
 
 const ROLES = [
   { role_name: "volunteer", description: "Volunteer — browses events, earns points, redeems rewards" },
-  { role_name: "organizer", description: "Event Organizer — creates events, scans QR codes, manages attendance" },
+  { role_name: "organiser", description: "Event Organizer — creates events, scans QR codes, manages attendance" },
   { role_name: "admin",     description: "System Admin — manages users, creates coupons, verifies PINs, audits" },
   { role_name: "merchant",  description: "Merchant Cashier — verifies PINs, redeems coupons" },
 ];
@@ -33,8 +33,8 @@ const TEST_USERS = [
   { name: "Alice Volunteer",  email: "alice@test.com",    role: "volunteer", points: 500 },
   { name: "Eve Volunteer",    email: "eve@test.com",      role: "volunteer", points: 300 },
   // Organisers
-  { name: "Bob Organizer",    email: "bob@test.com",      role: "organizer", points: 0 },
-  { name: "Johnny Organizer", email: "johnny@test.com",   role: "organizer", points: 0 },
+  { name: "Bob Organizer",    email: "bob@test.com",      role: "organiser", points: 0 },
+  { name: "Johnny Organizer", email: "johnny@test.com",   role: "organiser", points: 0 },
   // Admin
   { name: "Carol Admin",      email: "carol@test.com",    role: "admin",     points: 0 },
   // Merchants

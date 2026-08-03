@@ -10,10 +10,12 @@ async function getDashboard(organiserId) {
     `SELECT
       COUNT(DISTINCT e.id)::int AS total_events,
       COUNT(DISTINCT er.user_id)::int AS total_volunteers,
+      COUNT(DISTINCT al.user_id)::int AS total_volunteers_checked_in,
       COUNT(DISTINCT CASE WHEN e.event_date >= NOW() THEN e.id END)::int AS upcoming_events,
-      COALESCE(ROUND(AVG(ef.rating)::numeric, 1), 0)::float AS average_feedback
+      COALESCE(ROUND(AVG(ef.rating)::numeric, 1), 0)::float AS average_rating
      FROM events e
      LEFT JOIN event_registrations er ON er.event_id = e.id
+     LEFT JOIN attendance_logs al ON al.event_id = e.id AND al.scan_type = 'check_in'
      LEFT JOIN event_feedback ef ON ef.event_id = e.id
      WHERE e.organizer_id = $1`,
     [organiserId]
@@ -31,14 +33,47 @@ async function getDashboard(organiserId) {
     [organiserId]
   );
 
-  return { stats: stats[0] || {}, upcoming };
+  // Organisation card for the dashboard header
+  const { rows: orgRows } = await pool.query(
+    `SELECT o.org_name AS name, o.status
+     FROM organizations o
+     JOIN users u ON o.contact_email = u.email
+     WHERE u.id = $1
+     LIMIT 1`,
+    [organiserId]
+  );
+
+  // Recent check-in activity feed (last 10 check-ins across the organiser's events)
+  const { rows: activity } = await pool.query(
+    `SELECT al.scanned_at AS timestamp, u.name AS volunteer_name, e.title AS event_title
+     FROM attendance_logs al
+     JOIN events e ON e.id = al.event_id
+     JOIN users u ON u.id = al.user_id
+     WHERE e.organizer_id = $1 AND al.scan_type = 'check_in'
+     ORDER BY al.scanned_at DESC
+     LIMIT 10`,
+    [organiserId]
+  );
+
+  return {
+    stats: stats[0] || {},
+    upcoming,
+    organisation: orgRows[0] || {},
+    recent_activity: activity.map((r) => ({ ...r, type: "check_in" })),
+  };
 }
 
 async function getMyEvents(organiserId, { page = 1, limit = 20, status } = {}) {
   const offset = (page - 1) * limit;
   const params = [organiserId];
   let where = "WHERE e.organizer_id = $1";
-  if (status) { params.push(status); where += ` AND e.status = $${params.length}`; }
+  if (status === "past") {
+    // 'past' is a computed state, not a stored status — no code ever writes it
+    where += " AND e.event_date < NOW()";
+  } else if (status) {
+    params.push(status);
+    where += ` AND e.status = $${params.length}`;
+  }
 
   const countResult = await pool.query(
     `SELECT COUNT(*) FROM events e ${where}`, params
@@ -47,7 +82,10 @@ async function getMyEvents(organiserId, { page = 1, limit = 20, status } = {}) {
 
   params.push(limit, offset);
   const { rows } = await pool.query(
-    `SELECT e.id, e.title, e.description, e.location, e.event_date, e.capacity AS spots_total, e.points_value, e.status, e.category, e.created_at,
+    `SELECT e.id, e.title, e.description, e.location, e.event_date, e.event_date AS date,
+            to_char(e.event_date, 'HH24:MI') AS start_time,
+            to_char(e.event_date + COALESCE(e.duration_hours, 0) * INTERVAL '1 hour', 'HH24:MI') AS end_time,
+            e.duration_hours, e.capacity AS spots_total, e.points_value, e.status, e.category, e.created_at,
       (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id) AS registered_count,
       (SELECT COUNT(*) FROM attendance_logs al WHERE al.event_id = e.id AND al.scan_type = 'check_in') AS checked_in_count
      FROM events e
@@ -60,6 +98,9 @@ async function getMyEvents(organiserId, { page = 1, limit = 20, status } = {}) {
 }
 
 async function createEvent(organiserId, data) {
+  if (!data.title || !data.event_date) {
+    throw createError(400, "validation_error", "title and event_date are required.");
+  }
   const { rows } = await pool.query(
     `INSERT INTO events (organizer_id, title, description, location, event_date, duration_hours, capacity, points_value, category, status)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'upcoming') RETURNING *`,
@@ -127,7 +168,13 @@ async function getRoster(organiserId, eventId) {
      ORDER BY u.name`,
     [organiserId, eventId]
   );
-  return { data: rows };
+
+  const { rows: titleRows } = await pool.query(
+    `SELECT title FROM events WHERE id = $1 AND organizer_id = $2`,
+    [eventId, organiserId]
+  );
+
+  return { data: rows, event_title: titleRows[0]?.title || "" };
 }
 
 async function getFeedback(organiserId, eventId) {
@@ -139,13 +186,28 @@ async function getFeedback(organiserId, eventId) {
     WHERE f.event_id = $1
       AND (SELECT e2.organizer_id FROM events e2 WHERE e2.id = f.event_id) = $2
     ORDER BY f.created_at DESC`;
-  const { rows } = await pool.query(sql, [eventId, organiserId]);
-  return { data: rows };
+  const [rowsResult, summaryResult] = await Promise.all([
+    pool.query(sql, [eventId, organiserId]),
+    pool.query(
+      `SELECT COALESCE(ROUND(AVG(rating)::numeric, 1), 0)::float AS average_rating,
+              COUNT(*)::int AS total
+       FROM event_feedback WHERE event_id = $1`,
+      [eventId]
+    ),
+  ]);
+  return {
+    data: rowsResult.rows,
+    average_rating: summaryResult.rows[0].average_rating,
+    total: summaryResult.rows[0].total,
+  };
 }
 
 async function getQna(organiserId, eventId) {
   const { rows } = await pool.query(
-    `SELECT q.id, q.question, q.answer, q.created_at, u.name AS asked_by
+    `SELECT q.id, q.question, q.answer, q.created_at AS asked_at,
+            (q.answer IS NOT NULL AND q.answer != '') AS is_answered,
+            CASE WHEN q.answer IS NOT NULL AND q.answer != '' THEN q.updated_at END AS answered_at,
+            u.name AS asked_by
      FROM event_qna q
      JOIN events e ON e.id = q.event_id
      JOIN users u ON u.id = q.question_by

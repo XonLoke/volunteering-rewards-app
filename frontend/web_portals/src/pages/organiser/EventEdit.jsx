@@ -15,6 +15,15 @@ const CATEGORY_OPTIONS = [
   { value: 'health', label: 'Health' },
 ];
 
+// Duration in hours between two "HH:MM" times (min 0.5, 1 decimal place).
+function durationBetween(start, end) {
+  const [sh, sm] = (start || '').split(':').map(Number);
+  const [eh, em] = (end || '').split(':').map(Number);
+  if ([sh, sm, eh, em].some((v) => Number.isNaN(v))) return null;
+  const mins = (eh * 60 + em) - (sh * 60 + sm);
+  return Math.max(0.5, Math.round((mins / 60) * 10) / 10);
+}
+
 export default function EventEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -112,10 +121,19 @@ export default function EventEdit() {
 
     setSubmitting(true);
     try {
+      // Map UI field names to the backend contract (event_date/duration_hours/
+      // capacity/points_value) — the old payload sent date/start_time/
+      // spots_total/points_awarded, which updateEvent never reads.
       const payload = {
-        ...form,
-        points_awarded: form.points_awarded ? parseInt(form.points_awarded, 10) : 0,
-        spots_total: parseInt(form.spots_total, 10),
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        location: form.location,
+        event_date: `${form.date}T${form.start_time}`,
+        duration_hours: durationBetween(form.start_time, form.end_time),
+        capacity: parseInt(form.spots_total, 10),
+        points_value: form.points_awarded ? parseInt(form.points_awarded, 10) : 0,
+        image_url: form.image_url || null,
       };
       await apiPut(`/organiser/events/${id}`, payload);
       toast('Event updated successfully!', 'success');

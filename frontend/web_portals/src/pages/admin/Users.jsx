@@ -154,7 +154,7 @@ function SuspendModal({ isOpen, onClose, user, onConfirm }) {
 
 const INVITE_ROLES = [
   { value: "volunteer", label: "Volunteer" },
-  { value: "organizer", label: "Organiser" },
+  { value: "organiser", label: "Organiser" },
   { value: "admin", label: "Admin" },
   { value: "merchant", label: "Merchant" },
 ];
@@ -312,7 +312,7 @@ export default function Users() {
             <select className="form-select" value={roleFilter} onChange={handleRoleFilter} style={{ width: 130 }}>
               <option value="">All Roles</option>
               <option value="volunteer">Volunteer</option>
-              <option value="organizer">Organiser</option>
+              <option value="organiser">Organiser</option>
               <option value="admin">Admin</option>
               <option value="merchant">Merchant</option>
             </select>

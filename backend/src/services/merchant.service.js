@@ -18,9 +18,10 @@ async function findCouponByPin(pin) {
   const pinHash = hashPin(normalisePin(pin));
   const result = await pool.query(
     `SELECT uc.id AS user_coupon_id, uc.user_id, uc.coupon_id, uc.status,
-            uc.expiry_date, uc.created_at, uc.redeemed_at, uc.verified_by,
+            COALESCE(uc.expiry_date, c.expiry_date) AS expiry_date,
+            uc.created_at, uc.redeemed_at, uc.verified_by,
             c.title, c.description, c.points_required,
-            c.value_cents, c.merchant_name,
+            c.value_cents, c.merchant_name, c.quantity AS quantity_remaining,
             u.name AS volunteer_name, u.email AS volunteer_email
        FROM user_coupons uc
        JOIN coupons c ON c.id = uc.coupon_id
@@ -35,6 +36,10 @@ async function findCouponByPin(pin) {
   if (coupon.status === "expired" || new Date(coupon.expiry_date) <= new Date()) {
     throw createError(400, "expired", "Coupon has expired.");
   }
+
+  // NOTE: expiry_date is COALESCEd in the SELECT above (uc.expiry_date falls
+  // back to c.expiry_date), so new Date(null) → 1970 can never falsely
+  // "expire" a coupon whose user_coupons.expiry_date is NULL.
 
   const { revoked_at, ...rest } = coupon;
 
@@ -64,7 +69,7 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
     let query;
     let params;
     if (userCouponId) {
-      query = `SELECT uc.id AS user_coupon_id, uc.user_id AS volunteer_user_id, uc.status, uc.expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
+      query = `SELECT uc.id AS user_coupon_id, uc.user_id AS volunteer_user_id, uc.status, COALESCE(uc.expiry_date, c.expiry_date) AS expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
                  FROM user_coupons uc
                  JOIN coupons c ON c.id = uc.coupon_id
                  JOIN users u ON u.id = uc.user_id
@@ -72,7 +77,7 @@ async function redeemCoupon({ pin, userCouponId, notes } = {}, cashierId, meta =
                 FOR UPDATE`;
       params = [userCouponId];
     } else {
-      query = `SELECT uc.id AS user_coupon_id, uc.user_id AS volunteer_user_id, uc.status, uc.expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
+      query = `SELECT uc.id AS user_coupon_id, uc.user_id AS volunteer_user_id, uc.status, COALESCE(uc.expiry_date, c.expiry_date) AS expiry_date, c.title, c.points_required, c.value_cents, u.name AS volunteer_name
                  FROM user_coupons uc
                  JOIN coupons c ON c.id = uc.coupon_id
                  JOIN users u ON u.id = uc.user_id
@@ -207,7 +212,7 @@ async function getRedemptionHistory({ page = 1, limit = 20, action, search } = {
        FROM redemption_logs rl
        JOIN user_coupons uc ON uc.id = rl.user_coupon_id
        JOIN coupons c ON c.id = uc.coupon_id
-       JOIN users u ON u.id = uc.user_id
+       LEFT JOIN users u ON u.id = uc.user_id
        ${whereSql}`,
     values
   );
@@ -215,15 +220,17 @@ async function getRedemptionHistory({ page = 1, limit = 20, action, search } = {
   values.push(safeLimit, offset);
   const result = await pool.query(
     `SELECT rl.id, rl.user_coupon_id, rl.action, rl.action_by, rl.ip_address,
-            rl.created_at, rl.notes,
-            uc.status AS coupon_status, uc.redeemed_at,
+            rl.created_at, rl.notes, rl.points_spent,
+            COALESCE(rl.value_cents, c.value_cents, 0) AS value_cents,
+            uc.status AS coupon_status, uc.status AS status, uc.redeemed_at, uc.pin_code,
+            CASE WHEN rl.action = 'reversed' THEN rl.created_at END AS reversed_at,
             c.id AS coupon_id, c.title AS coupon_title,
             u.id AS volunteer_id, u.name AS volunteer_name, u.email AS volunteer_email,
             verifier.name AS verified_by_name
        FROM redemption_logs rl
        JOIN user_coupons uc ON uc.id = rl.user_coupon_id
        JOIN coupons c ON c.id = uc.coupon_id
-       JOIN users u ON u.id = uc.user_id
+       LEFT JOIN users u ON u.id = uc.user_id
        LEFT JOIN users verifier ON verifier.id = rl.action_by
        ${whereSql}
       ORDER BY rl.created_at DESC
@@ -531,7 +538,7 @@ async function listRedemptions(userId, { page = 1, limit = 20, date_from, date_t
        FROM redemption_logs rl
        JOIN user_coupons uc ON uc.id = rl.user_coupon_id
        JOIN coupons c ON c.id = uc.coupon_id
-       JOIN users u ON u.id = uc.user_id
+       LEFT JOIN users u ON u.id = uc.user_id
       WHERE ${whereSql}`,
     values
   );
@@ -546,7 +553,7 @@ async function listRedemptions(userId, { page = 1, limit = 20, date_from, date_t
        FROM redemption_logs rl
        JOIN user_coupons uc ON uc.id = rl.user_coupon_id
        JOIN coupons c ON c.id = uc.coupon_id
-       JOIN users u ON u.id = uc.user_id
+       LEFT JOIN users u ON u.id = uc.user_id
       WHERE ${whereSql}
       ORDER BY rl.created_at DESC
       LIMIT $${idx} OFFSET $${idx + 1}`,

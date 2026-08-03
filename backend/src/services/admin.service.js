@@ -44,6 +44,7 @@ async function getDashboardStats() {
     redemption_today: pool.query("SELECT COUNT(*) FROM redemption_logs WHERE created_at::date = CURRENT_DATE"),
     users_30d: pool.query("SELECT COUNT(*) FROM users WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'"),
     coupons_30d: pool.query("SELECT COUNT(*) FROM user_coupons WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'"),
+    total_coupons: pool.query("SELECT COUNT(*) FROM user_coupons"),
   };
 
   const results = {};
@@ -58,8 +59,10 @@ async function getDashboardStats() {
     pending_approvals: results.pending_approvals,
     total_coupons_issued_today: results.coupon_today,
     total_redemptions_today: results.redemption_today,
-    users_growth_pct: results.users_30d > 0 ? Math.round((results.users_30d / results.total_users) * 100) : 0,
-    coupons_growth_pct: results.coupons_30d > 0 ? Math.round((results.coupons_30d / results.coupon_today) * 100) : 0,
+    users_growth_pct: results.total_users > 0 ? Math.round((results.users_30d / results.total_users) * 100) : 0,
+    // 30-day coupons as a share of all coupons — guard against division by zero
+    // (the previous formula divided 30-day count by today's count → Infinity → JSON null)
+    coupons_growth_pct: results.total_coupons > 0 ? Math.round((results.coupons_30d / results.total_coupons) * 100) : 0,
     total_events: results.total_events,
     total_merchants: results.total_merchants,
     no_show_count: results.no_show_count || 0,
@@ -147,7 +150,7 @@ async function getUserDetail(userId) {
   const { rows } = await pool.query(
     `SELECT u.id, u.name, u.email, u.phone, r.role_name AS role, u.points AS points_balance,
             u.status, u.created_at,
-            (SELECT COUNT(*) FROM event_registrations er JOIN events e ON er.event_id = e.id WHERE er.user_id = u.id) AS total_events_attended,
+            (SELECT COUNT(DISTINCT al.event_id) FROM attendance_logs al WHERE al.user_id = u.id) AS total_events_attended,
             (SELECT COALESCE(SUM(points_awarded), 0) FROM attendance_logs WHERE user_id = u.id) AS total_points_earned,
             (SELECT COALESCE(SUM(rl.points_spent), 0) FROM redemption_logs rl WHERE rl.user_id = u.id) AS total_points_redeemed
      FROM users u
@@ -280,7 +283,10 @@ async function listEvents({ page = 1, limit = 15, status } = {}) {
   const params = [];
   let where = '';
 
-  if (status) {
+  if (status === 'past') {
+    // 'past' is a computed state — no event status is ever written with it
+    where = 'WHERE e.event_date < NOW()';
+  } else if (status) {
     params.push(status);
     where = `WHERE e.status = $${params.length}`;
   }
@@ -381,8 +387,9 @@ async function listCoupons({ page = 1, limit = 15, status } = {}) {
   const offIdx = params.length + 2;
   const { rows } = await pool.query(
     `SELECT c.id, c.title, c.description, c.points_required AS points_cost, c.quantity,
-            c.value_cents, c.merchant_name, c.expiry_date, c.status, c.created_at,
+            c.value_cents, c.merchant_name, c.expiry_date, c.expiry_date AS valid_until, c.status, c.created_at,
             u.name AS created_by_name,
+            (SELECT COUNT(*) FROM user_coupons uc WHERE uc.coupon_id = c.id) AS quantity_used,
             (SELECT COUNT(*) FROM user_coupons uc WHERE uc.coupon_id = c.id) AS redeemed_count
      FROM coupons c
      LEFT JOIN users u ON c.created_by = u.id
@@ -419,7 +426,8 @@ async function createCoupon(data, userId) {
     if (data.coupon_type && !data.title) data.title = data.coupon_type;
     if (data.points_cost != null && data.points_required == null) data.points_required = data.points_cost;
     if (data.valid_until && !data.expiry_date) data.expiry_date = data.valid_until;
-    if (data.valid_from && !data.expiry_date) data.expiry_date = data.valid_from;
+    // NOTE: valid_from is intentionally NOT mapped to expiry_date — doing so made a
+    // coupon "expire" on its start date if the admin filled only "Valid From".
     if (!data.description) data.description = '';
 
     // Auto-calculate points_required from value_cents using rewards config
@@ -430,12 +438,16 @@ async function createCoupon(data, userId) {
     }
     if (!pointsRequired) pointsRequired = 100;
 
+    // coupons.expiry_date is NOT NULL — default to 30 days out when omitted so an
+    // "optional-looking" blank date field can't cause a 500.
+    const expiryDate = data.expiry_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
     // Create the coupon batch
     const { rows } = await client.query(
       `INSERT INTO coupons (title, description, points_required, quantity, value_cents, merchant_name, expiry_date, status, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8)
        RETURNING id, title, points_required, quantity, value_cents, merchant_name, expiry_date`,
-      [data.title, data.description, pointsRequired, data.quantity, data.value_cents || 0, data.merchant_name || null, data.expiry_date, userId]
+      [data.title, data.description, pointsRequired, data.quantity, data.value_cents || 0, data.merchant_name || null, expiryDate, userId]
     );
     const coupon = rows[0];
     const quantity = parseInt(data.quantity) || 0;
@@ -457,7 +469,7 @@ async function createCoupon(data, userId) {
       await client.query(
         `INSERT INTO user_coupons (coupon_id, pin_code, pin_hash, status, expiry_date)
          VALUES ($1, $2, $3, 'unused', $4)`,
-        [coupon.id, pin, pinHash, data.expiry_date]
+        [coupon.id, pin, pinHash, expiryDate]
       );
     }
 
@@ -772,6 +784,52 @@ async function createUserAccount(data, adminId) {
 }
 
 
+// ─── Create Organiser Account (with linked organisation) ─
+async function createOrganiserAccount(data, adminId) {
+  const bcrypt = require("bcrypt");
+  const { v4: uuidv4 } = require("uuid");
+
+  const name = (data.name || "").trim();
+  const email = (data.email || "").trim();
+  if (!name || !email) {
+    throw createError(400, "validation_error", "Name and email are required.");
+  }
+
+  // Check email
+  const { rows: existing } = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+  if (existing.length > 0) throw createError(409, "email_taken", "Email already in use.");
+
+  const roleResult = await pool.query("SELECT id FROM roles WHERE role_name = 'organiser'");
+  if (roleResult.rows.length === 0) throw createError(500, "role_missing", "organiser role not found.");
+  const roleId = roleResult.rows[0].id;
+
+  const hash = await bcrypt.hash("password123", 12);
+  const qr = uuidv4();
+
+  const { rows: userRows } = await pool.query(
+    `INSERT INTO users (email, password_hash, name, role_id, points, volunteer_qr_code, status)
+     VALUES ($1, $2, $3, $4, 0, $5, 'active') RETURNING id, email, name`,
+    [email, hash, name, roleId, qr]
+  );
+
+  // Link an organisation record (skip if one already exists for this email)
+  const { rows: orgExists } = await pool.query(
+    "SELECT id FROM organizations WHERE contact_email = $1 LIMIT 1", [email]
+  );
+  if (orgExists.length === 0) {
+    await pool.query(
+      `INSERT INTO organizations (org_name, org_type, contact_person, contact_email, approval_status, status)
+       VALUES ($1, $2, $3, $4, 'approved', 'active')`,
+      [data.org_name || `${name}'s Organisation`, data.org_type || "community_group", name, email]
+    );
+  }
+
+  return {
+    user: userRows[0],
+    message: `Organiser account created for ${name}. Login: ${email} / password123`,
+  };
+}
+
 // ─── Reset User Password ──────────────────────────────────
 async function resetUserPassword(userId, { newPassword }) {
   if (!newPassword || newPassword.length < 8) {
@@ -806,6 +864,7 @@ module.exports = {
   createProspect,
   updateProspectStatus,
   createMerchantAccount,
+  createOrganiserAccount,
   createUserAccount,
   resetUserPassword,
 };

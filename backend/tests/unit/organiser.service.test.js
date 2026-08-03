@@ -6,14 +6,19 @@ const organiserService = require("../../src/services/organiser.service");
 function mq(returns) { let i=0; return mock.method(pool,"query",() => i<returns.length?returns[i++]:{rows:[]}); }
 
 describe("getDashboard", () => {
-  it("should return stats and upcoming events", async () => {
+  it("should return stats, upcoming events, organisation and activity", async () => {
     mq([
-      { rows: [{ total_events: 5, total_volunteers: 20, upcoming_events: 3, average_feedback: 4.2 }] },
+      { rows: [{ total_events: 5, total_volunteers: 20, total_volunteers_checked_in: 8, upcoming_events: 3, average_rating: 4.2 }] },
       { rows: [{ id: 1, title: "Event 1", volunteers: 10 }] },
+      { rows: [{ name: "Green Earth", status: "active" }] },
+      { rows: [{ timestamp: new Date().toISOString(), volunteer_name: "Alice", event_title: "Event 1" }] },
     ]);
     const d = await organiserService.getDashboard(1);
     assert.equal(d.stats.total_events, 5);
+    assert.equal(d.stats.total_volunteers_checked_in, 8);
     assert.equal(d.upcoming.length, 1);
+    assert.equal(d.organisation.name, "Green Earth");
+    assert.equal(d.recent_activity.length, 1);
   });
 });
 
@@ -76,9 +81,14 @@ describe("getRoster", () => {
 });
 
 describe("getFeedback", () => {
-  it("should return feedback list", async () => {
-    mq([{ rows: [{ id: 1, rating: 5 }] }]);
+  it("should return feedback list with average rating and total", async () => {
+    mq([
+      { rows: [{ id: 1, rating: 5 }] },
+      { rows: [{ average_rating: 5, total: 1 }] },
+    ]);
     const r = await organiserService.getFeedback(1, 1);
     assert.equal(r.data.length, 1);
+    assert.equal(r.average_rating, 5);
+    assert.equal(r.total, 1);
   });
 });
