@@ -11,6 +11,21 @@ import {
 } from "react-native";
 import { apiGet, apiPost } from "../../lib/api";
 
+// Backend error codes that arrive WITHOUT a human-readable message
+// (attendance.service.js sends bare codes like "already_scanned" — the
+// APK depends on those codes, so we translate them here in the UI only).
+const ERROR_MAP: Record<string, string> = {
+  already_scanned: "This volunteer has already been checked in for this event.",
+  event_not_found: "The selected event was not found. Please refresh and try again.",
+  user_not_found: "No volunteer account was found with that QR code.",
+  not_registered: "Volunteer is not registered for this event.",
+  invalid_payload: "The scan request was invalid. Please try again.",
+};
+
+function readableError(message: string): string {
+  return ERROR_MAP[message] || message || "Could not check in";
+}
+
 export default function Controller() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanned, setScanned] = useState(false);
@@ -65,12 +80,17 @@ export default function Controller() {
         qr_code_value: volunteerQrCode,
       });
 
+      const volunteerName = result?.volunteer?.name || "Volunteer";
+
       Alert.alert(
         "Check-in Successful",
-        `Volunteer checked in to "${selectedEvent.title}"`,
+        `${volunteerName} checked in to "${selectedEvent.title}". Points awarded: ${result?.data?.points_awarded ?? 0}.`,
       );
     } catch (error: any) {
-      Alert.alert("Check-in Failed", error.message || "Could not check in");
+      Alert.alert(
+        "Check-in Failed",
+        readableError(error?.message) || "Could not check in",
+      );
     }
 
     setScanned(false);
