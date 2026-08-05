@@ -642,8 +642,26 @@ async function forgotPassword(email, redirectUrl) {
       [resetToken, resetExpires, user.id]
     );
 
-    // Use custom redirect URL if provided, otherwise fall back to FRONTEND_URL
-    const frontendOrigin = redirectUrl || process.env.FRONTEND_URL || "https://volunteering-rewards-app.vercel.app";
+    // 🔒 SECURITY (5 Aug audit #13): redirect_url is validated against the
+    // known portal origins — an attacker-supplied domain would otherwise turn
+    // the reset link into an open redirect / token leak via Referer.
+    const ALLOWED_RESET_ORIGINS = [
+      "https://webportals-lovat.vercel.app",
+      "https://volunteering-rewards-app.vercel.app",
+    ];
+    let frontendOrigin = process.env.FRONTEND_URL || "https://volunteering-rewards-app.vercel.app";
+    if (redirectUrl) {
+      try {
+        const { origin } = new URL(redirectUrl);
+        if (ALLOWED_RESET_ORIGINS.includes(origin)) {
+          frontendOrigin = redirectUrl;
+        } else {
+          console.warn(`[auth.service] Blocked redirect_url with unexpected origin: ${origin}`);
+        }
+      } catch {
+        console.warn("[auth.service] Blocked malformed redirect_url — using FRONTEND_URL");
+      }
+    }
     const resetUrl = `${frontendOrigin}?token=${resetToken}`;
 
     sendEmail({

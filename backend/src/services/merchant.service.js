@@ -188,13 +188,22 @@ async function reverseRedemption({ userCouponId, notes } = {}, cashierId, meta =
   }
 }
 
-async function getRedemptionHistory({ page = 1, limit = 20, action, search } = {}) {
+async function getRedemptionHistory({ page = 1, limit = 20, action, search } = {}, user = null) {
   const safePage = toPositiveInt(page, 1);
   const safeLimit = Math.min(toPositiveInt(limit, 20), 100);
   const offset = (safePage - 1) * safeLimit;
 
   const where = [];
   const values = [];
+
+  // 🔒 SECURITY (5 Aug audit #8): merchants see ONLY their own redemptions
+  // (same scoping as listRedemptions); admins see everything.
+  if (user && user.role !== "admin") {
+    const merchant = await findMerchantByUserId(user.id);
+    if (!merchant) return { data: [], total: 0, page: safePage, limit: safeLimit, total_pages: 0 };
+    values.push(merchant.name, `%${merchant.name}%`);
+    where.push(`(c.merchant_name = $1 OR c.merchant_name ILIKE $2)`);
+  }
 
   if (action) {
     values.push(action);
@@ -222,7 +231,8 @@ async function getRedemptionHistory({ page = 1, limit = 20, action, search } = {
     `SELECT rl.id, rl.user_coupon_id, rl.action, rl.action_by, rl.ip_address,
             rl.created_at, rl.notes, rl.points_spent,
             COALESCE(rl.value_cents, c.value_cents, 0) AS value_cents,
-            uc.status AS coupon_status, uc.status AS status, uc.redeemed_at, uc.pin_code,
+            uc.status AS coupon_status, uc.status AS status, uc.redeemed_at,
+            NULL AS pin_code, /* 🔒 5 Aug audit #8: never surface PINs in list endpoints */
             CASE WHEN rl.action = 'reversed' THEN rl.created_at END AS reversed_at,
             c.id AS coupon_id, c.title AS coupon_title,
             u.id AS volunteer_id, u.name AS volunteer_name, u.email AS volunteer_email,

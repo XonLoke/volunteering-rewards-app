@@ -41,6 +41,10 @@ const rawCors = process.env.CORS_ORIGINS;
 const corsOrigins = rawCors && rawCors !== "*"
   ? rawCors.split(",").map((s) => s.trim())
   : true; // true = reflect the request Origin header (safe with credentials)
+// 🔒 SECURITY (5 Aug audit #11): Render sits behind a reverse proxy — without
+// trust proxy, req.ip is the proxy IP and ALL clients share one rate-limit
+// bucket (a single attacker could DoS the whole app).
+app.set("trust proxy", 1);
 app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(rateLimiter.global);
@@ -87,9 +91,10 @@ if (process.env.NODE_ENV === "production") {
       }
       console.log("Auto-migrate: done.");
 
-      // Auto-seed if users table is empty
+      // Auto-seed if users table is empty — 🔒 SECURITY (5 Aug audit #4):
+      // NEVER seed well-known admin/test accounts on a fresh PRODUCTION DB.
       const { rows } = await pool.query("SELECT COUNT(*)::int AS cnt FROM users");
-      if (rows[0].cnt === 0) {
+      if (rows[0].cnt === 0 && process.env.NODE_ENV !== "production") {
         console.log("Auto-seed: users table empty, running seed...");
         try {
           // Inline minimal seed

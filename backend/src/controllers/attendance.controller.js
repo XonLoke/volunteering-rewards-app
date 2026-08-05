@@ -92,6 +92,12 @@ async function getLatestAttendance(req, res, next) {
       throw createError(400, "validation_error", "Invalid volunteer ID.");
     }
 
+    // 🔒 SECURITY (5 Aug audit #5): volunteers may only read their OWN
+    // attendance; organiser/admin may read any (scan verification flow).
+    if (req.user.id !== volunteerId && !["organiser", "admin"].includes(req.user.role)) {
+      throw createError(403, "forbidden", "You can only view your own attendance.");
+    }
+
     const after = req.query.after || new Date(0).toISOString();
     const attendance = await attendanceService.getLatestAttendance(volunteerId, after);
 

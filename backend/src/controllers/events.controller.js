@@ -119,8 +119,14 @@ async function askQuestion(req, res, next) {
 async function roster(req, res, next) {
   try {
     const eventResult = await pool.query(
-      "SELECT title FROM events WHERE id = $1", [req.params.id]
+      "SELECT title, organizer_id FROM events WHERE id = $1", [req.params.id]
     );
+
+    // 🔒 SECURITY (5 Aug audit #6): roster is organiser-scoped — foreign
+    // events return 404 (do not reveal their existence).
+    if (eventResult.rows[0]?.organizer_id !== req.user.id) {
+      throw createError(404, "event_not_found");
+    }
     const volunteersResult = await pool.query(`
       SELECT u.id AS user_id, u.name, u.email,
         er.created_at AS registered_at,
@@ -156,8 +162,8 @@ async function stats(req, res, next) {
       FROM events e
       LEFT JOIN (SELECT event_id, COUNT(*)::int AS count FROM event_registrations GROUP BY event_id) reg ON reg.event_id = e.id
       LEFT JOIN (SELECT event_id, COUNT(*)::int AS count FROM attendance_logs GROUP BY event_id) att ON att.event_id = e.id
-      WHERE e.id = $1
-    `, [req.params.id]);
+      WHERE e.id = $1 AND e.organizer_id = $2
+    `, [req.params.id, req.user.id]);
 
     const row = result.rows[0] || { total_registered: 0, total_checked_in: 0 };
     const pct = row.total_registered > 0 ? Math.round((row.total_checked_in / row.total_registered) * 100) : 0;

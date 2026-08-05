@@ -1,3 +1,7 @@
+// Test secrets — required since 5 Aug: rewards.service.js fail-fasts in
+// production, and unit tests may inherit NODE_ENV=production from the shell.
+process.env.PIN_SECRET = process.env.PIN_SECRET || "test-pin-secret";
+
 const { describe, it, mock } = require("node:test");
 const assert = require("node:assert");
 const { pool } = require("../../src/config/database");

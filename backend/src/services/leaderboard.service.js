@@ -11,7 +11,7 @@ const { pool } = require("../config/database");
 //-----------------------------------------------------------------------
 async function topByPoints(limit = 3) {
   const { rows } = await pool.query(`
-    SELECT id, name, points, volunteer_qr_code,
+    SELECT id, name, points,
            ROW_NUMBER() OVER (ORDER BY points DESC) AS rank
     FROM users
     WHERE role_id = (SELECT id FROM roles WHERE role_name = 'volunteer')

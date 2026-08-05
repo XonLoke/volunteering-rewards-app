@@ -10,8 +10,13 @@ const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
 
 // ─── PIN Hashing (compatible with Grace's merchant service) ──
+// 🔒 SECURITY (5 Aug audit #1): production must never hash PINs with a public
+// default; align dev fallback with rewards.service.js so hashes always match.
 function hashPin(pin) {
-  const secret = process.env.PIN_SECRET || process.env.JWT_ACCESS_SECRET || "dev-pin-secret";
+  if (!process.env.PIN_SECRET && process.env.NODE_ENV === "production") {
+    throw new Error("FATAL: PIN_SECRET is not set — refusing to hash PINs with a fallback secret");
+  }
+  const secret = process.env.PIN_SECRET || process.env.JWT_ACCESS_SECRET || "dev-pin-secret-not-for-production";
   return crypto.createHmac("sha256", secret).update(String(pin)).digest("hex");
 }
 
@@ -628,7 +633,12 @@ async function createMerchant(data, userId) {
     }
 
     await client.query("COMMIT");
-    return { merchant, message: data.contact_email ? "Merchant registered. Login: " + data.contact_email + " / password123" : "Merchant registered." };
+    // 🔒 SECURITY (5 Aug audit #3): never echo credentials in API responses —
+    // log them server-side only (retrievable by the admin from server logs).
+    if (data.contact_email) {
+      console.log(`[admin] Merchant account created: ${data.contact_email} / default password (change after first login)`);
+    }
+    return { merchant, message: data.contact_email ? "Merchant registered. Default credentials were logged server-side." : "Merchant registered." };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
