@@ -14,11 +14,13 @@ import { useEffect, useState } from "react";
 import { api } from "../../src/services/api";
 
 interface RosterVolunteer {
-  id: number;
+  user_id?: number;
+  id?: number;
   name: string;
   email: string;
-  status: string;
+  status?: string;
   registered_at: string;
+  is_checked_in?: boolean;
   check_in_time: string | null;
 }
 
@@ -38,9 +40,10 @@ export default function Roster() {
 
   async function fetchRoster() {
     try {
-      // api.get returns the parsed JSON body: { data: [...], event_title }
+      // GET /events/:id/roster returns { volunteers: [...] } (scan view);
+      // tolerate the { data: [...] } organiser-service shape as well.
       const data = await api.get<any>(`/events/${eventId}/roster`);
-      setVolunteers(data.data || []);
+      setVolunteers(data.volunteers || data.data || []);
       if (data.event_title) setEventTitle(data.event_title);
     } catch (error: any) {
       console.error("Roster error:", error);
@@ -50,7 +53,9 @@ export default function Roster() {
     }
   }
 
-  const checkedIn = volunteers.filter((v) => v.check_in_time).length;
+  const checkedIn = volunteers.filter(
+    (v) => v.is_checked_in || v.check_in_time
+  ).length;
 
   return (
     <View style={styles.container}>
@@ -91,8 +96,15 @@ export default function Roster() {
           {volunteers.length === 0 ? (
             <Text style={styles.empty}>No volunteers registered for this event yet.</Text>
           ) : (
-            volunteers.map((volunteer) => (
-              <View key={volunteer.id} style={styles.card}>
+            volunteers.map((volunteer) => {
+              const checkedInNow =
+                volunteer.is_checked_in || Boolean(volunteer.check_in_time);
+
+              return (
+              <View
+                key={volunteer.user_id || volunteer.id}
+                style={styles.card}
+              >
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
                     {volunteer.name?.charAt(0).toUpperCase() || "?"}
@@ -108,7 +120,7 @@ export default function Roster() {
                       ? new Date(volunteer.registered_at).toLocaleDateString()
                       : "—"}
                   </Text>
-                  {volunteer.check_in_time && (
+                  {checkedInNow && volunteer.check_in_time && (
                     <Text style={styles.meta}>
                       Checked in{" "}
                       {new Date(volunteer.check_in_time).toLocaleString()}
@@ -119,25 +131,22 @@ export default function Roster() {
                 <View
                   style={[
                     styles.statusBadge,
-                    volunteer.check_in_time
-                      ? styles.badgeCheckedIn
-                      : styles.badgePending,
+                    checkedInNow ? styles.badgeCheckedIn : styles.badgePending,
                   ]}
                 >
                   <Text
                     style={[
                       styles.statusText,
-                      volunteer.check_in_time
-                        ? styles.textCheckedIn
-                        : styles.textPending,
+                      checkedInNow ? styles.textCheckedIn : styles.textPending,
                     ]}
                   >
-                    {volunteer.check_in_time ? "✓ Checked in" : "Not checked in"}
+                    {checkedInNow ? "✓ Checked in" : "Not checked in"}
                   </Text>
                 </View>
               </View>
-            ))
-          )}
+              );
+            }))
+        }
         </ScrollView>
       )}
     </View>
