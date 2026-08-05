@@ -14,6 +14,10 @@ export default function Feedback() {
   const [events, setEvents] = useState<any[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [feedback, setFeedback] = useState<any[]>([]);
+  const [summary, setSummary] = useState<{ average_rating: number; total: number }>({
+    average_rating: 0,
+    total: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -43,7 +47,11 @@ export default function Feedback() {
   async function fetchFeedback() {
     try {
       const data = await apiGet(`/api/organiser/events/${selectedEvent.id}/feedback`);
-      setFeedback(data.data || data);
+      setFeedback(data.data || []);
+      setSummary({
+        average_rating: data.average_rating ?? 0,
+        total: data.total ?? 0,
+      });
     } catch (error: any) {
       console.log("Feedback error:", error.message);
     } finally {
@@ -94,6 +102,18 @@ export default function Feedback() {
         <Text style={styles.eventLabel}>Feedback for: {selectedEvent.title}</Text>
       )}
 
+      {/* Summary */}
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryRating}>{summary.average_rating}</Text>
+        <Text style={styles.summaryStars}>
+          {"★".repeat(Math.round(summary.average_rating))}
+          {"☆".repeat(5 - Math.round(summary.average_rating))}
+        </Text>
+        <Text style={styles.summaryTotal}>
+          {summary.total} {summary.total === 1 ? "feedback" : "feedbacks"}
+        </Text>
+      </View>
+
       {feedback.length === 0 && (
         <Text style={styles.empty}>No feedback yet for this event.</Text>
       )}
@@ -137,6 +157,16 @@ const styles = StyleSheet.create({
   activeTabText: { color: "#fff" },
   eventLabel: { fontSize: 13, color: "#888", marginBottom: 12 },
   empty: { color: "#999", textAlign: "center", marginTop: 40 },
+  summaryCard: {
+    backgroundColor: "#6A00E8",
+    borderRadius: 16,
+    padding: 18,
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  summaryRating: { color: "#fff", fontSize: 38, fontWeight: "900" },
+  summaryStars: { color: "#FFD700", fontSize: 16, marginTop: 2 },
+  summaryTotal: { color: "rgba(255,255,255,0.85)", fontSize: 12, marginTop: 4 },
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,

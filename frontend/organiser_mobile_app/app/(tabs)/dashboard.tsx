@@ -20,6 +20,11 @@ export default function Dashboard() {
   async function fetchDashboard() {
     try {
       const data = await apiGet("/api/organiser/dashboard");
+      setDashboard(data);
+    } catch (error: any) {
+      console.log("Dashboard error:", error.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -63,7 +68,7 @@ export default function Dashboard() {
         />
         <Card
           icon="star"
-          value={stats?.average_feedback ?? 0}
+          value={stats?.average_rating ?? 0}
           label="Average Feedback"
         />
       </View>
@@ -77,7 +82,9 @@ export default function Dashboard() {
             <View style={{ flex: 1 }}>
               <Text style={styles.eventTitle}>{event.title}</Text>
               <Text style={styles.eventText}>
-                {event.start_time ?? "No date available"}
+                {event.event_date
+                  ? new Date(event.event_date).toLocaleDateString()
+                  : "No date available"}
               </Text>
               <Text style={styles.eventText}>
                 {event.volunteers ?? 0} Volunteers

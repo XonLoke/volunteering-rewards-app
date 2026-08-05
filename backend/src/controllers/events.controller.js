@@ -13,6 +13,7 @@
 
 const eventsService = require("../services/events.service");
 const { pool } = require("../config/database");
+const { createError } = require("../middleware/errorHandler.middleware");
 
 // ─── GET /api/events ─────────────────────────────────────────
 async function browse(req, res, next) {
@@ -81,10 +82,22 @@ async function leave(req, res, next) {
 // ─── POST /api/events/:id/feedback ───────────────────────────
 async function submitFeedback(req, res, next) {
   try {
+    const rating = Number(req.body.rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw createError(400, "invalid_rating", "Rating must be a whole number between 1 and 5.");
+    }
+
+    const eventResult = await pool.query(
+      "SELECT id FROM events WHERE id = $1", [req.params.id]
+    );
+    if (eventResult.rows.length === 0) {
+      throw createError(404, "not_found", "Event not found.");
+    }
+
     const result = await pool.query(
       `INSERT INTO event_feedback (event_id, user_id, rating, comment)
        VALUES ($1, $2, $3, $4) RETURNING *`,
-      [req.params.id, req.user.id, req.body.rating, req.body.comment || null]
+      [req.params.id, req.user.id, rating, req.body.comment || null]
     );
     res.status(201).json({ data: result.rows[0], message: "Feedback submitted." });
   } catch (err) { next(err); }

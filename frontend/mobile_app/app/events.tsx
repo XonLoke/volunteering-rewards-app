@@ -663,6 +663,24 @@ export default function Events() {
             </>
           )}
         </TouchableOpacity>
+
+        {isBooked && (
+          <TouchableOpacity
+            style={[styles.rateButton, { borderColor: categoryColor }]}
+            onPress={() =>
+              router.push({
+                pathname: "/event-feedback",
+                params: { eventId: String(item.id), eventTitle: item.title },
+              } as any)
+            }
+            activeOpacity={0.85}
+          >
+            <Ionicons name="star-outline" size={16} color={categoryColor} />
+            <Text style={[styles.rateButtonText, { color: categoryColor }]}>
+              Rate this event
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -914,6 +932,21 @@ const styles = StyleSheet.create({
   },
   bookButtonText: {
     fontSize: 15,
+    fontWeight: "800",
+  },
+  rateButton: {
+    marginTop: 10,
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    flexDirection: "row",
+    gap: 6,
+  },
+  rateButtonText: {
+    fontSize: 13,
     fontWeight: "800",
   },
   loadingContainer: {

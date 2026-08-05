@@ -5,35 +5,67 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import { api } from "../../src/services/api";
 
-const events = [
-  {
-    title: "Beach Cleanup at East Coast Park",
-    status: "Upcoming",
-    volunteers: "120 Volunteers",
-  },
-  {
-    title: "Community Garden Workday",
-    status: "Upcoming",
-    volunteers: "85 Volunteers",
-  },
-  {
-    title: "Food Donation Drive",
-    status: "Ongoing",
-    volunteers: "63 Volunteers",
-  },
-  {
-    title: "Park Cleanup @ Bishan-Ang Mo Kio",
-    status: "Completed",
-    volunteers: "140 Volunteers",
-  },
-];
+const TABS = ["All", "Upcoming", "Ongoing", "Completed", "Past"];
+
+interface OrganiserEvent {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  event_date: string;
+  status: string;
+  registered_count: number;
+  checked_in_count: number;
+}
 
 export default function Events() {
+  const [events, setEvents] = useState<OrganiserEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("All");
+
+  useEffect(() => {
+    fetchEvents();
+  }, [status]);
+
+  async function fetchEvents() {
+    try {
+      setLoading(true);
+
+      // "All" sends no status param; "Past" is computed server-side from event_date.
+      const query = status === "All" ? "" : `?status=${status.toLowerCase()}`;
+
+      // api.get returns the parsed JSON body — response is { data: [...] }.
+      const data = await api.get<any>(`/organiser/events${query}`);
+      setEvents(data.data || data || []);
+    } catch (error: any) {
+      console.error("Events error:", error);
+      Alert.alert("Error", error.message || "Failed to load events.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filteredEvents = events.filter((event) =>
+    event.title?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const openRoster = (event: OrganiserEvent) => {
+    router.push({
+      pathname: "/organiser/roster",
+      params: { eventId: String(event.id), title: event.title },
+    } as any);
+  };
+
   return (
     <View style={styles.container}>
       {/* HEADER */}
@@ -55,62 +87,82 @@ export default function Events() {
           placeholder="Search events..."
           placeholderTextColor="#777"
           style={styles.searchInput}
+          value={search}
+          onChangeText={setSearch}
         />
       </View>
 
       {/* FILTER TAB */}
       <View style={styles.tabs}>
-        <Text style={styles.active}>All</Text>
-        <Text style={styles.tab}>Upcoming</Text>
-        <Text style={styles.tab}>Ongoing</Text>
-        <Text style={styles.tab}>Completed</Text>
+        {TABS.map((item) => (
+          <TouchableOpacity key={item} onPress={() => setStatus(item)}>
+            <Text style={status === item ? styles.active : styles.tab}>
+              {item}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* EVENT LIST */}
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {events.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.eventCard}
-            onPress={() => router.push("/organiser/eventForm")}
-          >
-            <View style={styles.imageBox}>
-              <Ionicons name="calendar-outline" size={26} color="#6A00E8" />
-            </View>
+      {loading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color="#6A00E8" />
+        </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {filteredEvents.length > 0 ? (
+            filteredEvents.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.eventCard}
+                onPress={() => openRoster(item)}
+              >
+                <View style={styles.imageBox}>
+                  <Ionicons name="calendar-outline" size={26} color="#6A00E8" />
+                </View>
 
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>{item.title}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.title}>{item.title}</Text>
 
-              <View style={styles.row}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={12}
-                  color="#777"
-                />
-                <Text style={styles.text}>May 25, 2025</Text>
-              </View>
+                  <View style={styles.row}>
+                    <Ionicons name="calendar-outline" size={12} color="#777" />
+                    <Text style={styles.text}>
+                      {item.event_date
+                        ? new Date(item.event_date).toLocaleDateString()
+                        : "No date"}
+                    </Text>
+                  </View>
 
-              <View style={styles.row}>
-                <Ionicons name="people-outline" size={12} color="#777" />
-                <Text style={styles.text}>{item.volunteers}</Text>
-              </View>
-            </View>
+                  <View style={styles.row}>
+                    <Ionicons name="people-outline" size={12} color="#777" />
+                    <Text style={styles.text}>
+                      {item.registered_count ?? 0} registered ·{" "}
+                      {item.checked_in_count ?? 0} checked in
+                    </Text>
+                  </View>
+                </View>
 
-            <View
-              style={[
-                styles.badge,
-                item.status === "Completed"
-                  ? styles.completed
-                  : item.status === "Ongoing"
-                  ? styles.ongoing
-                  : styles.upcoming,
-              ]}
-            >
-              <Text style={styles.badgeText}>{item.status}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+                <View
+                  style={[
+                    styles.badge,
+                    item.status === "Completed" || item.status === "completed"
+                      ? styles.completed
+                      : item.status === "Ongoing" || item.status === "ongoing"
+                        ? styles.ongoing
+                        : styles.upcoming,
+                  ]}
+                >
+                  <Text style={styles.badgeText}>
+                    {item.status ?? "Upcoming"}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={styles.empty}>No events found.</Text>
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -180,6 +232,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
+  loading: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 80,
+  },
+
   eventCard: {
     backgroundColor: "#fff",
     borderRadius: 18,
@@ -241,4 +299,6 @@ const styles = StyleSheet.create({
   completed: {
     backgroundColor: "#16A34A",
   },
+
+  empty: { textAlign: "center", color: "#777", marginTop: 30 },
 });
