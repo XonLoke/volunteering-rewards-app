@@ -35,8 +35,10 @@ services:
         value: "900000"
       - key: RATE_LIMIT_MAX
         value: "5000"
+      # Rotated 5 Aug 2026: old literal + the v1 placeholder were both exposed
+      # (docs + git history). Keep in sync with the Render dashboard value.
       - key: PIN_SECRET
-        value: "73128219d055466ea889d7892370bf68"
+        value: "023a91777f8f42c37ef71371e4c505af"
       - key: MAX_FILE_SIZE
         value: "1048576"
       - key: FRONTEND_URL
