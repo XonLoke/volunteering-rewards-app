@@ -2,10 +2,11 @@ name: keep-api-warm
 
 on:
   schedule:
-    # Every 10 minutes, offset from :00 to avoid global herd alignment.
+    # Every 12 minutes, offset from :00 to avoid global herd alignment.
     # Render free tier sleeps after ~15 min of inactivity — this ping keeps
-    # the backend warm 24/7 until the exam demo period ends.
-    - cron: "4-59/10 * * * *"
+    # the backend warm 24/7 until the exam demo period ends. 12 min (not 10)
+    # keeps GitHub Actions minutes within the private-repo free quota.
+    - cron: "5-59/12 * * * *"
   workflow_dispatch: # manual trigger = instant pre-demo warm-up
 
 permissions:
