@@ -282,6 +282,30 @@ The system implements **two generations of AI** — Gen 1 (non-API rule-based al
 
 ---
 
+## Account Creation & Roles
+
+Only the **Volunteer** role has a public registration page (Volunteer PWA). The Admin, Organiser, Merchant and Scanner portals deliberately have **no register page** — `POST /api/auth/register` is hardcoded to the `volunteer` role, so no one can self-register as a privileged role through the API either.
+
+| Role | How the account is created |
+|------|---------------------------|
+| Volunteer | Self-registration (Volunteer PWA → Sign Up) |
+| Organiser | Created by an admin (Admin Portal → Organisers → + Create Account), then approved |
+| Merchant | Created by an admin (Admin Portal → Users → + Invite User, role: Merchant) |
+| Admin | Created by an existing admin — or bootstrapped by script for the very first one (see below) |
+
+### The first admin account (bootstrap)
+
+The very first admin cannot be created from the app itself (that would be a chicken-and-egg problem, and a public admin register page would be a security hole). It is created by an ops step:
+
+1. **Seed script (recommended for local / fresh environments):** `cd backend && node src/utils/seed.js` creates the demo accounts (including `carol@test.com` / admin) with `ON CONFLICT DO NOTHING` so it is safe to re-run.
+2. **One-off script or SQL (production):** production auto-seed is **disabled by design** (`backend/index.js` — the 5 Aug security fix prevents well-known accounts from being auto-seeded on a fresh production DB). To create an admin in production, run a one-off script like `backend/fix_carol.js` / `backend/create_diana.js` (bcrypt password hash + role_id lookup) or insert the user via SQL.
+
+### Creating more admins (in-app)
+
+Admin Portal → **Users → "+ Invite User"** → fill in Name / Email / Password / **Role: Admin** → Create Account (`POST /api/admin/users/create-account`). This deliberate form-based flow (built 5 Jul 2026) replaced the earlier one-click role toggle, which was removed after a supervisor security review — account elevation now requires an intentional, auditable action.
+
+---
+
 ## Key Commands
 
 ```bash
