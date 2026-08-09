@@ -51,13 +51,17 @@ export default function EditProfile() {
         setPhone(user.phone || "");
 
         try {
-          const response = await authFetch(`${BASE_URL}/profile`);
+          // ← was /profile, correct route is /auth/me
+          const response = await authFetch(`${BASE_URL}/auth/me`);
           const data = await response.json();
 
-          if (response.ok && data.user) {
+          console.log("PROFILE LOAD STATUS:", response.status);
+          console.log("PROFILE LOAD DATA:", JSON.stringify(data));
+
+          if (response.ok && data.name) {
             const updatedUser = {
               ...user,
-              ...data.user,
+              ...data,
             };
 
             setName(updatedUser.name || "");
@@ -129,31 +133,32 @@ export default function EditProfile() {
 
       setSaving(true);
 
-      const response = await authFetch(`${BASE_URL}/profile`, {
+      // ← was /profile, correct route is /auth/me
+      const response = await authFetch(`${BASE_URL}/auth/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: user.id,
           name: trimmedName,
-          email: trimmedEmail,
-          phone: trimmedPhone,
+          phone: trimmedPhone || undefined,
         }),
       });
 
       const data = await response.json().catch(() => ({}));
 
       console.log("EDIT PROFILE STATUS:", response.status);
-      console.log("EDIT PROFILE DATA:", data);
+      console.log("EDIT PROFILE DATA:", JSON.stringify(data));
 
-      if (!response.ok || data.success === false) {
-        throw new Error(data.message || "Failed to update profile.");
+      if (!response.ok) {
+        throw new Error(
+          data.error?.message || data.message || "Failed to update profile."
+        );
       }
 
       const updatedUser = {
         ...user,
-        ...(data.user || {}),
+        ...(data || {}),
         name: trimmedName,
         email: trimmedEmail,
         phone: trimmedPhone,

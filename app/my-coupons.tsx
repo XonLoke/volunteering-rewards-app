@@ -138,14 +138,21 @@ export default function MyCoupons() {
 
       await loadCurrentPoints();
 
-      const response = await authFetch(`${BASE_URL}/my-coupons`);
+      // ← was /my-coupons, correct route is /me/coupons (matches home.tsx / profile.tsx)
+      const response = await authFetch(`${BASE_URL}/me/coupons`);
       const data = await response.json();
 
+      // ← temporary logging to confirm the real response shape
+      console.log("MY COUPONS STATUS:", response.status);
+      console.log("MY COUPONS DATA:", JSON.stringify(data));
+
       if (!response.ok) {
-        throw new Error(data.message || data.error || "Failed to fetch coupons.");
+        throw new Error(
+          data.error?.message || data.message || "Failed to fetch coupons."
+        );
       }
 
-      const fetchedCoupons = data.coupons || [];
+      const fetchedCoupons = data.coupons || data.data || [];
 
       const sortedCoupons = fetchedCoupons.sort((a: Coupon, b: Coupon) => {
         const dateA = new Date(a.created_at).getTime();

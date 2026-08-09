@@ -118,6 +118,16 @@ export default function ScanSuccess() {
     }
   };
 
+  const goToFeedback = () => {
+    router.push({
+      pathname: "/feedback" as any,
+      params: {
+        eventId: safeEventId !== undefined ? String(safeEventId) : "",
+        eventTitle: eventName,
+      },
+    });
+  };
+
   return (
     <SafeAreaView
       style={[styles.screen, { backgroundColor: theme.colors.background }]}
@@ -302,11 +312,11 @@ export default function ScanSuccess() {
               styles.primaryButton,
               { backgroundColor: theme.colors.primary },
             ]}
-            onPress={() => router.replace("/home" as any)}
+            onPress={goToFeedback}
             activeOpacity={0.86}
           >
-            <Ionicons name="home-outline" size={19} color="#fff" />
-            <Text style={styles.primaryButtonText}>Back to Home</Text>
+            <Ionicons name="star-outline" size={19} color="#fff" />
+            <Text style={styles.primaryButtonText}>Rate This Event</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -328,6 +338,21 @@ export default function ScanSuccess() {
               ]}
             >
               View Scan History
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={() => router.replace("/home" as any)}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.skipButtonText,
+                { color: theme.colors.textSecondary },
+              ]}
+            >
+              Back to Home
             </Text>
           </TouchableOpacity>
         </View>
@@ -537,5 +562,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
     marginLeft: 8,
+  },
+
+  skipButton: {
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+
+  skipButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

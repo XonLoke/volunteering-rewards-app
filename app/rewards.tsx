@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useState, useEffect, useMemo } from "react";
@@ -141,15 +142,48 @@ export default function Rewards() {
 
       if (stored) {
         const user = JSON.parse(stored);
-        setUserPoints(user.points || 0);
+        setUserPoints(user.points || 0); // show cached value immediately, avoids blank flash
       }
 
-      const response = await authFetch(`${BASE_URL}/coupons`);
+      // ← fetch the real, live balance instead of only trusting the cache
+      try {
+        const profileRes = await authFetch(`${BASE_URL}/auth/me`);
+        const profileData = await profileRes.json();
+
+        console.log("Rewards points refresh status:", profileRes.status);
+        console.log("Rewards points refresh data:", JSON.stringify(profileData));
+
+        // ← backend field is "points_balance", not "points"
+        if (profileRes.ok && typeof profileData.points_balance !== "undefined") {
+          setUserPoints(Number(profileData.points_balance));
+
+          if (stored) {
+            const user = JSON.parse(stored);
+            const updatedUser = { ...user, points: profileData.points_balance };
+            await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+            await AsyncStorage.setItem("userPoints", String(profileData.points_balance));
+          }
+        }
+      } catch (pointsErr) {
+        console.log("Live points refresh skipped:", pointsErr);
+      }
+
+      const response = await authFetch(`${BASE_URL}/rewards`);
       const data = await response.json();
 
-      setCoupons(data.coupons || []);
-    } catch (err) {
+      console.log("Rewards status:", response.status);
+      console.log("Rewards response:", JSON.stringify(data));
+
+      if (!response.ok) {
+        throw new Error(
+          data.error?.message || data.message || "Failed to fetch rewards."
+        );
+      }
+
+      setCoupons(data.rewards || data.coupons || data.data || []);
+    } catch (err: any) {
       console.error("Failed to fetch rewards:", err);
+      Alert.alert("Error", err.message || "Failed to load rewards.");
     } finally {
       setLoading(false);
       setRefreshing(false);

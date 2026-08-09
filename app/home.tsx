@@ -69,15 +69,35 @@ const getGreeting = () => {
 
 const getEventImage = (category?: string, title?: string) => {
   const text = `${category || ""} ${title || ""}`.toLowerCase();
-  if (text.includes("beach") || text.includes("cleanup")) return require("@/assets/images/beach.webp");
-  if (text.includes("food bank") || text.includes("sorting") || text.includes("packing")) return require("@/assets/images/foodbank.jpg");
-  if (text.includes("blood") || text.includes("donation")) return require("@/assets/images/blooddonation.jpg");
-  if (text.includes("disaster") || text.includes("preparedness") || text.includes("workshop")) return require("@/assets/images/disasterprep.png");
-  if (text.includes("guided") || text.includes("walk") || text.includes("botanic")) return require("@/assets/images/guidedwalk.webp");
-  if (text.includes("soup") || text.includes("kitchen") || text.includes("willing hearts") || text.includes("elderly")) return require("@/assets/images/soup kitchen.webp");
-  if (text.includes("youth") || text.includes("mentor")) return require("@/assets/images/youthmentoring.jpg");
-  if (text.includes("park") || text.includes("garden") || text.includes("wetland") || text.includes("restoration") || text.includes("environment")) return require("@/assets/images/park.jpg");
-  return require("@/assets/images/beach.webp");
+
+  // ← broadened keywords so real event titles actually match their category
+  if (text.includes("beach") || text.includes("cleanup") || text.includes("clean-up")) return require("@/assets/images/beach.webp");
+  if (
+    text.includes("food bank") ||
+    text.includes("sorting") ||
+    text.includes("packing") ||
+    text.includes("distribut") ||
+    text.includes("meal") ||
+    text.includes("grocery") ||
+    text.includes("pantry")
+  ) return require("@/assets/images/foodbank.jpg");
+  if (text.includes("blood") || text.includes("donation drive") || text.includes("donate blood")) return require("@/assets/images/blooddonation.jpg");
+  if (text.includes("disaster") || text.includes("preparedness") || text.includes("emergency") || text.includes("workshop")) return require("@/assets/images/disasterprep.png");
+  if (text.includes("guided") || text.includes("walk") || text.includes("botanic") || text.includes("nature trail")) return require("@/assets/images/guidedwalk.webp");
+  if (text.includes("soup") || text.includes("kitchen") || text.includes("willing hearts") || text.includes("elderly") || text.includes("senior")) return require("@/assets/images/soup kitchen.webp");
+  if (text.includes("youth") || text.includes("mentor") || text.includes("tutor") || text.includes("student")) return require("@/assets/images/youthmentoring.jpg");
+  if (
+    text.includes("park") ||
+    text.includes("garden") ||
+    text.includes("wetland") ||
+    text.includes("restoration") ||
+    text.includes("environment") ||
+    text.includes("tree") ||
+    text.includes("planting")
+  ) return require("@/assets/images/park.jpg");
+
+  // ← neutral fallback for genuinely uncategorised/test events, instead of defaulting to beach
+  return require("@/assets/images/park.jpg");
 };
 
 const getEventColor = (category?: string) => {
@@ -279,7 +299,6 @@ export default function Home() {
         });
         const couponsData = await couponsRes.json();
         if (couponsRes.ok) {
-          // ← backend wraps the list in "data" — was missing this fallback
           const allCoupons = couponsData.coupons || couponsData.user_coupons || couponsData.data || [];
           setActiveCoupons(allCoupons.filter((c: any) => c.status === "unused").length);
         }
@@ -688,7 +707,22 @@ export default function Home() {
                       </View>
                       <View style={styles.manageText}>
                         <Text style={[styles.manageTitle, { color: theme.colors.text }]} numberOfLines={2}>{event.title}</Text>
-                        <Text style={[styles.manageDate, { color: theme.colors.textSecondary }]}>
+                        {event.event_date && new Date(event.event_date).getTime() < Date.now() && (
+  <View style={{
+    backgroundColor: "#10b98122",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: "flex-start",
+    marginTop: 4,
+    marginBottom: 4,
+  }}>
+    <Text style={{ color: "#10b981", fontSize: 10, fontWeight: "900" }}>
+      ✓ ATTENDED
+    </Text>
+  </View>
+)}
+<Text style={[styles.manageDate, { color: theme.colors.textSecondary }]}>
                           {formatEventFullDate(event.event_date)} · {formatEventTime(event.event_date)}
                         </Text>
                       </View>
@@ -704,7 +738,22 @@ export default function Home() {
                     </View>
                     <TouchableOpacity
                       style={[styles.cancelBookingBtn, { backgroundColor: "#ef444422", borderColor: "#ef444455" }]}
-                      onPress={() => confirmCancelBooking(event)}
+                      onPress={() => {
+  if (event.event_date) {
+    const eventTime = new Date(event.event_date).getTime();
+    const now = Date.now();
+    if (eventTime < now) {
+      Alert.alert("Cannot cancel", "This event has already taken place.");
+      return;
+    }
+    const hoursLeft = (eventTime - now) / (1000 * 60 * 60);
+    if (hoursLeft < 24) {
+      Alert.alert("Cannot cancel", "Cancellations must be made at least 24 hours before the event starts.");
+      return;
+    }
+  }
+  confirmCancelBooking(event);
+}}
                       disabled={isCanceling}
                       activeOpacity={0.85}
                     >

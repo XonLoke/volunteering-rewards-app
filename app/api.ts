@@ -5,12 +5,13 @@
  * to all requests. Provides typed helpers for GET, POST, PUT, DELETE.
  *
  * Usage:
- *   import { apiGet, apiPost } from '../api';
+ *   import { apiGet, apiPost } from '@/utils/api';
  *   const data = await apiGet('/events');
  *   await apiPost('/events/5/register');
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
@@ -22,6 +23,38 @@ async function getToken(): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Called whenever the backend tells us the token is invalid/expired.
+ * Clears the local session and bounces the user to login.
+ */
+let redirectingToLogin = false;
+
+async function handleUnauthorized(): Promise<void> {
+  if (redirectingToLogin) return;
+  redirectingToLogin = true;
+
+  try {
+    await AsyncStorage.multiRemove(["token", "user", "userPoints"]);
+  } catch {
+    // ignore storage errors, still redirect
+  } finally {
+    router.replace("/login" as any);
+    // allow future 401s to trigger this again after navigation settles
+    setTimeout(() => {
+      redirectingToLogin = false;
+    }, 1000);
+  }
+}
+
+function isTokenExpiredPayload(data: any): boolean {
+  return (
+    data?.error?.code === "token_expired" ||
+    data?.code === "token_expired" ||
+    data?.error?.message === "Invalid or expired access token." ||
+    data?.message === "Invalid or expired access token."
+  );
 }
 
 // ─── Generic request builder ─────────────────────────────────────
@@ -66,6 +99,11 @@ async function request<T = any>(
 
   const data = await res.json().catch(() => ({}));
 
+  if (res.status === 401 || isTokenExpiredPayload(data)) {
+    await handleUnauthorized();
+    throw new Error("Session expired. Please log in again.");
+  }
+
   if (!res.ok) {
     const errMsg =
       data.error?.message || data.message || `Request failed (${res.status})`;
@@ -105,6 +143,10 @@ export async function apiDelete<T = any>(
 /**
  * Authenticated fetch wrapper — attaches JWT Bearer token automatically.
  * Use this in any file that needs to call the API with authentication.
+ *
+ * NOTE: this returns the raw Response. If you want automatic token-expiry
+ * handling, check response.ok / parse the body and call handleUnauthorized
+ * yourself, or prefer apiGet/apiPost/apiPut/apiDelete which do this for you.
  */
 export async function authFetch(
   url: string,
@@ -123,7 +165,16 @@ export async function authFetch(
     headers["Content-Type"] = "application/json";
   }
 
-  return fetch(url, { ...options, headers });
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401) {
+    const cloned = await res.clone().json().catch(() => ({}));
+    if (res.status === 401 || isTokenExpiredPayload(cloned)) {
+      await handleUnauthorized();
+    }
+  }
+
+  return res;
 }
 
 /**
@@ -149,6 +200,11 @@ export async function apiUpload<T = any>(
   });
 
   const data = await res.json().catch(() => ({}));
+
+  if (res.status === 401 || isTokenExpiredPayload(data)) {
+    await handleUnauthorized();
+    throw new Error("Session expired. Please log in again.");
+  }
 
   if (!res.ok) {
     const errMsg =

@@ -334,6 +334,7 @@ const styles = StyleSheet.create({
   downlineAvatar: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   downlineInitial: { fontSize: 16, fontWeight: "900" },
   downlineInfo: { flex: 1 },
+  downlineEmail: { fontSize: 14, fontWeight: "700" },
   infoCard: { borderWidth: 1, borderRadius: 22, padding: 20, marginBottom: 20 },
   infoText: { fontSize: 13, fontWeight: "600", lineHeight: 22 },
 });

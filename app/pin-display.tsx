@@ -2,6 +2,10 @@ import { Text, View, TouchableOpacity, SafeAreaView, StyleSheet, ScrollView, Ale
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useRef } from "react";
+import { authFetch } from "./api";
+
+const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
 export default function PINDisplay() {
   const router = useRouter();
@@ -17,12 +21,59 @@ export default function PINDisplay() {
     color: (params.color as string) || "#f97316",
   };
 
-  // ← Use real PIN from backend, split into array
   const pinString = (params.pin as string) || "000000";
   const PIN = pinString.split("");
-
   const remainingPoints = (params.newBalance as string) || "0";
   const pointsCost = (params.pointsCost as string) || "0";
+  const userCouponId = (params.userCouponId as string) || "";
+
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const navigatedRef = useRef(false);
+
+  // ← Poll every 6 seconds — auto-navigate to success when cashier redeems PIN
+  useEffect(() => {
+    if (!userCouponId) return;
+
+    const checkCouponStatus = async () => {
+      if (navigatedRef.current) return;
+
+      try {
+        const response = await authFetch(`${BASE_URL}/me/coupons`);
+        const data = await response.json();
+
+        if (!response.ok) return;
+
+        const coupons = data.coupons || data.data || [];
+        const thisCoupon = coupons.find(
+          (c: any) => String(c.id) === String(userCouponId)
+        );
+
+        if (thisCoupon && thisCoupon.status === "used") {
+          navigatedRef.current = true;
+          if (pollingRef.current) clearInterval(pollingRef.current);
+
+          router.replace({
+            pathname: "/redeem-success",
+            params: {
+              title: coupon.title,
+              pin: pinString,
+              remainingPoints,
+              pointsCost,
+            },
+          });
+        }
+      } catch (err) {
+        console.log("Coupon status poll error:", err);
+      }
+    };
+
+    checkCouponStatus();
+    pollingRef.current = setInterval(checkCouponStatus, 6000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
 
   const handleCopyPIN = () => {
     Clipboard.setString(pinString);
@@ -68,10 +119,14 @@ export default function PINDisplay() {
         <View style={[styles.titleBox, { backgroundColor: theme.colors.primary }]}>
           <Text style={styles.titleText}>{coupon.title}</Text>
         </View>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{coupon.description}</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+          {coupon.description}
+        </Text>
 
         {/* PIN Label */}
-        <Text style={[styles.pinLabel, { color: theme.colors.textSecondary }]}>6-Digit Redemption PIN</Text>
+        <Text style={[styles.pinLabel, { color: theme.colors.textSecondary }]}>
+          6-Digit Redemption PIN
+        </Text>
 
         {/* PIN Boxes */}
         <View style={styles.pinRow}>
@@ -81,6 +136,16 @@ export default function PINDisplay() {
             </View>
           ))}
         </View>
+
+        {/* Waiting indicator */}
+        {userCouponId ? (
+          <View style={[styles.waitingCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <Ionicons name="time-outline" size={16} color={theme.colors.textSecondary} />
+            <Text style={[styles.waitingText, { color: theme.colors.textSecondary }]}>
+              Waiting for merchant to scan PIN...
+            </Text>
+          </View>
+        ) : null}
 
         {/* Details card */}
         <View style={[styles.detailsCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -157,6 +222,12 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   pinDigit: { fontSize: 24, fontWeight: "900" },
+  waitingCard: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    borderWidth: 1, borderRadius: 12, padding: 12,
+    marginBottom: 16, width: "100%",
+  },
+  waitingText: { fontSize: 12, fontWeight: "600", flex: 1 },
   detailsCard: {
     width: "100%", borderRadius: 16, padding: 16,
     borderWidth: 1, marginBottom: 20, gap: 12,

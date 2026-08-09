@@ -68,18 +68,19 @@ export default function AIRecommendations() {
         return;
       }
 
-      const user = JSON.parse(stored);
+      console.log("Calling AI recommendations at:", `${BASE_URL}/ai/recommendations`);
 
-      const response = await authFetch(`${BASE_URL}/recommendations/${user.id}`);
+      const response = await authFetch(`${BASE_URL}/ai/recommendations`);
       const data = await response.json();
+
+      console.log("AI recommendations raw response:", JSON.stringify(data));
 
       if (!response.ok) {
         throw new Error(
-          data.message || data.error || "Failed to fetch recommendations."
+          data.error?.message || data.message || "Failed to fetch recommendations."
         );
       }
 
-      // ← backend wraps the list in "data" — was missing this fallback
       setEvents(data.recommendations || data.events || data.data || []);
       setCategories(data.preferred_categories || data.categories || []);
     } catch (error: any) {

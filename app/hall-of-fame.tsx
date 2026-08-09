@@ -75,6 +75,9 @@ export default function HallOfFame() {
       const response = await authFetch(`${BASE_URL}/leaderboard`);
       const data = await response.json().catch(() => ({}));
 
+      console.log("Leaderboard status:", response.status);
+      console.log("Leaderboard response:", JSON.stringify(data));
+
       if (!response.ok) {
         const message =
           data.message || data.error || "Failed to fetch leaderboard.";
@@ -95,8 +98,28 @@ export default function HallOfFame() {
         throw new Error(message);
       }
 
-      setLeaderboard(data.leaderboard || []);
-      setMyRank(data.my_rank || null);
+      // ← backend nests the real leaderboard under data.data.most_points
+      const rawLeaderboard = data.data?.most_points || data.leaderboard || [];
+
+      const normalisedLeaderboard: LeaderboardUser[] = rawLeaderboard.map(
+        (entry: any) => ({
+          id: entry.id,
+          name: entry.name,
+          email: entry.email || "",
+          points: entry.points,
+          rank: Number(entry.rank),
+        })
+      );
+
+      setLeaderboard(normalisedLeaderboard);
+
+      // ← no separate "my_rank" field — find the current user inside the leaderboard
+      const myEntry =
+        normalisedLeaderboard.find(
+          (entry) => Number(entry.id) === Number(user.id)
+        ) || null;
+
+      setMyRank(myEntry);
     } catch (error: any) {
       console.error("Leaderboard error:", error);
 
@@ -309,7 +332,8 @@ export default function HallOfFame() {
           </View>
         )}
 
-        {leaderboard.length > 0 && (
+        {/* ← only show the "Leaderboard" section (rank 4+) when there's actually someone in it */}
+        {restLeaderboard.length > 0 && (
           <View style={styles.listTitleRow}>
             <View>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
@@ -342,6 +366,31 @@ export default function HallOfFame() {
                 color={theme.colors.text}
               />
             </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ← when everyone already fits on the podium, say so instead of leaving a gap */}
+        {leaderboard.length > 0 && restLeaderboard.length === 0 && (
+          <View
+            style={[
+              styles.allShownCard,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <Ionicons
+              name="checkmark-circle-outline"
+              size={20}
+              color={theme.colors.primary}
+            />
+            <Text
+              style={[styles.allShownText, { color: theme.colors.textSecondary }]}
+            >
+              That's everyone! All {leaderboard.length} volunteer
+              {leaderboard.length === 1 ? "" : "s"} shown above.
+            </Text>
           </View>
         )}
       </View>
@@ -779,6 +828,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  allShownCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+  },
+
+  allShownText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
   },
 
   rankCard: {

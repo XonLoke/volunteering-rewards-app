@@ -108,22 +108,30 @@ export default function Events() {
       const response = await authFetch(`${BASE_URL}/events`);
       const data = await response.json();
 
+      // ← temporary logging to see the real response shape
+      console.log("EVENTS FETCH STATUS:", response.status);
+      console.log("EVENTS FETCH DATA:", JSON.stringify(data));
+
       if (!response.ok) {
-        throw new Error(data.message || data.error || "Failed to fetch events.");
+        throw new Error(
+          data.error?.message || data.message || "Failed to fetch events."
+        );
       }
 
       const cancelledIds = await getCancelledBookingIds();
 
-      const fetchedEvents: Event[] = (data.events || []).map((event: Event) => {
-        if (cancelledIds.includes(Number(event.id))) {
-          return {
-            ...event,
-            registered: false,
-          };
-        }
+      const fetchedEvents: Event[] = (data.events || data.data || []).map(
+        (event: Event) => {
+          if (cancelledIds.includes(Number(event.id))) {
+            return {
+              ...event,
+              registered: false,
+            };
+          }
 
-        return event;
-      });
+          return event;
+        }
+      );
 
       setEvents(fetchedEvents);
       await syncBookedEventsToStorage(fetchedEvents);
@@ -220,12 +228,13 @@ export default function Events() {
       const data = await response.json().catch(() => ({}));
 
       console.log("EVENTS BOOK STATUS:", response.status);
-      console.log("EVENTS BOOK DATA:", data);
+      console.log("EVENTS BOOK DATA:", JSON.stringify(data));
 
       if (!response.ok) {
         if (
           data.message === "already_registered" ||
-          data.error === "already_registered"
+          data.error === "already_registered" ||
+          data.error?.code === "already_registered"
         ) {
           Alert.alert("Already booked", "You have already booked this event.");
           await removeCancelledBookingId(event.id);
@@ -233,12 +242,18 @@ export default function Events() {
           return;
         }
 
-        if (data.message === "event_full" || data.error === "event_full") {
+        if (
+          data.message === "event_full" ||
+          data.error === "event_full" ||
+          data.error?.code === "event_full"
+        ) {
           Alert.alert("Event full", "This event has reached its capacity.");
           return;
         }
 
-        throw new Error(data.message || data.error || "Failed to book event.");
+        throw new Error(
+          data.error?.message || data.message || "Failed to book event."
+        );
       }
 
       await removeCancelledBookingId(event.id);
@@ -307,11 +322,11 @@ export default function Events() {
       const data = await response.json().catch(() => ({}));
 
       console.log("EVENTS DELETE STATUS:", response.status);
-      console.log("EVENTS DELETE DATA:", data);
+      console.log("EVENTS DELETE DATA:", JSON.stringify(data));
 
       if (!response.ok) {
         throw new Error(
-          data.message || data.error || "Failed to cancel booking."
+          data.error?.message || data.message || "Failed to cancel booking."
         );
       }
 
