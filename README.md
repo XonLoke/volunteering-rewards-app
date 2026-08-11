@@ -138,7 +138,7 @@ Installable on phone home screen via browser "Add to Home Screen" prompt.
 
 | App | Download | Login |
 |-----|----------|-------|
-| **Volunteer Android APK** | [GitHub Releases](https://github.com/XonLoke/volunteering-rewards-app/releases) (v1.1.0+) or CI build artifacts | alice@test.com |
+| **Volunteer Android APK** | [Download APK v1.1.2 (82 MB)](https://github.com/XonLoke/volunteering-rewards-app/releases/download/apk-v1.1.2/Volunteering-Rewards-App_11Aug2026.apk) · [All releases](https://github.com/XonLoke/volunteering-rewards-app/releases) | alice@test.com |
 
 A native Android APK built with Expo / React Native. See the [APK Installation](#apk-download--installation) section below.
 
@@ -159,8 +159,8 @@ The native Android APK provides the full volunteer experience (Home, Events, Rew
 
 ### Option 1: Download from GitHub Releases (Recommended)
 
-1. Go to [GitHub Releases →](https://github.com/XonLoke/volunteering-rewards-app/releases)
-2. Download the latest `app-release.apk` from the release assets
+1. **Latest release (v1.1.2, 11 Aug 2026):** [Download `Volunteering-Rewards-App_11Aug2026.apk`](https://github.com/XonLoke/volunteering-rewards-app/releases/download/apk-v1.1.2/Volunteering-Rewards-App_11Aug2026.apk) (~82 MB)
+2. Or browse [all releases →](https://github.com/XonLoke/volunteering-rewards-app/releases) for earlier versions
 3. Transfer the APK to your Android phone (USB, email, or cloud drive)
 
 ### Option 2: Download from CI Artifacts
@@ -185,7 +185,7 @@ cd android && ./gradlew assembleRelease
 ### Installation on Android
 
 1. **Enable Unknown Sources:** Go to *Settings → Security → Install unknown apps* (or *Settings → Apps → Special app access → Install unknown apps*) and allow your file manager or browser.
-2. **Locate the APK:** Open your file manager and navigate to where you saved `app-release.apk`.
+2. **Locate the APK:** Open your file manager and navigate to where you saved the downloaded APK.
 3. **Tap to install:** Select the file and follow the on-screen prompts.
 4. **Open the app:** Find "Volunteering Rewards" in your app drawer and sign in with **alice@test.com / password123**.
 
