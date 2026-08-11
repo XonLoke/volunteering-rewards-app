@@ -122,7 +122,7 @@ Step 4: Expo EAS (Mobile)   ← optional, currently blocked
   | `JWT_REFRESH_SECRET` | Generate again (different value) |
   | `JWT_ACCESS_EXPIRES_IN` | `15m` |
   | `JWT_REFRESH_EXPIRES_IN` | `7d` |
-  | `PIN_SECRET` | `volunteering-rewards-pin-secret-v1` (must match seed data) |
+  | `PIN_SECRET` | `set in Render dashboard (rotated 5 Aug 2026 — do not commit)` (must match seed data) |
   | `RATE_LIMIT_WINDOW_MS` | `900000` |
   | `RATE_LIMIT_MAX` | `100` |
   | `CORS_ORIGINS` | `*` |
@@ -201,7 +201,7 @@ Run this **twice** to generate `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`.
 - [ ] Login as `carol@test.com` / `password123`
 - [ ] Verify Admin Dashboard loads
 - [ ] Visit `https://webportals-lovat.vercel.app/organiser` — login as `bob@test.com`
-- [ ] Visit `https://webportals-lovat.vercel.app/merchant` — login as `cheryl@test.com`
+- [ ] Visit `https://webportals-lovat.vercel.app/merchant/login` — login as `cheryl@test.com`
 - [ ] Visit `https://webportals-lovat.vercel.app/scan` — login as `bob@test.com`
 
 ---
@@ -243,7 +243,7 @@ backend/
 │       ├── jwt.js              # JWT token generation/verification
 │       ├── migrationRunner.js  # Runs SQL migrations
 │       └── seed.js             # Seeds test data
-├── migrations/                 # SQL migration files (001 → 024)
+├── migrations/                 # SQL migration files (001 → 023)
 └── tests/                      # Unit, integration, performance tests
 ```
 
@@ -327,7 +327,7 @@ app/
 | `DB_SSL` | Render | Backend (database.js) | `true` |
 | `JWT_ACCESS_SECRET` | Render | Backend (jwt.js) | 64-char hex string |
 | `JWT_REFRESH_SECRET` | Render | Backend (jwt.js) | 64-char hex string |
-| `PIN_SECRET` | Render | Backend (rewards.service.js) | `volunteering-rewards-pin-secret-v1` |
+| `PIN_SECRET` | Render | Backend (rewards.service.js) | `set in Render dashboard (rotated 5 Aug 2026 — do not commit)` |
 | `NODE_ENV` | Render | Backend | `production` |
 | `PORT` | Render | Backend | `3000` |
 | `CORS_ORIGINS` | Render | Backend (index.js) | `*` |
@@ -417,7 +417,7 @@ All services use GitHub OAuth for login — you can sign up with one click.
 | API Health | `https://vol-rewards-api.onrender.com/api/health` | Health check |
 | Admin Portal | `https://webportals-lovat.vercel.app/admin/login` | System admin |
 | Organiser Portal | `https://webportals-lovat.vercel.app/organiser` | Event organisers |
-| Merchant Portal | `https://webportals-lovat.vercel.app/merchant` | Cashier PIN verification |
+| Merchant Portal | `https://webportals-lovat.vercel.app/merchant/login` | Cashier PIN verification |
 | Scanner PWA | `https://webportals-lovat.vercel.app/scan` | QR attendance scanning |
 | Neon Database | `https://console.neon.tech` | Database management |
 | Expo Builds | `https://expo.dev/accounts/xonloke/projects/vol-app/builds` | APK build status |

@@ -63,18 +63,18 @@ In the web service dashboard, go to **Environment** tab and add:
 | `DB_NAME` | `volunteering_rewards` | |
 | `DB_USER` | `postgres` | |
 | `DB_PASSWORD` | *(from Render DB — password)* | |
-| `JWT_ACCESS_SECRET` | `f4e2e21b0272d7991d7f22e842893f59aa5f06bc4f5944c8f68718852256eaad` | |
-| `JWT_REFRESH_SECRET` | `d96ae641c1dbb9d255ff6d49b7f4149e59fa00af2a33259cd943a14fd969bd19` | |
+| `JWT_ACCESS_SECRET` | auto-generated in Render (`generateValue: true`) | do **not** copy literals into docs |
+| `JWT_REFRESH_SECRET` | auto-generated in Render (`generateValue: true`) | do **not** copy literals into docs |
 | `JWT_ACCESS_EXPIRES_IN` | `15m` | |
 | `JWT_REFRESH_EXPIRES_IN` | `7d` | |
-| `PIN_SECRET` | `volunteering-rewards-pin-secret-v1` | |
+| `PIN_SECRET` | set in Render dashboard (rotated 5 Aug 2026 — do not commit) | |
 | `RATE_LIMIT_WINDOW_MS` | `900000` | 15 minutes |
 | `RATE_LIMIT_MAX` | `100` | requests per window |
-| `CORS_ORIGINS` | `https://your-admin-frontend.onrender.com,https://your-organiser-frontend.onrender.com` | *(if you deploy frontends later)* |
+| `CORS_ORIGINS` | `https://webportals-lovat.vercel.app,https://volunteering-rewards-app.vercel.app` | both Vercel portals (5 Aug 2026) |
 
 > **Rate limiting in production:** The default limits (global 500/15min, login 10/min, register 5/min) are safe for production. Do **not** set `DISABLE_RATE_LIMIT=true` in production env vars. For local dev, see `backend/.env`.
 
-> **Important:** If you deploy separate frontend portals later, update `CORS_ORIGINS` with their Render URLs.
+> **Secrets hygiene (5 Aug 2026):** All portals run on **Vercel** — CORS_ORIGINS above is the live allowlist. Never commit secret literals (JWT/PIN) to docs — they are set in the Render dashboard / blueprint only.
 
 After adding all vars, Render will automatically rebuild and restart the service.
 

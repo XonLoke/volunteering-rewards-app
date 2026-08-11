@@ -67,7 +67,7 @@ In the web service dashboard, go to **Environment** tab and add:
 | `JWT_REFRESH_SECRET` | `d96ae641c1dbb9d255ff6d49b7f4149e59fa00af2a33259cd943a14fd969bd19` | |
 | `JWT_ACCESS_EXPIRES_IN` | `15m` | |
 | `JWT_REFRESH_EXPIRES_IN` | `7d` | |
-| `PIN_SECRET` | `volunteering-rewards-pin-secret-v1` | |
+| `PIN_SECRET` | `set in Render dashboard (rotated 5 Aug 2026 — do not commit)` | |
 | `RATE_LIMIT_WINDOW_MS` | `900000` | 15 minutes |
 | `RATE_LIMIT_MAX` | `100` | requests per window |
 | `CORS_ORIGINS` | `https://your-admin-frontend.onrender.com,https://your-organiser-frontend.onrender.com` | *(if you deploy frontends later)* |
