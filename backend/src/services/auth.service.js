@@ -651,11 +651,17 @@ async function forgotPassword(email, redirectUrl) {
       "https://volunteering-rewards-app.vercel.app",
     ];
     let frontendOrigin = process.env.FRONTEND_URL || "https://volunteering-rewards-app.vercel.app";
+    // Clients (web portals, mobile apps) send redirect_url carrying the reset
+    // screen path (e.g. /admin/reset-password). When redirect_url is absent or
+    // blocked, still point the link at the reset screen — the bare origin's
+    // root page (PWA landing) does not read ?token=.
+    let resetPath = "/reset-password";
     if (redirectUrl) {
       try {
-        const { origin } = new URL(redirectUrl);
+        const { origin, pathname } = new URL(redirectUrl);
         if (ALLOWED_RESET_ORIGINS.includes(origin)) {
           frontendOrigin = redirectUrl;
+          if (pathname.includes("reset-password")) resetPath = "";
         } else {
           console.warn(`[auth.service] Blocked redirect_url with unexpected origin: ${origin}`);
         }
@@ -663,7 +669,7 @@ async function forgotPassword(email, redirectUrl) {
         console.warn("[auth.service] Blocked malformed redirect_url — using FRONTEND_URL");
       }
     }
-    const resetUrl = `${frontendOrigin}?token=${resetToken}`;
+    const resetUrl = `${frontendOrigin}${resetPath}?token=${resetToken}`;
 
     sendEmail({
       to: user.email,

@@ -141,3 +141,59 @@ describe("UT-06: Token Refresh — Invalid Token", () => {
     }
   });
 });
+
+describe("UT-07: Forgot Password — Reset Link URL Construction", () => {
+  const emailService = require("../../src/services/email.service");
+
+  // forgotPassword destructures sendEmail at require time, so mock the
+  // module property and re-require auth.service (same idiom as the
+  // load-time bcrypt mock above).
+  async function captureResetLink(redirectUrl) {
+    mock.restoreAll();
+    let captured = null;
+    mock.method(emailService, "sendEmail", async (opts) => { captured = opts; });
+    delete require.cache[require.resolve("../../src/services/auth.service")];
+    const freshAuth = require("../../src/services/auth.service");
+    mockPoolWith([
+      q([{ id: 1, name: "Alice", email: "alice@test.com" }]), // user found
+      q([]),                                                  // UPDATE reset token
+    ]);
+    await freshAuth.forgotPassword("alice@test.com", redirectUrl);
+    assert.ok(captured, "sendEmail should have been called");
+    return captured.html;
+  }
+
+  it("appends /reset-password when no redirect_url (PWA fallback)", async () => {
+    delete process.env.FRONTEND_URL;
+    const html = await captureResetLink(undefined);
+    assert.match(html, /https:\/\/volunteering-rewards-app\.vercel\.app\/reset-password\?token=/);
+  });
+
+  it("appends /reset-password to FRONTEND_URL origin when no redirect_url", async () => {
+    process.env.FRONTEND_URL = "https://custom-frontend.example.com";
+    try {
+      const html = await captureResetLink(undefined);
+      assert.match(html, /https:\/\/custom-frontend\.example\.com\/reset-password\?token=/);
+    } finally {
+      delete process.env.FRONTEND_URL;
+    }
+  });
+
+  it("keeps web portal path — no double /reset-password", async () => {
+    const html = await captureResetLink("https://webportals-lovat.vercel.app/admin/reset-password");
+    assert.match(html, /https:\/\/webportals-lovat\.vercel\.app\/admin\/reset-password\?token=/);
+    assert.ok(!html.includes("/admin/reset-password/reset-password"));
+  });
+
+  it("keeps mobile full path — no double /reset-password", async () => {
+    const html = await captureResetLink("https://volunteering-rewards-app.vercel.app/reset-password");
+    assert.match(html, /https:\/\/volunteering-rewards-app\.vercel\.app\/reset-password\?token=/);
+  });
+
+  it("falls back to default origin + path when redirect_url origin is blocked", async () => {
+    delete process.env.FRONTEND_URL;
+    const html = await captureResetLink("https://evil.example.com/login");
+    assert.match(html, /https:\/\/volunteering-rewards-app\.vercel\.app\/reset-password\?token=/);
+    assert.ok(!html.includes("evil.example.com"));
+  });
+});
