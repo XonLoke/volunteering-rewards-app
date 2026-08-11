@@ -31,7 +31,7 @@ async function getMyPoints(userId) {
     "SELECT points FROM users WHERE id = $1", [userId]
   );
   const { rows: history } = await pool.query(
-    `SELECT al.id, al.points_awarded AS points, e.title AS description, al.scanned_at AS created_at
+    `SELECT al.id, al.points_awarded AS points, e.title AS description, e.location, al.scanned_at AS created_at
      FROM attendance_logs al
      JOIN events e ON e.id = al.event_id
      WHERE al.user_id = $1

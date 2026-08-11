@@ -75,8 +75,8 @@ In your Render dashboard → Environment Variables:
 | Variable | Value |
 |----------|-------|
 | `FRONTEND_URL` | Your PWA URL, e.g. `https://my-app.vercel.app` |
-| `EMAIL_USER` | SMTP username or Mailgun from address |
-| `EMAIL_PASS` | SMTP password or Mailgun sending key |
+| `EMAIL_USER` | From address (or SMTP username) |
+| `EMAIL_PASS` | SendGrid API key / Mailgun sending key / SMTP password |
 
 The backend uses this priority:
 1. **`redirect_url`** sent from the frontend (highest priority)
@@ -98,20 +98,32 @@ The forgot-password screens pass `redirect_url: "${EXPO_PUBLIC_FRONTEND_URL}/res
 
 The web portals (`ForgotPassword.jsx`) use `window.location.origin` to detect their own URL at runtime. The reset link always points back to the same portal the user came from.
 
-### 4. Email Setup (Mailgun / SMTP)
+### 4. Email Setup (SendGrid / Mailgun / SMTP)
 
-**Option A: Mailgun API (recommended)**
+Email is configured in **Admin Portal → Email Config** (stored in the DB) — the `EMAIL_USER`/`EMAIL_PASS` env vars above are only a fallback if no DB row exists. The backend tries providers in order (`email.service.js`): **SendGrid REST API** → **Mailgun REST API** → **SMTP**, based on the configured host/user.
+
+> **Render note:** Render's free tier **blocks all outbound SMTP** (verified — Gmail and Mailgun SMTP both time out). HTTPS REST APIs (SendGrid / Mailgun) work fine, so prefer a REST provider on Render.
+
+**Option A: SendGrid REST API (recommended — used by the live system)**
+1. Create a free [SendGrid](https://sendgrid.com) account
+2. **Settings → Sender Authentication** → add + verify a sender identity (an address + name, e.g. `volunteerrewardsapp@gmail.com`). Click the verification link in the email SendGrid sends — log in with your **SendGrid username** (not the sender address)
+3. Create an **API key** (Settings → API Keys) with at least *Mail Send* permission
+4. In **Admin Portal** → **Email Config** → Email User = sender address, Email Pass = API key (host containing `sendgrid` enables the REST path)
+5. Click **Save** → **Send Test** — a 202/ok confirms delivery
+
+**Option B: Mailgun API**
 1. Create a free [Mailgun](https://www.mailgun.com) account
 2. Go to **Domains** → copy your sandbox domain
 3. In **Admin Portal** → **Email Config** → click **Mailgun** preset
 4. Enter `postmaster@<your-sandbox>.mailgun.org` as Email User
 5. Enter your Mailgun **sending key** as Email Pass
 6. Click **Save** → **Send Test**
-7. Add your email as an **Authorized Recipient** in Mailgun dashboard
+7. Add your email as an **Authorized Recipient** in Mailgun dashboard (sandbox sends are limited to authorized recipients)
 
-**Option B: Any SMTP provider**
+**Option C: SMTP (any provider — not on Render)**
 1. In **Admin Portal** → **Email Config** → enter your SMTP credentials
 2. Supported: Gmail (App Password), SendGrid, SMTP2GO, Brevo
+3. ⚠️ Will not work on Render's free tier (outbound SMTP blocked) — use this only on hosts that allow SMTP egress
 
 
 
@@ -257,7 +269,7 @@ The system implements **two generations of AI** — Gen 1 (non-API rule-based al
 | F4: Hall of Fame Leaderboard | Gamification / SQL ranking with volunteer leaderboard | ✅ Done |
 | Email Verification | Crypto-token verification sent on registration (24h expiry) | ✅ Done (AUTH-09) |
 | Forgot / Reset Password | Self-service password reset via email with secure token (1h expiry) | ✅ Done (AUTH-10/11) |
-| Admin Email Config | Configure SMTP / Mailgun settings from Admin Portal UI | ✅ Done |
+| Admin Email Config | Configure SendGrid / Mailgun / SMTP from Admin Portal UI | ✅ Done |
 
 > **AI Architecture (F1 & F2):** `GET /api/ai/recommendations` and `GET /api/ai/feedback-summary/:eventId` call **FreeLLMAPI** (`localhost:3001`) — a local proxy aggregating free tiers from Google AI Studio (Gemini 2.5 Flash), Groq, Cerebras, Mistral, and 12+ others with auto-failover between providers. Each request has a 15-second timeout. If the LLM is unreachable or all providers are exhausted, the controller falls back to the Gen 1 rule-based algorithms (content-based filtering / lexicon sentiment). Responses include an `ai_generated: true/false` flag.
 > 
