@@ -238,6 +238,7 @@ async function login(body) {
       id: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: user.role_name,
       points_balance: user.points,
       volunteer_qr_code: user.volunteer_qr_code,
