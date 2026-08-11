@@ -77,9 +77,13 @@ async function login(email, password) {
 
   const listBody = await api("/admin/users", { headers: { Authorization: `Bearer ${adminToken}` } });
   const users = Array.isArray(listBody) ? listBody : listBody.data || listBody.users || [];
-  const targets = users.filter((u) => u.email && u.email.endsWith("@test.com"));
+  const disabled = users.filter((u) => u.email && u.email.endsWith("@test.com") && u.status !== "active");
+  const targets = users.filter((u) => u.email && u.email.endsWith("@test.com") && u.status === "active");
 
-  if (targets.length === 0) throw new Error("No @test.com accounts found via /admin/users");
+  if (targets.length === 0) throw new Error("No active @test.com accounts found via /admin/users");
+  if (disabled.length) {
+    console.log(`[SKIP] ${disabled.length} disabled test account(s) — cannot log in, reset pointless: ${disabled.map((u) => u.email).join(", ")}\n`);
+  }
 
   console.log(`Found ${targets.length} test accounts:\n`);
   console.log("EMAIL".padEnd(32) + "NEW PASSWORD".padEnd(28) + "STATUS");
