@@ -105,6 +105,7 @@ export default function ScanHistory() {
           const backendScans: Scan[] = data.history.map((h: any) => ({
             id: h.id,
             event_title: h.description || "Volunteer Event",
+            location: h.location,
             points_awarded: h.points ?? 0,
             scanned_at: h.created_at,
             source: "backend" as const,
