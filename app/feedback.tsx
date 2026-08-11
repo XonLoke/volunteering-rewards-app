@@ -1,212 +1,208 @@
 import {
-  ActivityIndicator,
-  Alert,
+  Text,
+  View,
+  TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
-  Text,
   TextInput,
-  TouchableOpacity,
-  View,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useState, useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { authFetch } from "./api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
+const STAR_OPTIONS = [1, 2, 3, 4, 5];
 
-export default function Feedback() {
+export default function FeedbackScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const params = useLocalSearchParams();
-
-  const eventId = params.eventId as string;
-  const eventTitle = (params.eventTitle as string) || "this event";
+  const { eventId, eventTitle } = useLocalSearchParams<{
+    eventId: string;
+    eventTitle: string;
+  }>();
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  const accent = "#f59e0b";
+  const getRatingLabel = (r: number) => {
+    if (r === 0) return "Tap a star to rate";
+    if (r === 1) return "Poor";
+    if (r === 2) return "Below Average";
+    if (r === 3) return "Average";
+    if (r === 4) return "Good";
+    return "Excellent";
+  };
 
   const handleSubmit = async () => {
-    if (!eventId) {
-      Alert.alert("Missing event", "We couldn't tell which event this feedback is for.");
+    if (!rating) {
+      Alert.alert("Rating required", "Please select a star rating.");
       return;
     }
 
-    if (rating === 0) {
-      Alert.alert("Add a rating", "Please tap a star to rate this event before submitting.");
+    if (!eventId) {
+      Alert.alert("Error", "Event ID is missing.");
       return;
     }
+
+    setSubmitting(true);
 
     try {
-      setSubmitting(true);
-
-      const response = await authFetch(`${BASE_URL}/events/${eventId}/feedback`, {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(`${BASE_URL}/events/${eventId}/feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({
-          rating,
-          comment: comment.trim(),
-        }),
+        body: JSON.stringify({ rating, comment: comment.trim() }),
       });
 
-      const data = await response.json().catch(() => ({}));
-
-      console.log("Feedback status:", response.status);
-      console.log("Feedback response:", JSON.stringify(data));
-
-      if (!response.ok) {
-        throw new Error(
-          data.error?.message || data.message || "Failed to submit feedback."
-        );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error?.message || "Failed to submit feedback.");
       }
 
-      Alert.alert("Thank you!", "Your feedback has been submitted.", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
-    } catch (error: any) {
-      console.error("Feedback submit error:", error);
-      Alert.alert("Error", error.message || "Failed to submit feedback.");
+      setSubmitted(true);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to submit feedback.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/home");
+    }
+  };
+
+  if (submitted) {
+    return (
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.successContainer}>
+          <Ionicons name="checkmark-circle" size={80} color="#10b981" />
+          <Text style={[styles.successTitle, { color: theme.colors.text }]}>Thank You!</Text>
+          <Text style={[styles.successSub, { color: theme.colors.textSecondary }]}>
+            Your feedback has been submitted.
+          </Text>
+          <TouchableOpacity style={[styles.successBtn, { backgroundColor: theme.colors.primary }]} onPress={goBack}>
+            <Text style={styles.successBtnText}>Back to Events</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView
-      style={[styles.screen, { backgroundColor: theme.colors.background }]}
-    >
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.topBar}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
+          <Ionicons name="chevron-back" size={24} color={theme.colors.primary} />
+          <Text style={[styles.backText, { color: theme.colors.primary }]}>Back</Text>
+        </TouchableOpacity>
+
+        <View style={styles.content}>
+          <Text style={[styles.heading, { color: theme.colors.text }]}>Share Your Feedback</Text>
+          <Text style={[styles.subheading, { color: theme.colors.textSecondary }]} numberOfLines={2}>
+            {eventTitle || "Event"}
+          </Text>
+
+          {/* Rating */}
+          <View style={styles.ratingSection}>
+            <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>Rating</Text>
+            <View style={styles.starsRow}>
+              {STAR_OPTIONS.map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setRating(star)}
+                  activeOpacity={0.6}
+                  style={styles.starBtn}
+                >
+                  <Ionicons
+                    name={star <= rating ? "star" : "star-outline"}
+                    size={44}
+                    color={star <= rating ? "#f59e0b" : theme.colors.border}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={[styles.ratingHint, { color: theme.colors.textSecondary }]}>
+              {getRatingLabel(rating)}
+            </Text>
+          </View>
+
+          {/* Comment */}
+          <View style={styles.commentSection}>
+            <Text style={[styles.sectionLabel, { color: theme.colors.text }]}>
+              Comments{" "}
+              <Text style={{ color: theme.colors.textSecondary }}>(optional)</Text>
+            </Text>
+            <TextInput
+              style={[
+                styles.commentInput,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                },
+              ]}
+              placeholder="Tell us about your experience..."
+              placeholderTextColor={theme.colors.textTertiary}
+              value={comment}
+              onChangeText={setComment}
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+              maxLength={1000}
+            />
+            <Text style={[styles.charCount, { color: theme.colors.textTertiary }]}>
+              {comment.length}/1000
+            </Text>
+          </View>
+
+          {/* Submit */}
           <TouchableOpacity
             style={[
-              styles.backBtn,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-            ]}
-            onPress={() => router.back()}
-            disabled={submitting}
-          >
-            <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
-          </TouchableOpacity>
-
-          <Text style={[styles.pageTitle, { color: theme.colors.text }]}>
-            Rate Your Experience
-          </Text>
-
-          <View style={styles.spacer} />
-        </View>
-
-        <View
-          style={[
-            styles.eventCard,
-            { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-          ]}
-        >
-          <View style={[styles.eventIconBox, { backgroundColor: accent + "18" }]}>
-            <Ionicons name="calendar-outline" size={26} color={accent} />
-          </View>
-
-          <Text style={[styles.eventTitle, { color: theme.colors.text }]} numberOfLines={2}>
-            {eventTitle}
-          </Text>
-
-          <Text style={[styles.eventSub, { color: theme.colors.textSecondary }]}>
-            How was your volunteering experience?
-          </Text>
-        </View>
-
-        <View style={styles.starsSection}>
-          <View style={styles.starsRow}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity
-                key={star}
-                onPress={() => setRating(star)}
-                disabled={submitting}
-                activeOpacity={0.7}
-                style={styles.starButton}
-              >
-                <Ionicons
-                  name={star <= rating ? "star" : "star-outline"}
-                  size={40}
-                  color={star <= rating ? accent : theme.colors.border}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {rating > 0 && (
-            <Text style={[styles.ratingLabel, { color: accent }]}>
-              {ratingLabels[rating]}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.fieldGroup}>
-          <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
-            Comments (optional)
-          </Text>
-
-          <TextInput
-            style={[
-              styles.textArea,
+              styles.submitBtn,
               {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-                color: theme.colors.text,
+                backgroundColor: rating ? theme.colors.primary : theme.colors.border,
               },
             ]}
-            value={comment}
-            onChangeText={setComment}
-            placeholder="Tell us what went well, or what could be improved..."
-            placeholderTextColor={theme.colors.textTertiary}
-            multiline
-            numberOfLines={5}
-            textAlignVertical="top"
-            editable={!submitting}
-            maxLength={500}
-          />
+            onPress={handleSubmit}
+            disabled={!rating || submitting}
+            activeOpacity={0.85}
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="send" size={18} color="#fff" />
+                <Text style={styles.submitText}>Submit Feedback</Text>
+              </>
+            )}
+          </TouchableOpacity>
 
-          <Text style={[styles.counter, { color: theme.colors.textSecondary }]}>
-            {comment.length}/500
-          </Text>
+          {/* Skip */}
+          <TouchableOpacity style={styles.skipBtn} onPress={goBack} activeOpacity={0.7}>
+            <Text style={[styles.skipText, { color: theme.colors.textTertiary }]}>
+              Skip / Back
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={[
-            styles.submitBtn,
-            { backgroundColor: accent, opacity: submitting ? 0.75 : 1 },
-          ]}
-          onPress={handleSubmit}
-          disabled={submitting}
-          activeOpacity={0.85}
-        >
-          {submitting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="checkmark-outline" size={20} color="#fff" />
-              <Text style={styles.submitBtnText}>Submit Feedback</Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.skipBtn}
-          onPress={() => router.back()}
-          disabled={submitting}
-        >
-          <Text style={[styles.skipBtnText, { color: theme.colors.textSecondary }]}>
-            Skip for now
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -214,76 +210,31 @@ export default function Feedback() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  scroll: { paddingBottom: 48 },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
-  pageTitle: { fontSize: 17, fontWeight: "900", letterSpacing: 0.3 },
-  spacer: { width: 40, height: 40 },
-  eventCard: {
-    marginHorizontal: 20,
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 22,
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  eventIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
-  },
-  eventTitle: { fontSize: 18, fontWeight: "900", textAlign: "center", marginBottom: 6 },
-  eventSub: { fontSize: 13, fontWeight: "600", textAlign: "center" },
-  starsSection: { alignItems: "center", marginBottom: 28 },
-  starsRow: { flexDirection: "row", gap: 8 },
-  starButton: { padding: 4 },
-  ratingLabel: { fontSize: 14, fontWeight: "800", marginTop: 10 },
-  fieldGroup: { paddingHorizontal: 20, marginBottom: 24 },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  textArea: {
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 14,
-    fontWeight: "600",
-    minHeight: 120,
-  },
-  counter: { fontSize: 11, fontWeight: "700", textAlign: "right", marginTop: 6 },
-  submitBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    paddingVertical: 16,
-    marginBottom: 14,
-  },
-  submitBtnText: { color: "#fff", fontSize: 15, fontWeight: "800", letterSpacing: 0.3 },
-  skipBtn: { alignItems: "center", paddingVertical: 8 },
-  skipBtnText: { fontSize: 13, fontWeight: "700" },
+  scrollContent: { paddingBottom: 40 },
+  backBtn: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16 },
+  backText: { fontSize: 17, fontWeight: "600", marginLeft: 4 },
+  content: { paddingHorizontal: 24 },
+  heading: { fontSize: 26, fontWeight: "900", marginBottom: 4 },
+  subheading: { fontSize: 15, fontWeight: "600", marginBottom: 32 },
+  // Rating
+  ratingSection: { marginBottom: 28 },
+  sectionLabel: { fontSize: 16, fontWeight: "800", marginBottom: 14 },
+  starsRow: { flexDirection: "row", justifyContent: "center", gap: 8 },
+  starBtn: { padding: 6 },
+  ratingHint: { textAlign: "center", fontSize: 14, fontWeight: "600", marginTop: 10 },
+  // Comment
+  commentSection: { marginBottom: 28 },
+  commentInput: { borderRadius: 18, borderWidth: 1, padding: 16, fontSize: 15, minHeight: 130, lineHeight: 22 },
+  charCount: { textAlign: "right", fontSize: 12, marginTop: 6 },
+  // Submit
+  submitBtn: { borderRadius: 18, paddingVertical: 16, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8 },
+  submitText: { color: "#fff", fontSize: 16, fontWeight: "900" },
+  skipBtn: { alignItems: "center", paddingVertical: 20 },
+  skipText: { fontSize: 14, fontWeight: "600" },
+  // Success
+  successContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 },
+  successTitle: { fontSize: 26, fontWeight: "900", marginTop: 16, marginBottom: 8 },
+  successSub: { fontSize: 15, fontWeight: "600", textAlign: "center", marginBottom: 32 },
+  successBtn: { borderRadius: 18, paddingVertical: 16, paddingHorizontal: 32 },
+  successBtnText: { color: "#fff", fontSize: 16, fontWeight: "900" },
 });

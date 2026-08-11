@@ -39,6 +39,7 @@ export default function RootLayout() {
         <Stack.Screen name="hall-of-fame" />
         <Stack.Screen name="scan" />
         <Stack.Screen name="referral" />
+        <Stack.Screen name="feedback" />
       </Stack>
 
       <StatusBar style="auto" />

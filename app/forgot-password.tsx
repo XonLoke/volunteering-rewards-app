@@ -20,7 +20,6 @@ const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 export default function ForgotPassword() {
   const router = useRouter();
   const { theme } = useTheme();
-
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -45,6 +44,8 @@ export default function ForgotPassword() {
       });
 
       const data = await response.json();
+      console.log("Forgot password status:", response.status);
+      console.log("Forgot password response:", JSON.stringify(data));
 
       if (!response.ok) {
         throw new Error(data.error?.message || data.message || "Something went wrong.");

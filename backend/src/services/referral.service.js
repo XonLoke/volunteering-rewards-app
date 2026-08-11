@@ -5,6 +5,7 @@
 //-----------------------------------------------------------------------
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
+const { createNotification } = require("./notification.service");
 
 //-----------------------------------------------------------------------
 // SECTION: Get Current Sponsorship Config
@@ -24,24 +25,32 @@ async function getConfig() {
 //          upline_1_email = parent sponsor (person who sponsored the recruiter)
 //-----------------------------------------------------------------------
 async function linkSponsorship(userId, upline2Email, upline1Email) {
+  // Get the new user's name for notification messages
+  const { rows: newUser } = await pool.query(
+    "SELECT name FROM users WHERE id = $1", [userId]
+  );
+  const newUserName = newUser.length > 0 ? newUser[0].name : "A new volunteer";
+
   // Find the direct sponsor (upline 2)
   let upline2Id = null;
+  let upline2Name = "";
   if (upline2Email) {
     const { rows: u2 } = await pool.query(
       "SELECT id, name, email FROM users WHERE email = $1 AND role_id = (SELECT id FROM roles WHERE role_name = 'volunteer') LIMIT 1",
       [upline2Email.trim().toLowerCase()]
     );
-    if (u2.length > 0) upline2Id = u2[0].id;
+    if (u2.length > 0) { upline2Id = u2[0].id; upline2Name = u2[0].name; }
   }
 
   // Find the parent sponsor (upline 1)
   let upline1Id = null;
+  let upline1Name = "";
   if (upline1Email) {
     const { rows: u1 } = await pool.query(
       "SELECT id, name, email FROM users WHERE email = $1 AND role_id = (SELECT id FROM roles WHERE role_name = 'volunteer') LIMIT 1",
       [upline1Email.trim().toLowerCase()]
     );
-    if (u1.length > 0) upline1Id = u1[0].id;
+    if (u1.length > 0) { upline1Id = u1[0].id; upline1Name = u1[0].name; }
   }
 
   // Save upline emails on the new user
@@ -65,6 +74,13 @@ async function linkSponsorship(userId, upline2Email, upline1Email) {
        VALUES ($1, $2, 1, $3, 'rewarded', $4)`,
       [upline2Id, userId, cfg.helped_sponsor_points, now]
     );
+    createNotification({
+      userId: upline2Id,
+      title: "Referral Bonus!",
+      description: `${newUserName} signed up through your referral link. You earned ${cfg.helped_sponsor_points} points!`,
+      icon: "people-outline",
+      color: "#10b981",
+    }).catch(() => {});
   }
 
   // Level 2: Parent sponsor gets upline_helper_points for helping the recruiter
@@ -74,6 +90,13 @@ async function linkSponsorship(userId, upline2Email, upline1Email) {
        VALUES ($1, $2, 2, $3, 'rewarded', $4)`,
       [upline1Id, userId, cfg.upline_helper_points, now]
     );
+    createNotification({
+      userId: upline1Id,
+      title: "Referral Bonus!",
+      description: `${newUserName} joined your referral network. You earned ${cfg.upline_helper_points} points!`,
+      icon: "people-outline",
+      color: "#10b981",
+    }).catch(() => {});
   }
 
   return { upline2Id, upline1Id };
@@ -87,11 +110,26 @@ async function linkSponsorship(userId, upline2Email, upline1Email) {
 //-----------------------------------------------------------------------
 async function awardDirectSponsorPoints(referrerId, newUserId) {
   const cfg = await getConfig();
+
+  // Get new user's name for notification
+  const { rows: newUser } = await pool.query(
+    "SELECT name FROM users WHERE id = $1", [newUserId]
+  );
+  const newUserName = newUser.length > 0 ? newUser[0].name : "A new volunteer";
+
   await pool.query(
     `INSERT INTO referral_logs (referrer_id, referred_id, level, points_awarded, status, created_at)
      VALUES ($1, $2, 1, $3, 'rewarded', NOW())`,
     [referrerId, newUserId, cfg.direct_sponsor_points]
   );
+
+  createNotification({
+    userId: referrerId,
+    title: "Referral Bonus!",
+    description: `${newUserName} signed up through your referral link. You earned ${cfg.direct_sponsor_points} points!`,
+    icon: "people-outline",
+    color: "#10b981",
+  }).catch(() => {});
 }
 
 //-----------------------------------------------------------------------

@@ -111,7 +111,9 @@ export default function Scanner() {
             ? "This volunteer has already been checked in."
             : error?.message === "volunteer_not_found"
               ? "Volunteer not found. Please check the QR code."
-              : error?.message || "Failed to record attendance. Please try again.";
+              : error?.message === "not_registered"
+                ? "This volunteer is not registered for this event."
+                : error?.message || "Failed to record attendance. Please try again.";
 
         setResult({
           type: "error",

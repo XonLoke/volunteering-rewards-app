@@ -125,7 +125,7 @@ export default function EventSelect() {
                     {ended ? (
                       <span style={styles.endedBadge}>Ended</span>
                     ) : (
-                      <span style={styles.eventPoints}>+{event.points_awarded || 0} pts</span>
+                      <span style={styles.eventPoints}>+{event.points_value || event.points_awarded || 0} pts</span>
                     )}
                   </div>
 

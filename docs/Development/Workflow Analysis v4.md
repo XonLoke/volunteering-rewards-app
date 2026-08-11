@@ -1,7 +1,7 @@
 # Workflow Analysis v4 — Supervisor Feedback Incorporated
 
 > **Updated:** 21 May 2026  
-> **Changes:** Added approval gate, admin registers merchants + products, PIN at coupon creation, reset password, statistics charts. Cashier app & organiser attendance app use PWA. Merchant self-registration is Phase 2.
+> **Changes:** Added approval gate, admin registers merchants + products, PIN at coupon creation, reset password, statistics charts. Clarified merchant self-registration is Phase 2.
 
 ---
 
@@ -48,11 +48,10 @@
 - Edit uploaded events (delete, add, amendment)
 - Review volunteers feedback and suggestions and evaluate event + person-in-charge assessment
 
-### On-site Controller (PWA — mobile web app)
+### On-site Controller (mobile app)
 - Person-in-charge take attendance
 - After completed event, scan volunteer's QR code
 - Statistic Charts to show various info about campaigns being organized
-- Built as PWA (Progressive Web App) — installable on mobile devices via browser
 
 ---
 
@@ -89,7 +88,6 @@ The volunteering programme organisation should solicit merchant sponsorship of g
 - Verify coupons via 6-digit PIN
 - Mark coupon as redeemed
 - View redemption history
-- Built as PWA (Progressive Web App) — installable on mobile devices via browser
 
 ### Self-Registration — Phase 2 (Not in Current Scope)
 - Visit website and register as participating merchant & person-in-charge

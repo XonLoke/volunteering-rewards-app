@@ -27,7 +27,7 @@ Nurain built a **standalone mobile organiser app** using Expo/React Native. The 
 - Moved into the main project at `frontend/organiser_mobile_app/`
 - Updated API connection from her local backend to the **shared production backend** (`https://vol-rewards-api.onrender.com`)
 - Added **JWT authentication** to match the main backend's auth system
-- Restored orchestration test files that were affected during the merge
+- Restored integration test files that were affected during the merge
 - Removed the duplicate standalone backend (the app now uses the existing backend)
 
 ### Architecture
@@ -166,7 +166,7 @@ Nurain's branch inadvertently reverted several production fixes. These were rest
 
 - `merchant.service.js:26` — `LEFT JOIN` (was changed back to `INNER JOIN`)
 - `render.yaml` — `PIN_SECRET` and `RATE_LIMIT_MAX` values
-- Orchestration test files — restored from `main`
+- Integration test files — restored from `main`
 
 ### 5.3 Removed
 
@@ -262,13 +262,13 @@ After completing the mobile app tests, verify data consistency with other portal
 | Submit feedback | (Volunteer PWA) | Feedback tab | Feedback appears in mobile app |
 | Dashboard stats | Dashboard tab | Organiser Dashboard | Same numbers |
 
-### 6.6 Running the Orchestration Test
+### 6.6 Running the Integration Test
 
 To verify the entire system still works after integration:
 
 ```bash
 # From project root
-node backend/tests/integration/orchestration.test.js
+node backend/tests/integration/integration.test.js
 ```
 
 Expected: **54/54 PASS**

@@ -180,9 +180,39 @@ export default function Events() {
                       </td>
                       <td style={{ textTransform: 'capitalize' }}>{row.category || '--'}</td>
                       <td>
-                        {(row.registered_count ?? 0)} / {(row.spots_total ?? 0)}
+                        <button
+                          onClick={() => navigate(`/organiser/roster/${row.id}`)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: 'var(--accent)',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          {(row.registered_count ?? 0)} / {(row.spots_total ?? 0)}
+                        </button>
                       </td>
-                      <td>{row.checked_in_count ?? 0}</td>
+                      <td>
+                        <button
+                          onClick={() => navigate(`/organiser/roster/${row.id}`)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: 'var(--accent)',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          {row.checked_in_count ?? 0}
+                        </button>
+                      </td>
                       <td>{getStatusBadge(row.status)}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>

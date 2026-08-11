@@ -103,12 +103,9 @@ export default function Events() {
         return;
       }
 
-      const response = await api.get("/events");
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || "Failed to fetch events.");
-      }
+      // api.get returns the parsed JSON body (src/services/api.ts) and throws
+      // ApiError on HTTP errors — do NOT call .json()/read .ok on it.
+      const data = await api.get("/events");
 
       const cancelledIds = await getCancelledBookingIds();
 
@@ -204,40 +201,9 @@ export default function Events() {
     try {
       setBookingId(event.id);
 
-      const response = await fetch(`/events/${event.id}/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": String(user.id),
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          userId: user.id,
-        }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      console.log("EVENTS BOOK STATUS:", response.status);
-      console.log("EVENTS BOOK DATA:", data);
-
-      if (!response.ok) {
-        if (
-          data.message === "already_registered" ||
-          data.error === "already_registered"
-        ) {
-          Alert.alert("Already booked", "You have already booked this event.");
-          await removeCancelledBookingId(event.id);
-          return;
-        }
-
-        if (data.message === "event_full" || data.error === "event_full") {
-          Alert.alert("Event full", "This event has reached its capacity.");
-          return;
-        }
-
-        throw new Error(data.message || data.error || "Failed to book event.");
-      }
+      // Use the api helper — it attaches the Bearer token (backend reads the
+      // volunteer from the JWT; the old x-user-id header was ignored).
+      await api.post(`/events/${event.id}/register`);
 
       await removeCancelledBookingId(event.id);
 
@@ -261,6 +227,15 @@ export default function Events() {
 
       goToEventBookedPage(updatedEvent);
     } catch (error: any) {
+      if (error?.code === "already_registered") {
+        Alert.alert("Already booked", "You have already booked this event.");
+        await removeCancelledBookingId(event.id);
+        return;
+      }
+      if (error?.code === "event_full") {
+        Alert.alert("Event full", "This event has reached its capacity.");
+        return;
+      }
       console.error("Book event error:", error);
       Alert.alert("Error", error.message || "Failed to book this event.");
     } finally {
@@ -278,31 +253,7 @@ export default function Events() {
     try {
       setBookingId(event.id);
 
-      const response = await fetch(
-        `/events/${event.id}/register?user_id=${user.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": String(user.id),
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            userId: user.id,
-          }),
-        }
-      );
-
-      const data = await response.json().catch(() => ({}));
-
-      console.log("EVENTS DELETE STATUS:", response.status);
-      console.log("EVENTS DELETE DATA:", data);
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || data.error || "Failed to cancel booking."
-        );
-      }
+      await api.del(`/events/${event.id}/register`);
 
       await saveCancelledBookingId(event.id);
 
@@ -312,7 +263,9 @@ export default function Events() {
             ? {
                 ...item,
                 registered: false,
-                registrations: Number(data.registrations ?? 0),
+                // Backend unregister returns the deleted row (no registrations
+                // count) — decrement locally instead of zeroing.
+                registrations: Math.max(0, Number(item.registrations ?? 1) - 1),
               }
             : item
         )
@@ -710,6 +663,24 @@ export default function Events() {
             </>
           )}
         </TouchableOpacity>
+
+        {isBooked && (
+          <TouchableOpacity
+            style={[styles.rateButton, { borderColor: categoryColor }]}
+            onPress={() =>
+              router.push({
+                pathname: "/event-feedback",
+                params: { eventId: String(item.id), eventTitle: item.title },
+              } as any)
+            }
+            activeOpacity={0.85}
+          >
+            <Ionicons name="star-outline" size={16} color={categoryColor} />
+            <Text style={[styles.rateButtonText, { color: categoryColor }]}>
+              Rate this event
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -961,6 +932,21 @@ const styles = StyleSheet.create({
   },
   bookButtonText: {
     fontSize: 15,
+    fontWeight: "800",
+  },
+  rateButton: {
+    marginTop: 10,
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    flexDirection: "row",
+    gap: 6,
+  },
+  rateButtonText: {
+    fontSize: 13,
     fontWeight: "800",
   },
   loadingContainer: {

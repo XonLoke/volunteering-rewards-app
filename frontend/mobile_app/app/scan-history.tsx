@@ -97,12 +97,16 @@ export default function ScanHistory() {
       const user = JSON.parse(stored);
 
       try {
-        const response = await api.get("/me/points");
-        const data = await response.json();
+        // /me/points returns { points_balance, history } — history rows are
+        // { id, points, description, created_at } (me.service.js)
+        const data = await api.get("/me/points");
 
-        if (response.ok && Array.isArray(data.scans) && data.scans.length > 0) {
-          const backendScans: Scan[] = data.scans.map((scan: Scan) => ({
-            ...scan,
+        if (Array.isArray(data.history) && data.history.length > 0) {
+          const backendScans: Scan[] = data.history.map((h: any) => ({
+            id: h.id,
+            event_title: h.description || "Volunteer Event",
+            points_awarded: h.points ?? 0,
+            scanned_at: h.created_at,
             source: "backend" as const,
           }));
 

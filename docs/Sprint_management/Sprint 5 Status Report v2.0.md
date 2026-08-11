@@ -281,9 +281,9 @@ Render free tier spins down after 15 min idle. First request takes 30–60s to w
 
 ---
 
-## 6. Post-Sprint — Orchestration Integration Testing (9 Jul 2026)
+## 6. Post-Sprint — Integration Testing (9 Jul 2026)
 
-After Sprint 5 completion, a comprehensive orchestration integration test was conducted to verify all cross-portal data flows work correctly.
+After Sprint 5 completion, a comprehensive integration test was conducted to verify all cross-portal data flows work correctly.
 
 ### 6.1 Results
 
@@ -311,9 +311,9 @@ After Sprint 5 completion, a comprehensive orchestration integration test was co
 
 | File | Description |
 |------|-------------|
-| `backend/tests/integration/orchestration.test.js` | Automated test suite (54 tests) |
-| `docs/Testing/orchestration-test-report.md` | Full test report with findings and fixes |
-| `docs/Testing/orchestration-demo-checklist.md` | Step-by-step manual demo script |
+| `backend/tests/integration/integration.test.js` | Automated test suite (54 tests) |
+| `docs/Testing/integration-test-report.md` | Full test report with findings and fixes |
+| `docs/Testing/integration-demo-checklist.md` | Step-by-step manual demo script |
 | [GitHub Release v1.0.0-demo](https://github.com/XonLoke/volunteering-rewards-app/releases/tag/v1.0.0-demo) | APK download (118 MB, production API) |
 
 ---

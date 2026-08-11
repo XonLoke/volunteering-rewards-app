@@ -730,6 +730,26 @@ export default function Events() {
             </>
           )}
         </TouchableOpacity>
+
+        {/* Give Feedback — only for past events the user booked */}
+        {isBooked && new Date(item.event_date) < new Date() && (
+          <TouchableOpacity
+            style={[
+              styles.feedbackBtn,
+              { backgroundColor: theme.colors.surfaceSecondary, borderColor: categoryColor },
+            ]}
+            onPress={() =>
+              router.push({
+                pathname: "/feedback",
+                params: { eventId: String(item.id), eventTitle: item.title },
+              } as any)
+            }
+            activeOpacity={0.85}
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={16} color={categoryColor} />
+            <Text style={[styles.feedbackBtnText, { color: categoryColor }]}>Give Feedback</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -1015,5 +1035,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20,
+  },
+  feedbackBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  feedbackBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

@@ -36,8 +36,10 @@ export default function Events() {
 
       let url = "/api/organiser/events";
 
+      // Backend expects lowercase statuses; "All" must send no param at all
+      // (sending status=All matches nothing and returns an empty list).
       if (status !== "All") {
-        url += `?status=${status}`;
+        url += `?status=${status.toLowerCase()}`;
       }
 
       const data = await apiGet(url);
@@ -129,8 +131,8 @@ export default function Events() {
                 style={styles.cardLeft}
                 onPress={() =>
                   router.push({
-                    pathname: "/(tabs)/eventForm",
-                    params: { eventId: item.id },
+                    pathname: "/(tabs)/roster",
+                    params: { eventId: item.id, title: item.title },
                   })
                 }
               >
@@ -144,8 +146,8 @@ export default function Events() {
                   <View style={styles.row}>
                     <Ionicons name="calendar-outline" size={12} color="#777" />
                     <Text style={styles.text}>
-                      {item.start_time
-                        ? new Date(item.start_time).toLocaleDateString()
+                      {item.event_date
+                        ? new Date(item.event_date).toLocaleDateString()
                         : "No date available"}
                     </Text>
                   </View>
@@ -160,7 +162,8 @@ export default function Events() {
                   <View style={styles.row}>
                     <Ionicons name="people-outline" size={12} color="#777" />
                     <Text style={styles.text}>
-                      {item.volunteers ?? item.total_volunteers ?? 0} Volunteers
+                      {item.registered_count ?? 0} registered ·{" "}
+                      {item.checked_in_count ?? 0} checked in
                     </Text>
                   </View>
                 </View>

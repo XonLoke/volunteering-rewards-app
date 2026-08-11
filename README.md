@@ -261,7 +261,7 @@ The system implements **two generations of AI** — Gen 1 (non-API rule-based al
 
 > **AI Architecture (F1 & F2):** `GET /api/ai/recommendations` and `GET /api/ai/feedback-summary/:eventId` call **FreeLLMAPI** (`localhost:3001`) — a local proxy aggregating free tiers from Google AI Studio (Gemini 2.5 Flash), Groq, Cerebras, Mistral, and 12+ others with auto-failover between providers. Each request has a 15-second timeout. If the LLM is unreachable or all providers are exhausted, the controller falls back to the Gen 1 rule-based algorithms (content-based filtering / lexicon sentiment). Responses include an `ai_generated: true/false` flag.
 > 
-> **Email System:** Registration triggers a verification email with a 24-hour crypto token. Forgot password sends a reset link (1-hour expiry). Emails are sent via Mailgun REST API (free sandbox: 5 authorized recipients) or any SMTP provider configured in the Admin Portal. See `docs/Development/` for email setup guide.
+> **Email System:** Registration triggers a verification email with a 24-hour crypto token. Forgot password sends a reset link (1-hour expiry). The Contact Us form emails the support team. Emails are sent via Mailgun REST API (free sandbox: 5 authorized recipients) or any SMTP provider configured in the Admin Portal. The contact form recipient is configurable via `SUPPORT_EMAIL` env var (see [`docs/Development/Email Setup Guide v2.0.md`](docs/Development/Email%20Setup%20Guide%20v2.0.md#4-contact-form--support-email-recipient)).
 
 > **"For You" AI Assistant:** The mobile app also includes a client-side decision engine (`app/ai-recommendations.tsx`) answering 4 fixed questions — "Highest match?", "Best overall?", "Most points?", "Has slots?" — using a deterministic scoring formula on recommendation data.
 
@@ -279,6 +279,30 @@ The system implements **two generations of AI** — Gen 1 (non-API rule-based al
 | Merchant 3 | frank@test.com | password123 |
 | Volunteer | alice@test.com | password123 |
 | Volunteer 2 | eve@test.com | password123 |
+
+---
+
+## Account Creation & Roles
+
+Only the **Volunteer** role has a public registration page (Volunteer PWA). The Admin, Organiser, Merchant and Scanner portals deliberately have **no register page** — `POST /api/auth/register` is hardcoded to the `volunteer` role, so no one can self-register as a privileged role through the API either.
+
+| Role | How the account is created |
+|------|---------------------------|
+| Volunteer | Self-registration (Volunteer PWA → Sign Up) |
+| Organiser | Created by an admin (Admin Portal → Organisers → + Create Account), then approved |
+| Merchant | Created by an admin (Admin Portal → Users → + Invite User, role: Merchant) |
+| Admin | Created by an existing admin — or bootstrapped by script for the very first one (see below) |
+
+### The first admin account (bootstrap)
+
+The very first admin cannot be created from the app itself (that would be a chicken-and-egg problem, and a public admin register page would be a security hole). It is created by an ops step:
+
+1. **Seed script (recommended for local / fresh environments):** `cd backend && node src/utils/seed.js` creates the demo accounts (including `carol@test.com` / admin) with `ON CONFLICT DO NOTHING` so it is safe to re-run.
+2. **One-off script or SQL (production):** production auto-seed is **disabled by design** (`backend/index.js` — the 5 Aug security fix prevents well-known accounts from being auto-seeded on a fresh production DB). To create an admin in production, run a one-off script like `backend/fix_carol.js` / `backend/create_diana.js` (bcrypt password hash + role_id lookup) or insert the user via SQL.
+
+### Creating more admins (in-app)
+
+Admin Portal → **Users → "+ Invite User"** → fill in Name / Email / Password / **Role: Admin** → Create Account (`POST /api/admin/users/create-account`). This deliberate form-based flow (built 5 Jul 2026) replaced the earlier one-click role toggle, which was removed after a supervisor security review — account elevation now requires an intentional, auditable action.
 
 ---
 

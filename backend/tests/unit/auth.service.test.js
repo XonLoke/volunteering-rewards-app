@@ -1,3 +1,9 @@
+// Test secrets — required since 5 Aug: jwt/rewards fail-fast in production,
+// and unit tests may inherit NODE_ENV=production from the shell.
+process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "test-access-secret";
+process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "test-refresh-secret";
+process.env.PIN_SECRET = process.env.PIN_SECRET || "test-pin-secret";
+
 const { describe, it, mock } = require("node:test");
 const assert = require("node:assert");
 const bcrypt = require("bcrypt");

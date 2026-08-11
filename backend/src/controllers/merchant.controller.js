@@ -39,7 +39,9 @@ async function reverse(req, res, next) {
 // GET /api/merchant/history
 async function history(req, res, next) {
   try {
-    const result = await merchantService.getRedemptionHistory(req.query);
+    // 🔒 SECURITY (5 Aug audit #8): pass the caller so the service can scope
+    // history to the merchant (admins still see everything).
+    const result = await merchantService.getRedemptionHistory(req.query, req.user);
     res.json(result);
   } catch (err) {
     next(err);

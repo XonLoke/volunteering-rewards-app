@@ -15,6 +15,10 @@ const inputStyle = {
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [sent, setSent] = useState(false);
   // Detect portal from URL path: /admin/forgot-password => admin
   const pathParts = window.location.pathname.split('/');
   const portal = pathParts[1] === 'forgot-password' ? 'admin' : pathParts[1] || 'admin';

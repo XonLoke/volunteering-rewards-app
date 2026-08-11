@@ -13,13 +13,27 @@ export function getAuthToken(): string | null {
 }
 
 async function handleResponse(res: Response) {
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data?.error?.message || data.message || "Something went wrong");
+  // Guard against non-JSON bodies (e.g. Render cold-start timeout, gateway HTML)
+  // — res.json() would throw a SyntaxError that hides the real problem.
+  const text = await res.text();
+  let data: any = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
   }
 
-  return data;
+  if (!res.ok) {
+    throw new Error(
+      data?.error?.message ||
+        data?.message ||
+        `Request failed (HTTP ${res.status})`,
+    );
+  }
+
+  return data ?? {};
 }
 
 function getHeaders(hasBody?: boolean): Record<string, string> {

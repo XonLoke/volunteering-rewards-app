@@ -174,12 +174,12 @@ Then press `a` (Android emulator), `i` (iOS simulator), or scan QR code with Exp
 
 ---
 
-## Orchestration Integration Test
+## Integration Test
 
 After making changes, verify the entire system still works:
 
 ```
-node backend/tests/integration/orchestration.test.js
+node backend/tests/integration/integration.test.js
 ```
 
 **Expected:** 54/54 PASS

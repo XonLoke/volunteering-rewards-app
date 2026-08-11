@@ -1,5 +1,6 @@
 # ─── Build Stage ──────────────────────────────────────────
-FROM node:20-alpine AS builder
+# Pinned patch for reproducible builds (was node:20-alpine — floating tag)
+FROM node:20.19.1-alpine AS builder
 
 # Install build tools needed for bcrypt native compilation
 RUN apk add --no-cache python3 make g++
@@ -17,7 +18,7 @@ COPY backend/ .
 RUN npm rebuild bcrypt --build-from-source
 
 # ─── Production Stage ─────────────────────────────────────
-FROM node:20-alpine
+FROM node:20.19.1-alpine
 
 # Create non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

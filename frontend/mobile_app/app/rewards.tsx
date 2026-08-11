@@ -142,10 +142,10 @@ export default function Rewards() {
         setUserPoints(user.points || 0);
       }
 
-      const response = await api.get("/rewards");
-      const data = await response.json();
+      // /rewards returns { data: rows } — api.get returns the parsed body
+      const data = await api.get("/rewards");
 
-      setCoupons(data.coupons || []);
+      setCoupons(data.data || []);
     } catch (err) {
       console.error("Failed to fetch rewards:", err);
     } finally {

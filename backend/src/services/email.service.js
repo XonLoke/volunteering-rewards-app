@@ -1,10 +1,13 @@
 /**
  * Email Service — Multi-provider email dispatch
  *
- * Sends via SMTP using credentials from DB (email_config table) or env vars.
- * Previously used Mailgun REST API, but Render's network blocks outbound
- * HTTPS to api.mailgun.net, so SMTP (smtp.mailgun.org) is used instead.
- * The Mailgun REST API code (sendViaMailgunApi) is kept for non-Render deploys.
+ * Sends via HTTPS REST APIs (preferred — Render free tier blocks outbound SMTP:
+ * both smtp.gmail.com:587/465 and smtp.mailgun.org:587 time out) or SMTP as
+ * last-resort fallback. Credentials come from the DB (email_config table) or env vars.
+ * Supported REST paths:
+ *   - Mailgun:  sendViaMailgunApi()   (active when host/user contains "mailgun")
+ *   - SendGrid: sendViaSendgridApi()  (active when host contains "sendgrid")
+ * SMTP via Nodemailer is the fallback for any other host.
  *
  * Mounted at: src/services/email.service.js
  * Required by: auth.service.js, contact.routes.js
@@ -39,6 +42,7 @@ async function loadDbConfig() {
         // Try Mailgun REST API first; fall back to SMTP if it fails
         isMailgun: (rows[0].smtp_host || "").toLowerCase().includes("mailgun")
           || (rows[0].email_user || "").toLowerCase().includes("mailgun"),
+        isSendgrid: (rows[0].smtp_host || "").toLowerCase().includes("sendgrid"),
       };
       return cachedDbConfig;
     }
@@ -60,6 +64,7 @@ function getEnvConfig() {
     pass,
     fromName: process.env.EMAIL_FROM_NAME || "Volunteer Rewards App",
     isMailgun: host.toLowerCase().includes("mailgun"),
+    isSendgrid: host.toLowerCase().includes("sendgrid"),
   };
 }
 
@@ -130,6 +135,67 @@ async function sendViaMailgunApi(fromAddress, fromName, to, subject, text, html,
     });
     req.on("error", reject);
     req.write(postData);
+    req.end();
+  });
+}
+
+//-----------------------------------------------------------------------
+// SECTION: SendGrid REST API Sender
+// Purpose: Send email via SendGrid's HTTP API (works from Render, no SMTP needed).
+//          Active when the configured smtp_host contains "sendgrid".
+//-----------------------------------------------------------------------
+
+function sendViaSendgridApi(config, to, subject, text, html, replyTo) {
+  const apiKey = config.pass;
+  const fromEmail = config.user;
+
+  if (!apiKey || !fromEmail) {
+    return Promise.reject(new Error("SendGrid API key or from address missing"));
+  }
+
+  const content = [];
+  if (text) content.push({ type: "text/plain", value: text });
+  if (html) content.push({ type: "text/html", value: html });
+  if (content.length === 0) content.push({ type: "text/plain", value: "" });
+
+  const payload = JSON.stringify({
+    personalizations: [{
+      to: [{ email: to }],
+      ...(replyTo ? { reply_to: { email: replyTo } } : {}),
+    }],
+    from: { email: fromEmail, name: config.fromName || "Volunteer Rewards App" },
+    subject,
+    content,
+  });
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: "api.sendgrid.com",
+      path: "/v3/mail/send",
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + apiKey,
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload),
+      },
+    }, (res) => {
+      let body = "";
+      res.on("data", (chunk) => body += chunk);
+      res.on("end", () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve({ messageId: res.headers["x-message-id"] || "sendgrid-ok" });
+        } else {
+          reject(new Error(`SendGrid API error (${res.statusCode}): ${body.slice(0, 300)}`));
+        }
+      });
+    });
+
+    req.setTimeout(30000, () => {
+      req.destroy();
+      reject(new Error("SendGrid API request timed out after 30s"));
+    });
+    req.on("error", reject);
+    req.write(payload);
     req.end();
   });
 }
@@ -206,7 +272,18 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
     }
   }
 
-  // Try 2: SMTP (fallback for all providers)
+  // Try 2: SendGrid REST API (if applicable)
+  if (config.isSendgrid) {
+    try {
+      const result = await sendViaSendgridApi(config, to, subject, text, html, replyTo);
+      return { messageId: result.messageId };
+    } catch (sgErr) {
+      console.warn(`[email.service] SendGrid REST API failed (${sgErr.message}), falling back to SMTP...`);
+      lastErr = sgErr;
+    }
+  }
+
+  // Try 3: SMTP (fallback for all providers)
   try {
     const tp = await getSmtpTransporter(config);
     const info = await tp.sendMail({

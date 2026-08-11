@@ -137,14 +137,10 @@ export default function MyCoupons() {
 
       await loadCurrentPoints();
 
-      const response = await api.get("/me/coupons");
-      const data = await response.json();
+      // /me/coupons returns { data: rows } — api.get throws ApiError on errors
+      const data = await api.get("/me/coupons");
 
-      if (!response.ok) {
-        throw new Error(data.message || data.error || "Failed to fetch coupons.");
-      }
-
-      const fetchedCoupons = data.coupons || [];
+      const fetchedCoupons = data.data || [];
 
       const sortedCoupons = fetchedCoupons.sort((a: Coupon, b: Coupon) => {
         const dateA = new Date(a.created_at).getTime();

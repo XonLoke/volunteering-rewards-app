@@ -134,7 +134,7 @@ describe("registerForEvent", () => {
 
     mockClient.query.mock.mockImplementation((query, params) => {
       if (query === "BEGIN") return {};
-      if (query.includes("SELECT id, capacity")) return { rows: [{ id: 1, capacity: 100 }] };
+      if (query.includes("capacity")) return { rows: [{ id: 1, capacity: 100 }] };
       if (query.includes("SELECT 1 FROM event_registrations")) return { rows: [] };
       if (query.includes("SELECT COUNT")) return { rows: [{ count: 5 }] };
       if (query.includes("INSERT INTO event_registrations")) return { rows: [{ id: 10, event_id: 1, user_id: 42 }] };
@@ -182,7 +182,7 @@ describe("registerForEvent", () => {
 
     mockClient.query.mock.mockImplementation((query) => {
       if (query === "BEGIN") return {};
-      if (query.includes("SELECT id, capacity")) return { rows: [{ id: 1, capacity: 50 }] };
+      if (query.includes("capacity")) return { rows: [{ id: 1, capacity: 50 }] };
       if (query.includes("SELECT 1 FROM event_registrations")) return { rows: [{ id: 1 }] }; // already registered
       if (query === "ROLLBACK") return {};
       return {};
@@ -208,7 +208,7 @@ describe("registerForEvent", () => {
     mockClient.query.mock.mockImplementation((query) => {
       callCount++;
       if (query === "BEGIN") return {};
-      if (query.includes("SELECT id, capacity")) return { rows: [{ id: 1, capacity: 10 }] };
+      if (query.includes("capacity")) return { rows: [{ id: 1, capacity: 10 }] };
       if (query.includes("SELECT 1 FROM event_registrations")) return { rows: [] };
       if (query.includes("SELECT COUNT")) return { rows: [{ count: 10 }] }; // full
       if (query === "ROLLBACK") return {};
@@ -233,7 +233,7 @@ describe("registerForEvent", () => {
 
     mockClient.query.mock.mockImplementation((query) => {
       if (query === "BEGIN") return {};
-      if (query.includes("SELECT id, capacity")) return { rows: [{ id: 1, capacity: null }] };
+      if (query.includes("capacity")) return { rows: [{ id: 1, capacity: null }] };
       if (query.includes("SELECT 1 FROM event_registrations")) return { rows: [] };
       if (query.includes("INSERT INTO event_registrations")) return { rows: [{ id: 11, event_id: 1, user_id: 42 }] };
       if (query === "COMMIT") return {};
@@ -253,8 +253,9 @@ describe("registerForEvent", () => {
 describe("unregisterFromEvent", () => {
   it("should successfully unregister user", async () => {
     mockPoolQuery([
-      { rows: [{ id: 1 }] }, // event exists
+      { rows: [{ id: 1, title: "Beach Cleanup" }] }, // event exists
       { rows: [{ id: 10, event_id: 1, user_id: 42 }] }, // deleted registration
+      { rows: [] }, // notification INSERT (non-blocking, caught if fails)
     ]);
 
     const result = await eventsService.unregisterFromEvent(1, 42);

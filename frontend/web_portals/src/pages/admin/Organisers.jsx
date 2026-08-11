@@ -167,9 +167,9 @@ export default function Organisers() {
       render: (val) => (val ? new Date(val).toLocaleDateString() : '--'),
     },
     {
-      key: 'status',
+      key: 'organisation_status',
       label: 'Status',
-      render: (val) => <StatusBadge status={val} />,
+      render: (val) => <StatusBadge status={val || 'pending'} />,
     },
     {
       key: 'id',
@@ -180,7 +180,7 @@ export default function Organisers() {
           className="btn btn-outline btn-sm"
           onClick={() => handleReview(row)}
         >
-          {row.status === 'pending' ? 'Review' : 'View'}
+          {row.organisation_status === 'pending' ? 'Review' : 'View'}
         </button>
       ),
     },
@@ -237,7 +237,7 @@ export default function Organisers() {
                   <div className="card" key={org.id}>
                     <div className="card-header">
                       <h3 className="card-title">{org.organisation_name}</h3>
-                      <StatusBadge status={org.status} />
+                      <StatusBadge status={org.organisation_status || 'pending'} />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
                       <div>

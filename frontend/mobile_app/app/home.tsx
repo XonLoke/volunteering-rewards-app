@@ -276,14 +276,8 @@ export default function Home() {
   };
 
   const refreshEventsAndBookings = async (userId: number) => {
-    const eventsRes = await api.get("/events");
-    const eventsData = await eventsRes.json();
-
-    if (!eventsRes.ok) {
-      throw new Error(
-        eventsData.message || eventsData.error || "Failed to refresh events."
-      );
-    }
+    // api.get returns the parsed body and throws ApiError on HTTP errors
+    const eventsData = await api.get("/events");
 
     const cancelledIds = await getCancelledBookingIds();
 
@@ -345,34 +339,12 @@ export default function Home() {
 
       const user = JSON.parse(stored);
 
-      const response = await fetch(
-        `/events/${event.id}/register`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": String(user.id),
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            userId: user.id,
-          }),
-        }
-      );
-
-      const data = await response.json().catch(() => ({}));
-
-      console.log("HOME DELETE STATUS:", response.status);
-      console.log("HOME DELETE DATA:", data);
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || data.error || "Failed to cancel booking."
-        );
-      }
+      // api.del attaches the Bearer token (backend reads the volunteer from
+      // the JWT; the old relative URL + x-user-id header never worked).
+      await api.del(`/events/${event.id}/register`);
 
       await saveCancelledBookingId(Number(event.id));
-      await removeBookingFromHome(Number(event.id), data.registrations);
+      await removeBookingFromHome(Number(event.id));
 
       Alert.alert(
         "Booking cancelled",
@@ -430,17 +402,17 @@ export default function Home() {
       setUserPoints(Number(storedPoints ?? user.points ?? 0));
 
       try {
-        const profileRes = await api.get("/auth/me");
-        const profileData = await profileRes.json();
+        // /auth/me returns a flat user with points_balance (no .user wrapper)
+        const profileData = await api.get("/auth/me");
 
-        if (profileRes.ok && profileData.user) {
-          const freshPoints = Number(profileData.user.points ?? 0);
+        if (profileData && profileData.points_balance != null) {
+          const freshPoints = Number(profileData.points_balance ?? 0);
 
           setUserPoints(freshPoints);
 
           const updatedUser = {
             ...user,
-            ...profileData.user,
+            ...profileData,
           };
 
           await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
@@ -451,36 +423,28 @@ export default function Home() {
       }
 
       try {
-        const couponsRes = await fetch(
-          "/me/coupons"
-        );
-        const couponsData = await couponsRes.json();
+        // /me/coupons returns { data: rows }
+        const couponsData = await api.get("/me/coupons");
 
-        if (couponsRes.ok) {
-          const active = (couponsData.coupons || []).filter(
-            (c: any) => c.status === "unused"
-          ).length;
+        const active = (couponsData.data || []).filter(
+          (c: any) => c.status === "unused"
+        ).length;
 
-          setActiveCoupons(active);
-        }
+        setActiveCoupons(active);
       } catch (couponsErr) {
         console.log("Coupons refresh skipped:", couponsErr);
       }
 
       try {
-        const notifRes = await fetch(
-          "/me/events"
-        );
-        const notifData = await notifRes.json();
+        // Notifications live at /me/notifications — /me/events is a different endpoint
+        const notifData = await api.get("/me/notifications");
 
-        if (notifRes.ok) {
-          const notifications = notifData.notifications || [];
+        const notifications = notifData.notifications || [];
 
-          const unread = notifications.filter((n: any) => !n.is_read).length;
-          setUnreadCount(unread);
+        const unread = notifications.filter((n: any) => !n.is_read).length;
+        setUnreadCount(unread);
 
-          setUpdates(notifications.slice(0, 3));
-        }
+        setUpdates(notifications.slice(0, 3));
       } catch (notifErr) {
         console.log("Notifications refresh skipped:", notifErr);
       }

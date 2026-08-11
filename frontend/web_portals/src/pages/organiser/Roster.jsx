@@ -23,8 +23,8 @@ export default function Roster() {
         name: v.name,
         email: v.email,
         phone: '--',
-        registered_at: null,
-        is_checked_in: v.status === 'checked_in' || v.check_in_time !== null,
+        registered_at: v.registered_at || null,
+        is_checked_in: v.check_in_time !== null,
         checked_in_at: v.check_in_time || null,
       }));
       setData({
@@ -130,9 +130,9 @@ export default function Roster() {
           <div style={{ display: 'flex', gap: 32, alignItems: 'center', flexWrap: 'wrap' }}>
             <div>
               <div className="stat-value" style={{ fontSize: 24 }}>
-                {totalCheckedIn} / {totalRegistered}
+                {totalRegistered} / {totalCheckedIn}
               </div>
-              <div className="stat-label">Volunteers Checked In</div>
+              <div className="stat-label">Registered / Checked In</div>
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div

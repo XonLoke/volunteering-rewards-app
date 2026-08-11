@@ -7,15 +7,17 @@ import {
   ScrollView,
   Image,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { useTheme } from "../contexts/ThemeContext";
-import { api } from "../src/services/api";
+import { api, ApiError } from "../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+type PageState = "loading" | "ready" | "error";
 
 const menuItems = [
   { id: "1", icon: "create-outline", label: "Edit Profile", sub: "Update your details", route: "/edit-profile" },
@@ -36,34 +38,69 @@ const gold = "#f5c842";
 export default function Profile() {
   const router = useRouter();
   const { theme } = useTheme();
+  const [pageState, setPageState] = useState<PageState>("loading");
+  const [errorMsg, setErrorMsg] = useState("");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [scansCount, setScansCount] = useState(0);
   const [couponsCount, setCouponsCount] = useState(0);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const stored = await AsyncStorage.getItem("user");
-      if (!stored) return;
-      const parsedUser = JSON.parse(stored);
-      setUser(parsedUser);
+  // ── Fetch profile + stats from API on mount ────────────
+  const fetchProfile = useCallback(async () => {
+    try {
+      // Fetch profile, points, and coupons in parallel
+      const [profileData, pointsData, couponsData] = await Promise.all([
+        api.get<any>("/auth/me"),
+        api.get<any>("/me/points"),
+        api.get<any>("/me/coupons"),
+      ]);
 
+      const merged = {
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        points: profileData.points_balance ?? 0,
+        role: profileData.role,
+      };
+
+      setUser(merged);
+      // /me/points returns { history }, /me/coupons returns { data } — me.service.js
+      setScansCount((pointsData.history || []).length);
+      setCouponsCount((couponsData.data || []).length);
+
+      // Update AsyncStorage cache for offline use
+      const cached = await AsyncStorage.getItem("user");
+      const existing = cached ? JSON.parse(cached) : {};
+      Object.assign(existing, merged);
+      await AsyncStorage.setItem("user", JSON.stringify(existing));
+
+      setPageState("ready");
+    } catch {
+      // Fallback to AsyncStorage if API fails
       try {
-        // Fetch scans count
-        const scansRes = await api.get("/me/points");
-        const scansData = await scansRes.json();
-        setScansCount((scansData.scans || []).length);
-
-        // Fetch coupons count
-        const couponsRes = await api.get("/me/coupons");
-        const couponsData = await couponsRes.json();
-        setCouponsCount((couponsData.coupons || []).length);
-      } catch (err) {
-        console.error("Failed to fetch stats:", err);
+        const stored = await AsyncStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setUser(parsed);
+        }
+        setPageState("ready");
+      } catch {
+        setErrorMsg("Could not load profile. Pull down to retry.");
+        setPageState("error");
       }
-    };
-    loadUser();
+    }
   }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // ── Refresh when screen regains focus (e.g. after edit) ─
+  useEffect(() => {
+    const unsubscribe = router.beforePopState?.(() => true);
+    // Re-fetch whenever the component re-renders after navigation
+    return () => { /* cleanup */ };
+  }, [router]);
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("user");
@@ -95,6 +132,40 @@ export default function Profile() {
     ]);
   };
 
+  // ── Loading state ──────────────────────────────────────
+  if (pageState === "loading") {
+    return (
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.centerWrap}>
+          <ActivityIndicator size="large" color={accent} />
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+            Loading profile...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Error state ────────────────────────────────────────
+  if (pageState === "error" && !user) {
+    return (
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.centerWrap}>
+          <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
+          <Text style={[styles.errorTitle, { color: theme.colors.text }]}>Connection Issue</Text>
+          <Text style={[styles.errorDesc, { color: theme.colors.textSecondary }]}>{errorMsg}</Text>
+          <TouchableOpacity
+            style={[styles.retryBtn, { backgroundColor: accent }]}
+            onPress={() => { setPageState("loading"); fetchProfile(); }}
+          >
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Ready state ────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -245,6 +316,13 @@ export default function Profile() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   scroll: { paddingBottom: 48 },
+  centerWrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
+  loadingText: { fontSize: 14, fontWeight: "500", marginTop: 8 },
+  errorTitle: { fontSize: 20, fontWeight: "800" },
+  errorDesc: { fontSize: 14, textAlign: "center", lineHeight: 20 },
+  retryBtn: { paddingVertical: 12, paddingHorizontal: 28, borderRadius: 14, marginTop: 8 },
+  retryBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+
   heroBanner: {
     paddingBottom: 28,
     borderBottomLeftRadius: 36,

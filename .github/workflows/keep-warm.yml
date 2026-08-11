@@ -1,0 +1,29 @@
+name: keep-api-warm
+
+on:
+  schedule:
+    # Every 12 minutes, offset from :00 to avoid global herd alignment.
+    # Render free tier sleeps after ~15 min of inactivity — this ping keeps
+    # the backend warm 24/7 until the exam demo period ends. 12 min (not 10)
+    # keeps GitHub Actions minutes within the private-repo free quota.
+    - cron: "5-59/12 * * * *"
+  workflow_dispatch: # manual trigger = instant pre-demo warm-up
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint (until 30 Sep 2026)
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          if [[ "$TODAY" > "2026-09-30" ]]; then
+            echo "Past target date ($TODAY > 2026-09-30) — keep-warm finished."
+            exit 0
+          fi
+          curl -fsS -o /dev/null -w "health %{http_code} in %{time_total}s\n" \
+            https://vol-rewards-api.onrender.com/api/health \
+            --max-time 90 \
+            || echo "health ping failed (server may be waking) — next tick retries"

@@ -114,11 +114,18 @@ export default function Index() {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Sign in */}
-        <Text style={[styles.signInText, { color: "rgba(255,255,255,0.6)" }]}>
-          Already have an account?{" "}
-          <Text style={[styles.signInLink, { color: "#fff" }]}>Sign in</Text>
-        </Text>
+        {/* Sign in — 🔧 5 Aug: was a dead <Text> with no onPress; now navigates */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => router.push("/login")}
+          style={styles.signInWrap}
+          hitSlop={8}
+        >
+          <Text style={[styles.signInText, { color: "rgba(255,255,255,0.6)" }]}>
+            Already have an account?{" "}
+            <Text style={[styles.signInLink, { color: "#fff" }]}>Sign in</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     </LinearGradient>
   );
@@ -222,4 +229,5 @@ const styles = StyleSheet.create({
   ctaText: { fontSize: RF(15), fontWeight: "700", letterSpacing: 0.2, color: "#fff" },
   signInText: { fontSize: RF(12), textAlign: "center" },
   signInLink: { fontWeight: "500" },
+  signInWrap: { alignSelf: "stretch", paddingVertical: 6, marginTop: 2 },
 });

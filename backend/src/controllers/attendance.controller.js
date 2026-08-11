@@ -11,25 +11,53 @@ const { createError } = require("../middleware/errorHandler.middleware");
 // ─── POST /api/attendance/scan ───────────────────────────────
 async function scan(req, res, next) {
   try {
-    const { event_id, qr_code_value } = req.body;
+    const { event_id, qr_code_value, volunteer_id } = req.body;
 
-    if (!event_id || !qr_code_value) {
-      throw createError(400, "validation_error", "event_id and qr_code_value are required.");
+    if (!event_id) {
+      throw createError(400, "validation_error", "event_id is required.");
     }
 
-    // Look up volunteer by QR code
-    const userResult = await pool.query(
-      `SELECT id FROM users WHERE volunteer_qr_code = $1 AND role_id = (SELECT id FROM roles WHERE role_name = 'volunteer')`,
-      [qr_code_value]
-    );
+    // Two ways to identify the volunteer: QR code (scanner app) or
+    // volunteer_id (organiser portal's manual check-in).
+    let volunteerId;
+    if (volunteer_id) {
+      const vId = parseInt(volunteer_id, 10);
+      if (!Number.isInteger(vId) || vId <= 0) {
+        throw createError(400, "validation_error", "Invalid volunteer_id.");
+      }
+      const userResult = await pool.query(
+        `SELECT id FROM users WHERE id = $1 AND role_id = (SELECT id FROM roles WHERE role_name = 'volunteer')`,
+        [vId]
+      );
+      if (!userResult.rows.length) {
+        throw createError(404, "volunteer_not_found", "No volunteer found with that ID.");
+      }
+      volunteerId = vId;
+    } else {
+      if (!qr_code_value) {
+        throw createError(400, "validation_error", "qr_code_value is required (or volunteer_id).");
+      }
+      // Look up volunteer by QR code
+      const userResult = await pool.query(
+        `SELECT id FROM users WHERE volunteer_qr_code = $1 AND role_id = (SELECT id FROM roles WHERE role_name = 'volunteer')`,
+        [qr_code_value]
+      );
 
-    if (!userResult.rows.length) {
-      throw createError(404, "volunteer_not_found", "No volunteer found with that QR code.");
+      if (!userResult.rows.length) {
+        throw createError(404, "volunteer_not_found", "No volunteer found with that QR code.");
+      }
+
+      volunteerId = userResult.rows[0].id;
     }
-
-    const volunteerId = userResult.rows[0].id;
 
     const result = await attendanceService.scanQR(event_id, volunteerId);
+
+    // Enrich with volunteer name + balance for the scanner UI (additive —
+    // existing clients only read message/data.points_awarded, which are unchanged).
+    const volResult = await pool.query(
+      `SELECT id, name, COALESCE(points, 0)::int AS points_balance FROM users WHERE id = $1`,
+      [volunteerId]
+    );
 
     res.status(201).json({
       message: "Check-in recorded successfully.",
@@ -37,6 +65,7 @@ async function scan(req, res, next) {
         attendance_id: result.attendance.id,
         points_awarded: result.awardedPoints,
       },
+      volunteer: volResult.rows[0] || null,
     });
   } catch (err) { next(err); }
 }
@@ -61,6 +90,12 @@ async function getLatestAttendance(req, res, next) {
     const volunteerId = parseInt(req.params.id, 10);
     if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
       throw createError(400, "validation_error", "Invalid volunteer ID.");
+    }
+
+    // 🔒 SECURITY (5 Aug audit #5): volunteers may only read their OWN
+    // attendance; organiser/admin may read any (scan verification flow).
+    if (req.user.id !== volunteerId && !["organiser", "admin"].includes(req.user.role)) {
+      throw createError(403, "forbidden", "You can only view your own attendance.");
     }
 
     const after = req.query.after || new Date(0).toISOString();

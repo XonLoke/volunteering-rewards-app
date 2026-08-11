@@ -22,7 +22,7 @@
 
 ### 1. File priority when reading
 ```
-AGENTS.md → docs/DATABASE_TABLES.md → docs/API_CONTRACTS_v2.md → source code
+AGENTS.md (d:/c3000c/AGENTS.md) → docs/Database/DATABASE_TABLES.md → docs/APK_and_AI_impliment/API_CONTRACTS_v2.md → source code
 ```
 
 ### 2. Permission patterns already allowlisted

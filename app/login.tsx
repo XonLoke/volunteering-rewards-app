@@ -77,8 +77,12 @@ export default function Login() {
         String(data.user.id)
       );
 
-      // Replace instead of push so user cannot go back to login screen
-      router.replace("/home");
+      Alert.alert("Login Successful", `Welcome back, ${data.user.name || "there"}!`, [
+        {
+          text: "OK",
+          onPress: () => router.replace("/home"),
+        },
+      ]);
     } catch (err: any) {
       Alert.alert(
         "Login failed",

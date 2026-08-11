@@ -1,5 +1,6 @@
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
+const { createNotification } = require("./notification.service");
 
 const buildEventFilters = ({ search, category }) => {
   const conditions = [];
@@ -91,7 +92,7 @@ const registerForEvent = async (eventId, userId) => {
     await client.query("BEGIN");
 
     const eventResult = await client.query(
-      "SELECT id, capacity FROM events WHERE id = $1 FOR UPDATE",
+      "SELECT id, title, capacity FROM events WHERE id = $1 FOR UPDATE",
       [eventId]
     );
 
@@ -99,7 +100,7 @@ const registerForEvent = async (eventId, userId) => {
       throw createError(404, "not_found");
     }
 
-    const { capacity } = eventResult.rows[0];
+    const { capacity, title } = eventResult.rows[0];
 
     const registeredResult = await client.query(
       "SELECT 1 FROM event_registrations WHERE event_id = $1 AND user_id = $2",
@@ -127,6 +128,16 @@ const registerForEvent = async (eventId, userId) => {
     );
 
     await client.query("COMMIT");
+
+    // Non-blocking: notify volunteer of successful registration
+    createNotification({
+      userId,
+      title: "Registered for Event!",
+      description: `You have successfully registered for "${title}".`,
+      icon: "calendar-outline",
+      color: "#6366f1",
+    }).catch(() => {});
+
     return insertResult.rows[0];
   } catch (error) {
     await client.query("ROLLBACK");
@@ -137,7 +148,7 @@ const registerForEvent = async (eventId, userId) => {
 };
 
 const unregisterFromEvent = async (eventId, userId) => {
-  const eventResult = await pool.query("SELECT id FROM events WHERE id = $1", [eventId]);
+  const eventResult = await pool.query("SELECT id, title FROM events WHERE id = $1", [eventId]);
 
   if (!eventResult.rows.length) {
     throw createError(404, "not_found");
@@ -151,6 +162,15 @@ const unregisterFromEvent = async (eventId, userId) => {
   if (!deleteResult.rows.length) {
     throw createError(404, "not_found");
   }
+
+  // Non-blocking: notify volunteer of unregistration
+  createNotification({
+    userId,
+    title: "Unregistered from Event",
+    description: `You have been unregistered from "${eventResult.rows[0].title}".`,
+    icon: "calendar-outline",
+    color: "#ef4444",
+  }).catch(() => {});
 
   return deleteResult.rows[0];
 };

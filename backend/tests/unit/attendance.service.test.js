@@ -21,10 +21,12 @@ function mockPoolConnect(client) {
 describe("scanQR", () => {
   it("should successfully scan QR and award points", async () => {
     const client = makeMockClient([
-      { rows: [{ id: 1, points_reward: 20 }] },
+      { rows: [{ id: 1, title: "Beach Cleanup", points_reward: 20 }] },
       { rows: [{ id: 42 }] },
+      { rows: [{ id: 1 }] }, // registered for event
       { rows: [] },
       { rows: [{ id: 1, event_id: 1, user_id: 42, points_awarded: 20 }] },
+      {},
       {},
     ]);
     mockPoolConnect(client);
@@ -59,11 +61,28 @@ describe("scanQR", () => {
     }
   });
 
+  it("should throw 400 if volunteer is not registered for the event", async () => {
+    const client = makeMockClient([
+      { rows: [{ id: 1, points_reward: 20 }] },
+      { rows: [{ id: 42 }] },
+      { rows: [] }, // no registration
+    ]);
+    mockPoolConnect(client);
+    try {
+      await attendanceService.scanQR(1, 42);
+      assert.fail("Should have thrown");
+    } catch (err) {
+      assert.equal(err.statusCode || err.status, 400);
+      assert.equal(err.code, "not_registered");
+    }
+  });
+
   it("should throw 409 if already scanned", async () => {
     const client = makeMockClient([
       { rows: [{ id: 1, points_reward: 20 }] },
       { rows: [{ id: 42 }] },
-      { rows: [{ id: 1 }] },
+      { rows: [{ id: 1 }] }, // registered
+      { rows: [{ id: 1 }] }, // already scanned
     ]);
     mockPoolConnect(client);
     try {
@@ -80,8 +99,9 @@ describe("scanQR", () => {
       query: (sql) => {
         sqlCalls.push(sql);
         if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return {};
-        if (sql.includes("SELECT id, COALESCE")) return { rows: [{ id: 1, points_reward: 10 }] };
+        if (sql.includes("points_reward")) return { rows: [{ id: 1, title: "Test Event", points_reward: 10 }] };
         if (sql.includes("SELECT id FROM users")) return { rows: [{ id: 42 }] };
+        if (sql.includes("SELECT 1 FROM event_registrations")) return { rows: [{ id: 1 }] };
         if (sql.includes("SELECT 1 FROM attendance_logs")) return { rows: [] };
         if (sql.includes("INSERT INTO attendance_logs")) return { rows: [{ id: 1 }] };
         if (sql.includes("UPDATE users")) return {};
@@ -140,6 +160,7 @@ describe("batchSync", () => {
           return { rows: [{ id: scanCount, points_reward: scanCount === 1 ? 20 : 15 }] };
         }
         if (sql.includes("SELECT id FROM users")) return { rows: [{ id: 42 }] };
+        if (sql.includes("SELECT 1 FROM event_registrations")) return { rows: [{ id: 1 }] };
         if (sql.includes("SELECT 1 FROM attendance_logs")) return { rows: [] };
         if (sql.includes("INSERT INTO attendance_logs")) return { rows: [{ id: scanCount, event_id: scanCount, user_id: 42, points_awarded: scanCount === 1 ? 20 : 15 }] };
         if (sql.includes("UPDATE users")) return {};
@@ -163,6 +184,7 @@ describe("batchSync", () => {
         if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return {};
         if (sql.includes("points_reward")) return { rows: [{ id: 1, points_reward: 20 }] };
         if (sql.includes("SELECT id FROM users")) return { rows: [{ id: 42 }] };
+        if (sql.includes("SELECT 1 FROM event_registrations")) return { rows: [{ id: 1 }] };
         if (sql.includes("SELECT 1 FROM attendance_logs")) return { rows: [{ id: 1 }] }; // exists=duplicate
         return { rows: [] };
       },
@@ -172,6 +194,24 @@ describe("batchSync", () => {
     const result = await attendanceService.batchSync([{ eventId: 1, volunteerId: 42 }]);
     assert.equal(result.skipped.length, 1);
     assert.equal(result.skipped[0].reason, "already_scanned");
+  });
+
+  it("should report errors for volunteers not registered for the event", async () => {
+    const client = {
+      query: (sql) => {
+        if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return {};
+        if (sql.includes("points_reward")) return { rows: [{ id: 1, points_reward: 20 }] };
+        if (sql.includes("SELECT id FROM users")) return { rows: [{ id: 42 }] };
+        if (sql.includes("SELECT 1 FROM event_registrations")) return { rows: [] }; // not registered
+        return { rows: [] };
+      },
+      release: () => {},
+    };
+    mockPoolConnect(client);
+    const result = await attendanceService.batchSync([{ eventId: 1, volunteerId: 42 }]);
+    assert.equal(result.success.length, 0);
+    assert.equal(result.errors.length, 1);
+    assert.equal(result.errors[0].code, "not_registered");
   });
 
   it("should return errors for scans with missing fields", async () => {

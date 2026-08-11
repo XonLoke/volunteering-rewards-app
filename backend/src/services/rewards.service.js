@@ -1,8 +1,16 @@
 const crypto = require("crypto");
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
+const { createNotification } = require("./notification.service");
 
-const PIN_SECRET = process.env.PIN_SECRET || process.env.JWT_SECRET || "dev-pin-secret-change-me";
+// 🔒 SECURITY (5 Aug audit #1): fail-fast in production instead of using a
+// public default PIN secret (HMAC key for every coupon PIN hash).
+const PIN_SECRET = (() => {
+  if (!process.env.PIN_SECRET && process.env.NODE_ENV === "production") {
+    throw new Error("FATAL: PIN_SECRET is not set — refusing to start in production with a fallback PIN secret");
+  }
+  return process.env.PIN_SECRET || process.env.JWT_SECRET || "dev-pin-secret-not-for-production";
+})();
 
 function toPositiveInt(value, fallback) {
   const parsed = Number.parseInt(value, 10);
@@ -156,6 +164,15 @@ async function redeemReward(rewardId, userId, meta = {}) {
     }
 
     await client.query("COMMIT");
+
+    // Non-blocking notification — failure does not roll back the redemption
+    createNotification({
+      userId,
+      title: "Coupon Redeemed!",
+      description: `You redeemed ${coupon.title} for ${coupon.points_required} points. Show your 6-digit PIN to the merchant.`,
+      icon: "pricetag-outline",
+      color: "#8b5cf6",
+    }).catch(() => {});
 
     return {
       data: {

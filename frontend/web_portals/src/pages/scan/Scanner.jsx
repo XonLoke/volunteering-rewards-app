@@ -41,6 +41,11 @@ const ERROR_MAP = {
   already_checked_in: 'Volunteer has already been checked in.',
   event_not_today: 'This event is not scheduled for today.',
   not_found: 'Volunteer not found. Please check the ID.',
+  // Backend codes (thrown without messages — see attendance.service.js)
+  already_scanned: 'Volunteer has already been checked in.',
+  event_not_found: 'Event not found. Please check the event.',
+  user_not_found: 'Volunteer not found. Please check the ID.',
+  volunteer_not_found: 'Volunteer not found. Please check the ID.',
 };
 
 // QR code prefix expected from the volunteer app
@@ -190,8 +195,8 @@ export default function Scanner() {
       });
       setScanResult({
         volunteerName: res.volunteer?.name || res.attendance?.volunteer_name || 'Volunteer',
-        pointsAwarded: res.attendance?.points_awarded || 0,
-        newBalance: res.volunteer?.points_balance || 0,
+        pointsAwarded: res.data?.points_awarded ?? res.attendance?.points_awarded ?? 0,
+        newBalance: res.volunteer?.points_balance ?? 0,
         action: 'Checked In',
         time: formatTimeDisplay(),
       });
@@ -223,8 +228,8 @@ export default function Scanner() {
         });
         setScanResult({
           volunteerName: res.volunteer?.name || res.attendance?.volunteer_name || 'Volunteer',
-          pointsAwarded: res.attendance?.points_awarded || 0,
-          newBalance: res.volunteer?.points_balance || 0,
+          pointsAwarded: res.data?.points_awarded ?? res.attendance?.points_awarded ?? 0,
+          newBalance: res.volunteer?.points_balance ?? 0,
           action: actionType === 'checkin' ? 'Checked In' : 'Points Awarded',
           time: formatTimeDisplay(),
         });

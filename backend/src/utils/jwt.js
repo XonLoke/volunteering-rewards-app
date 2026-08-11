@@ -12,8 +12,16 @@
 const jwt = require("jsonwebtoken");
 
 // ─── Access Token ────────────────────────────────────────
-const ACCESS_SECRET  = process.env.JWT_ACCESS_SECRET  || "dev-access-secret-change-in-production";
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "dev-refresh-secret-change-in-production";
+// 🔒 SECURITY (5 Aug audit #1): never fall back to a public default secret in
+// production — a config error must fail the boot, not silently forge tokens.
+function prodSecret(name, value, devFallback) {
+  if (!value && process.env.NODE_ENV === "production") {
+    throw new Error(`FATAL: ${name} is not set — refusing to start in production with a fallback secret`);
+  }
+  return value || devFallback;
+}
+const ACCESS_SECRET  = prodSecret("JWT_ACCESS_SECRET", process.env.JWT_ACCESS_SECRET, "dev-access-secret-not-for-production");
+const REFRESH_SECRET = prodSecret("JWT_REFRESH_SECRET", process.env.JWT_REFRESH_SECRET, "dev-refresh-secret-not-for-production");
 const ACCESS_EXPIRES_IN  = process.env.JWT_ACCESS_EXPIRES_IN  || "15m";
 const REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
