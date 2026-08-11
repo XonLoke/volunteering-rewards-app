@@ -17,8 +17,7 @@ import { authFetch } from "./api";
 
 const BASE_URL = "https://vol-rewards-api.onrender.com/api";
 
-const getScanHistoryKey = (userId: number | string) =>
-  `scanHistory:${userId}`;
+const getScanHistoryKey = (userId: number | string) => `scanHistory:${userId}`;
 
 interface Scan {
   id: number | string;
@@ -102,12 +101,18 @@ export default function ScanHistory() {
       await AsyncStorage.removeItem("scanHistory");
 
       try {
-        const response = await authFetch(`${BASE_URL}/scans`);
+        // Backend returns { points_balance, history: [{ id, points, description, created_at }] }
+        const response = await authFetch(`${BASE_URL}/me/points`);
         const data = await response.json();
 
-        if (response.ok && Array.isArray(data.scans) && data.scans.length > 0) {
-          const backendScans: Scan[] = data.scans.map((scan: Scan) => ({
-            ...scan,
+        if (response.ok && Array.isArray(data.history) && data.history.length > 0) {
+          const backendScans: Scan[] = data.history.map((item: any) => ({
+            id: item.id,
+            event_title: item.description || "Volunteer Event",
+            location: undefined,
+            points_value: item.points,
+            points_awarded: item.points,
+            scanned_at: item.created_at,
             source: "backend" as const,
           }));
 
