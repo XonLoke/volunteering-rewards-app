@@ -278,17 +278,13 @@ export default function Home() {
       setUserPoints(Number(storedPoints ?? user.points_balance ?? user.points ?? 0));
 
       try {
-        const profileRes = await fetch(`${BASE_URL}/me`, {
+        const profileRes = await fetch(`${BASE_URL}/me/points`, {
           headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         });
         const profileData = await profileRes.json();
-        if (profileRes.ok && profileData.name) {
-          const freshPoints = Number(profileData.points_balance ?? profileData.points ?? 0);
+        if (profileRes.ok && typeof profileData.points_balance !== "undefined") {
+          const freshPoints = Number(profileData.points_balance);
           setUserPoints(freshPoints);
-          const updatedUser = { ...user, ...profileData };
-          setUserName(updatedUser.name || "Volunteer");
-          setAvatarUri(updatedUser.avatar_url || null);
-          await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
           await AsyncStorage.setItem("userPoints", String(freshPoints));
         }
       } catch (profileErr) { console.log("Profile refresh skipped:", profileErr); }
