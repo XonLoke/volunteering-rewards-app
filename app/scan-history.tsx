@@ -109,7 +109,7 @@ export default function ScanHistory() {
           const backendScans: Scan[] = data.history.map((item: any) => ({
             id: item.id,
             event_title: item.description || "Volunteer Event",
-            location: undefined,
+            location: item.location,
             points_value: item.points,
             points_awarded: item.points,
             scanned_at: item.created_at,
