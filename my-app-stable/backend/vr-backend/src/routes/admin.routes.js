@@ -1,0 +1,93 @@
+/**
+ * Admin Routes — Admin Web Portal
+ *
+ * Endpoints:
+ *   GET   /api/admin/dashboard                     — Dashboard metrics
+ *   GET   /api/admin/users                         — List users
+ *   GET   /api/admin/users/:id                     — User detail
+ *   PUT   /api/admin/users/:id                     — Update user
+ *   DELETE /api/admin/users/:id                    — Deactivate user
+ *   GET   /api/admin/organisers                    — List organisers
+ *   PUT   /api/admin/organisers/:id/approve        — Approve/reject organiser
+ *   GET   /api/admin/events                        — List all events
+ *   DELETE /api/admin/events/:id                   — Remove event
+ *   GET   /api/admin/events/:id/participation      — Event participation data
+ *   GET   /api/admin/coupons                       — List coupon batches
+ *   POST  /api/admin/coupons                       — Create coupon batch
+ *   PUT   /api/admin/coupons/:id                   — Update coupon
+ *   DELETE /api/admin/coupons/:id                  — Delete coupon
+ *   GET   /api/admin/rewards/configuration         — Get points config
+ *   PUT   /api/admin/rewards/configuration         — Update points config
+ *   GET   /api/admin/redemptions                   — Redemption history
+ *
+ * Mounted at: /api/admin (see index.js)
+ */
+
+const { Router } = require("express");
+const router = Router();
+const controller = require("../controllers/admin.controller");
+const { authenticate } = require("../middleware/auth.middleware");
+const { roleGuard } = require("../middleware/role.middleware");
+const { requireAdmin } = roleGuard(["admin"]);
+
+router.use(authenticate, requireAdmin);
+
+// Dashboard
+router.get("/dashboard", controller.dashboard);
+
+// Users
+router.get("/users", controller.listUsers);
+router.get("/users/:id", controller.getUser);
+router.put("/users/:id", controller.updateUser);
+router.put("/users/:id/reset-password", controller.resetPassword);
+router.put("/users/:id/role", controller.updateUserRole);
+router.delete("/users/:id", controller.deactivateUser);
+router.post("/users/create-account", controller.createUserAccount);
+
+// Organisers
+router.get("/organisers", controller.listOrganisers);
+router.put("/organisers/:id/approve", controller.approveOrganiser);
+
+// Events
+router.get("/events", controller.listEvents);
+router.delete("/events/:id", controller.deleteEvent);
+router.get("/events/:id/participation", controller.eventParticipation);
+
+// Coupons
+router.get("/coupons", controller.listCoupons);
+router.post("/coupons", controller.createCoupon);
+router.get("/coupons/:id/pins", controller.getCouponPins);
+router.put("/coupons/:id", controller.updateCoupon);
+router.delete("/coupons/:id", controller.deleteCoupon);
+
+// Rewards Config
+router.get("/rewards/configuration", controller.getRewardsConfig);
+router.put("/rewards/configuration", controller.updateRewardsConfig);
+
+// Sponsorship Config
+router.get("/sponsorship/configuration", controller.getSponsorshipConfig);
+router.put("/sponsorship/configuration", controller.updateSponsorshipConfig);
+
+// Merchants
+router.get("/merchants", controller.listMerchants);
+router.put("/merchants/:id", controller.updateMerchant);
+router.get("/merchants/prospects", controller.listProspects);
+router.post("/merchants/prospects", controller.createProspect);
+router.put("/merchants/prospects/:id/status", controller.updateProspectStatus);
+router.post("/merchants", controller.createMerchant);
+router.post("/merchants/create-account", controller.createMerchantAccount);
+router.post("/organisers/create-account", controller.createOrganiserAccount);
+router.get("/merchants/:id/products", controller.listMerchantProducts);
+router.post("/merchants/:id/products", controller.createMerchantProduct);
+
+// Redemptions
+router.get("/redemptions", controller.listRedemptions);
+router.post("/redemptions/cleanup", controller.cleanupRedemptions);
+
+// Email Config (SMTP settings)
+router.get("/email/config", controller.getEmailConfig);
+router.put("/email/config", controller.updateEmailConfig);
+router.post("/email/test", controller.testEmailConfig);
+router.post("/email/discover-mailgun", controller.discoverMailgun);
+
+module.exports = router;

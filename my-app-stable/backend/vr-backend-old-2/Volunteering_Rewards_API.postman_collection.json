@@ -1,0 +1,269 @@
+{
+  "info": {
+    "name": "Volunteering Rewards API",
+    "description": "API test collection for Volunteering Rewards App — Sprint 1 backend. Import this file into Postman (File → Import).\n\nSetup:\n1. Run `npm run dev` in backend/\n2. Select the collection variable \"baseUrl\" and set it to http://localhost:3000\n3. Run requests in order: Health → Register → Login → Profile → Refresh",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔍 Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Response has status ok\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql(\"ok\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check if the server is running and reachable."
+      }
+    },
+    {
+      "name": "📝 Register New User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.expect(pm.response.code).to.eql(201);",
+              "});",
+              "pm.test(\"Response has accessToken\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.accessToken).to.not.be.empty;",
+              "    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+              "    pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"diana@test.com\",\n  \"password\": \"mypassword123\",\n  \"name\": \"Diana Volunteer\",\n  \"phone\": \"+65 9876 5432\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a new volunteer account. Change the email each time you test (email must be unique)."
+      }
+    },
+    {
+      "name": "🔑 Login (Alice - Volunteer)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Login successful - tokens returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.accessToken).to.not.be.empty;",
+              "    pm.expect(jsonData.refreshToken).to.not.be.empty;",
+              "    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+              "    pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);",
+              "});",
+              "pm.test(\"User is Alice with 500 points\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.user.name).to.eql(\"Alice Volunteer\");",
+              "    pm.expect(jsonData.user.points).to.eql(500);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"alice@test.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login as Alice (Volunteer, 500 points). The accessToken is auto-saved for use in Profile request."
+      }
+    },
+    {
+      "name": "🔑 Login (Bob - Organizer)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"bob@test.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login as Bob (Organizer). Copy the token manually if you need to test organizer-only routes."
+      }
+    },
+    {
+      "name": "🔑 Login (Carol - Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"carol@test.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login as Carol (Admin). Copy the token manually if you need to test admin-only routes."
+      }
+    },
+    {
+      "name": "👤 Get My Profile",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Profile returned with user details\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.user).to.have.property(\"email\");",
+              "    pm.expect(jsonData.user).to.have.property(\"name\");",
+              "    pm.expect(jsonData.user).to.have.property(\"points\");",
+              "    pm.expect(jsonData.user).to.have.property(\"role\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "profile"]
+        },
+        "description": "Get the currently logged-in user's profile. Requires a valid accessToken (auto-filled if you ran Login first)."
+      }
+    },
+    {
+      "name": "🔄 Refresh Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"New tokens received\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.accessToken).to.not.be.empty;",
+              "    pm.expect(jsonData.refreshToken).to.not.be.empty;",
+              "    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+              "    pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/refresh",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "refresh"]
+        },
+        "description": "Exchange your refresh token for a new access + refresh token pair. Run Login first to populate the refreshToken variable."
+      }
+    }
+  ]
+}
