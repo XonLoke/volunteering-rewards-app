@@ -508,8 +508,9 @@ async function updateCoupon(couponId, data) {
 
 // ─── Delete Coupon ────────────────────────────────────────
 async function deleteCoupon(couponId) {
-  await pool.query("DELETE FROM user_coupons WHERE coupon_id = $1", [couponId]);
+  // Delete redemption_logs first: they reference user_coupons (user_coupon_id FK)
   await pool.query("DELETE FROM redemption_logs WHERE coupon_id = $1", [couponId]);
+  await pool.query("DELETE FROM user_coupons WHERE coupon_id = $1", [couponId]);
   const { rows } = await pool.query("DELETE FROM coupons WHERE id = $1 RETURNING id", [couponId]);
   if (rows.length === 0) throw createError(404, "not_found", "Coupon not found.");
   return { message: "Coupon deleted" };
