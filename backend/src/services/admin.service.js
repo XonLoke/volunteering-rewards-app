@@ -490,7 +490,8 @@ async function createCoupon(data, userId) {
 
 // ─── Update Coupon ────────────────────────────────────────
 async function updateCoupon(couponId, data) {
-  // Map frontend field names to backend field names
+  // Map frontend field names to backend field names (mirrors createCoupon)
+  if (data.coupon_type && !data.title) data.title = data.coupon_type;
   if (data.points_cost != null && data.points_required == null) data.points_required = data.points_cost;
   if (data.valid_until && !data.expiry_date) data.expiry_date = data.valid_until;
 

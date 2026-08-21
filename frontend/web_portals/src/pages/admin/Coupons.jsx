@@ -63,7 +63,10 @@ function CouponFormModal({ isOpen, onClose, coupon, onSubmit }) {
 
       if (coupon) {
         await apiPut(`/admin/coupons/${coupon.id}`, {
+          coupon_type: payload.coupon_type,
           points_cost: payload.points_cost,
+          value_cents: payload.value_cents,
+          quantity: payload.quantity,
           valid_until: payload.valid_until,
         });
         onSubmit();
