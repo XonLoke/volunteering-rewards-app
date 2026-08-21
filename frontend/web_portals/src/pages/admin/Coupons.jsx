@@ -67,6 +67,7 @@ function CouponFormModal({ isOpen, onClose, coupon, onSubmit }) {
           points_cost: payload.points_cost,
           value_cents: payload.value_cents,
           quantity: payload.quantity,
+          valid_from: payload.valid_from,
           valid_until: payload.valid_until,
         });
         onSubmit();
@@ -147,7 +148,6 @@ function CouponFormModal({ isOpen, onClose, coupon, onSubmit }) {
               placeholder="e.g., Coffee Voucher"
               value={form.coupon_type}
               onChange={handleChange('coupon_type')}
-              disabled={!!coupon}
             />
           </div>
           <div className="form-row">
@@ -169,7 +169,6 @@ function CouponFormModal({ isOpen, onClose, coupon, onSubmit }) {
                 min="0"
                 value={form.value_cents}
                 onChange={handleChange('value_cents')}
-                disabled={!!coupon}
               />
             </div>
           </div>
@@ -182,7 +181,6 @@ function CouponFormModal({ isOpen, onClose, coupon, onSubmit }) {
               max="10000"
               value={form.quantity}
               onChange={handleChange('quantity')}
-              disabled={!!coupon}
             />
           </div>
           <div className="form-row">
@@ -193,7 +191,6 @@ function CouponFormModal({ isOpen, onClose, coupon, onSubmit }) {
                 type="date"
                 value={form.valid_from}
                 onChange={handleChange('valid_from')}
-                disabled={!!coupon}
               />
             </div>
             <div className="form-group">

@@ -392,7 +392,7 @@ async function listCoupons({ page = 1, limit = 15, status } = {}) {
   const offIdx = params.length + 2;
   const { rows } = await pool.query(
     `SELECT c.id, c.title, c.description, c.points_required AS points_cost, c.quantity,
-            c.value_cents, c.merchant_name, c.expiry_date, c.expiry_date AS valid_until, c.status, c.created_at,
+            c.value_cents, c.merchant_name, c.expiry_date, c.valid_from, c.expiry_date AS valid_until, c.status, c.created_at,
             u.name AS created_by_name,
             (SELECT COUNT(*) FROM user_coupons uc WHERE uc.coupon_id = c.id) AS quantity_used,
             (SELECT COUNT(*) FROM user_coupons uc WHERE uc.coupon_id = c.id) AS redeemed_count
@@ -449,10 +449,10 @@ async function createCoupon(data, userId) {
 
     // Create the coupon batch
     const { rows } = await client.query(
-      `INSERT INTO coupons (title, description, points_required, quantity, value_cents, merchant_name, expiry_date, status, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8)
-       RETURNING id, title, points_required, quantity, value_cents, merchant_name, expiry_date`,
-      [data.title, data.description, pointsRequired, data.quantity, data.value_cents || 0, data.merchant_name || null, expiryDate, userId]
+      `INSERT INTO coupons (title, description, points_required, quantity, value_cents, merchant_name, expiry_date, valid_from, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', $9)
+       RETURNING id, title, points_required, quantity, value_cents, merchant_name, expiry_date, valid_from`,
+      [data.title, data.description, pointsRequired, data.quantity, data.value_cents || 0, data.merchant_name || null, expiryDate, data.valid_from || null, userId]
     );
     const coupon = rows[0];
     const quantity = parseInt(data.quantity) || 0;
@@ -499,9 +499,10 @@ async function updateCoupon(couponId, data) {
     `UPDATE coupons SET title = COALESCE($1, title), description = COALESCE($2, description),
             points_required = COALESCE($3, points_required), quantity = COALESCE($4, quantity),
             value_cents = COALESCE($5, value_cents), merchant_name = COALESCE($6, merchant_name),
-            expiry_date = COALESCE($7, expiry_date), updated_at = NOW()
-     WHERE id = $8 RETURNING id, title, updated_at`,
-    [data.title, data.description, data.points_required, data.quantity, data.value_cents, data.merchant_name, data.expiry_date, couponId]
+            expiry_date = COALESCE($7, expiry_date), valid_from = COALESCE($8, valid_from),
+            updated_at = NOW()
+     WHERE id = $9 RETURNING id, title, updated_at`,
+    [data.title, data.description, data.points_required, data.quantity, data.value_cents, data.merchant_name, data.expiry_date, data.valid_from, couponId]
   );
   if (rows.length === 0) throw createError(404, "not_found", "Coupon not found.");
   return { coupon: rows[0] };
