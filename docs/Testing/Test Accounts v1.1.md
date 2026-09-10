@@ -4,7 +4,9 @@
 
 **Password for all test accounts:** `password123` (documented test convention — README, manuals, seed data).
 
-> ⚠️ **Post-exam rotation (early Sep):** after the exam demo window closes, all active test accounts below are rotated to unique strong passwords via `backend/scripts/reset_test_accounts.js` (dry-run default; `--apply` to execute). Disabled accounts are skipped automatically.
+> ✅ **These passwords are permanent — `password123` is intentionally kept.** After the project concluded, the repo was opened to the public as a working demo, so the shared test password is deliberately retained: visitors can log in as any of the four roles (volunteer, organiser, merchant, admin) and explore the live system. Read-only demonstration — the app runs in public-demo mode, which suppresses all outbound email and self-heals the demo data every hour, so any test you run is safe and reversible.
+>
+> ℹ️ `backend/scripts/reset_test_accounts.js` still exists and can rotate these passwords, but **it is deliberately not run** — doing so would break public access.
 
 ---
 
@@ -46,7 +48,7 @@ All three run the **same code** (current `main`) — the PWA is always the lates
 | 48 | viviankohhhh@gmail.com | vivian | Volunteer | ✅ active |
 | 45 | alicetest@gmail.com | Alice test | Volunteer | ✅ active |
 
-Personal logins used by team members for volunteer-app testing. The September rotation only targets `@test.com` accounts — these are deliberately left untouched.
+Personal logins used by team members for volunteer-app testing. They are outside the `@test.com` scope, so the demo reset leaves them alone — and any password rotation would only ever target `@test.com` accounts.
 
 ---
 
@@ -55,4 +57,4 @@ Personal logins used by team members for volunteer-app testing. The September ro
 - **Roles → portals:** admin → Admin Portal; organiser → Organiser Portal + Scanner PWA; merchant → Merchant Portal (cashier = PIN verification, merchant/admin roles only — `merchant.routes.js` `requireMerchantOrAdmin`); volunteer → Volunteer PWA / APK / Expo Go.
 - **Live verification:** every row above was read from the live production API on 11 Aug 2026 (12 users total; 10 `@test.com`, 2 personal).
 - **Rotation tooling:** `backend/scripts/reset_test_accounts.js` — admin login (current password via `ADMIN_PASSWORD` env) → resets each active `@test.com` account → verifies by fresh login. Live dry-run: 9 active, 1 skipped (disabled).
-- **Seed default:** `backend/src/utils/seed.js` still seeds `password123` — optionally update it as part of the post-exam cleanup so fresh dev seeds start from strong defaults.
+- **Seed default:** `backend/src/utils/seed.js` seeds `password123`, and `backend/src/services/demoReset.service.js` restores the 8 canonical demo accounts to it every hour while public-demo mode is on. A visitor who changes an admin password therefore cannot lock out the next visitor.

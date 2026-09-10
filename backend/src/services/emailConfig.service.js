@@ -6,6 +6,7 @@
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
 const { resetTransporter } = require("./email.service");
+const { isPublicDemoMode } = require("../config/demoMode");
 
 async function getEmailConfig() {
   const { rows } = await pool.query(
@@ -50,6 +51,15 @@ async function updateEmailConfig(data, userId) {
   }
   if (!data.email_user || !data.email_user.trim()) {
     throw createError(400, "validation_error", "Email user is required.");
+  }
+
+  // 🔒 PUBLIC DEMO: accept the form and report success, but never write. The
+  // admin Email Config page stays fully clickable, while the live SMTP
+  // credentials — which the periodic demo reset deliberately does not touch —
+  // stay intact. Validation above still runs, so empty fields still error.
+  if (isPublicDemoMode()) {
+    console.log("[emailConfig.service] DEMO MODE — email config update suppressed.");
+    return { message: "Email configuration updated successfully. New settings are active immediately." };
   }
 
   const smtpPort = parseInt(data.smtp_port, 10) || 465;
@@ -120,6 +130,23 @@ async function testEmailConfig(email, adminUser) {
 async function discoverMailgun(apiKey) {
   if (!apiKey || !apiKey.trim()) {
     throw createError(400, "validation_error", "Mailgun API key is required.");
+  }
+
+  // 🔒 PUBLIC DEMO: skip the outbound Mailgun call and return a synthetic
+  // result, so the Auto-Discover button completes like a working system.
+  // Nothing is persisted — updateEmailConfig() above is also a no-op here.
+  if (isPublicDemoMode()) {
+    console.log("[emailConfig.service] DEMO MODE — Mailgun discovery suppressed.");
+    return {
+      smtp_host: "smtp.mailgun.org",
+      smtp_port: 587,
+      smtp_secure: false,
+      email_user: "postmaster@demo.mailgun.org",
+      email_pass: "",
+      email_from_name: "Volunteer Rewards App",
+      domain_name: "demo.mailgun.org",
+      domain_type: "custom",
+    };
   }
 
   const https = require("https");

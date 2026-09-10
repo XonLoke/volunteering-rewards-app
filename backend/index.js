@@ -10,6 +10,7 @@ const helmet = require("helmet");
 const path = require("path");
 const rateLimiter = require("./src/middleware/rateLimiter.middleware");
 const errorHandler = require("./src/middleware/errorHandler.middleware");
+const { startDemoResetScheduler } = require("./src/services/demoReset.service");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -50,7 +51,12 @@ app.use(express.json({ limit: "1mb" }));
 app.use(rateLimiter.global);
 
 // ─── Serve Frontend Prototypes (static files) ───────────
-app.use(express.static(path.join(__dirname, "..", "frontend")));
+// 🔒 SECURITY: `send` only ignores a dotfile when it is the LAST path segment,
+// so a dot-DIRECTORY in the middle of a path is served normally. Denying
+// dotfiles outright removes that class of mistake if an env file ever lands
+// under frontend/ (frontend/web_portals/.env.local is gitignored today, so it
+// is not in the image — this is the belt to that pair of braces).
+app.use(express.static(path.join(__dirname, "..", "frontend"), { dotfiles: "deny" }));
 
 // ─── Health Check ────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
@@ -91,63 +97,23 @@ if (process.env.NODE_ENV === "production") {
       }
       console.log("Auto-migrate: done.");
 
-      // Auto-seed if users table is empty — 🔒 SECURITY (5 Aug audit #4):
-      // NEVER seed well-known admin/test accounts on a fresh PRODUCTION DB.
-      const { rows } = await pool.query("SELECT COUNT(*)::int AS cnt FROM users");
-      if (rows[0].cnt === 0 && process.env.NODE_ENV !== "production") {
-        console.log("Auto-seed: users table empty, running seed...");
-        try {
-          // Inline minimal seed
-          const bcrypt = require("bcrypt");
-          const { v4: uuidv4 } = require("uuid");
-
-          // Seed roles
-          const roles = [
-            ["volunteer", "Volunteer — browses events, earns points, redeems rewards"],
-            ["organiser", "Event Organizer — creates events, scans QR codes, manages attendance"],
-            ["admin", "System Admin — manages users, creates coupons, verifies PINs, audits"],
-            ["merchant", "Merchant Cashier — verifies PINs, redeems coupons"],
-          ];
-          for (const [name, desc] of roles) {
-            await pool.query("INSERT INTO roles (role_name, description) VALUES ($1, $2) ON CONFLICT (role_name) DO NOTHING", [name, desc]);
-          }
-          console.log("  ✓ roles seeded");
-
-          // Seed test users
-          const hash = await bcrypt.hash("password123", 12);
-          const testUsers = [
-            {name: "Alice Volunteer", email: "alice@test.com", role: "volunteer", points: 500},
-            {name: "Bob Organizer", email: "bob@test.com", role: "organiser", points: 0},
-            {name: "Carol Admin", email: "carol@test.com", role: "admin", points: 0},
-            {name: "Cheryl Merchant", email: "cheryl@test.com", role: "merchant", points: 0},
-          ];
-          for (const u of testUsers) {
-            const roleRes = await pool.query("SELECT id FROM roles WHERE role_name = $1", [u.role]);
-            if (roleRes.rows.length > 0) {
-              const qr = uuidv4();
-              await pool.query(
-                "INSERT INTO users (email, password_hash, name, role_id, points, volunteer_qr_code, status) VALUES ($1, $2, $3, $4, $5, $6, 'active') ON CONFLICT (email) DO NOTHING",
-                [u.email, hash, u.name, roleRes.rows[0].id, u.points, qr]
-              );
-            }
-          }
-          console.log("  ✓ test users seeded");
-
-          // Seed a sample event so there's content
-          const orgRes = await pool.query("INSERT INTO organizations (org_name, org_type, uen, contact_person, contact_email, approval_status, status) VALUES ('Green Earth Society', 'Non-Profit', 'S80SS0011A', 'Bob Organizer', 'bob@test.com', 'approved', 'active') ON CONFLICT DO NOTHING RETURNING id");
-          if (orgRes.rows.length > 0) {
-            const bobRes = await pool.query("SELECT id FROM users WHERE email = 'bob@test.com'");
-            if (bobRes.rows.length > 0) {
-              await pool.query("INSERT INTO events (organization_id, organizer_id, title, description, location, event_date, capacity, points_value, category, status) VALUES ($1, $2, 'Beach Cleanup @ East Coast', 'Help clean up East Coast Park.', 'East Coast Park', NOW() + INTERVAL \'7 days\', 50, 20, 'Environment', 'upcoming') ON CONFLICT DO NOTHING", [orgRes.rows[0].id, bobRes.rows[0].id]);
-            }
-          }
-          console.log("  ✓ sample content seeded");
-        } catch (seedErr) {
-          console.error("Auto-seed error:", seedErr.message);
-        }
-      } else {
-        console.log(`Auto-seed: skipped (${rows[0].cnt} users already exist)`);
-      }
+      // ─── Public demo self-heal ──────────────────────────────────────
+      // Restores the shared demo dataset (canonical accounts, events, coupons,
+      // merchants) and re-seeds it on a timer. No-op unless PUBLIC_DEMO_MODE
+      // is "true" — see demoReset.service.js for why each step is ordered the
+      // way it is.
+      //
+      // This replaces an inline "auto-seed if the users table is empty" block
+      // that was DEAD CODE: its outer guard already required
+      // NODE_ENV === "production" while its inner condition added
+      // `&& NODE_ENV !== "production"`, so the body could never execute. The
+      // reset supersedes it anyway — it restores a full baseline rather than
+      // four accounts and one event, and it is safe to run on a populated
+      // database, which the empty-table check could never be.
+      //
+      // Started after migrations, and never awaited: a full restore must not
+      // delay app.listen, since Render's cold start is already 30-50s.
+      startDemoResetScheduler();
     } catch (err) {
       console.error("Auto-migrate error:", err.message);
     }

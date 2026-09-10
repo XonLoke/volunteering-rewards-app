@@ -8,6 +8,7 @@
 const crypto = require("crypto");
 const { pool } = require("../config/database");
 const { createError } = require("../middleware/errorHandler.middleware");
+const { isPublicDemoMode } = require("../config/demoMode");
 
 // ─── PIN Hashing (compatible with Grace's merchant service) ──
 // 🔒 SECURITY (5 Aug audit #1): production must never hash PINs with a public
@@ -573,6 +574,17 @@ async function getRewardsConfig() {
 }
 
 async function updateRewardsConfig(data, userId) {
+  // 🔒 PUBLIC DEMO: this INSERTs a new row and getRewardsConfig() reads
+  // ORDER BY id DESC LIMIT 1, so a single write permanently rewrites the
+  // program's economics (points_per_dollar, redemption limits) for everyone.
+  // The demo reset is deliberately forbidden from touching
+  // rewards_configuration — it holds real values — so the write must never
+  // happen. Report success with the shape the admin UI expects.
+  if (isPublicDemoMode()) {
+    console.log("[admin.service] DEMO MODE — rewards configuration write suppressed.");
+    return { message: "Configuration updated", updated_at: new Date().toISOString() };
+  }
+
   const { rows } = await pool.query("INSERT INTO rewards_configuration (points_per_dollar, min_redeem_points, max_redeem_per_day, default_event_points, updated_by, updated_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *", [data.points_per_dollar, data.min_redeem_points, data.max_redeem_per_day, data.default_event_points, userId]);
   return { message: "Configuration updated", updated_at: rows[0].updated_at };
 }

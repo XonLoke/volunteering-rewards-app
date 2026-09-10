@@ -9,6 +9,11 @@ on:
 
 env:
   NODE_VERSION: 20
+  # src/utils/jwt.js binds its secrets at module load and throws when they are
+  # missing, so the lint job (which `require()`s it) needs them or it fails
+  # before a single test runs. Same throwaway values the test job already sets.
+  JWT_ACCESS_SECRET: ci-test-access-secret
+  JWT_REFRESH_SECRET: ci-test-refresh-secret
 
 jobs:
   lint:
@@ -28,14 +33,24 @@ jobs:
         run: npm ci
         working-directory: backend
 
+      # NOTE: this must be a literal block scalar (`run: |`) fed to a quoted
+      # heredoc. The previous form was `run: node -e "…"`, whose value YAML
+      # reads as a PLAIN scalar — and a plain scalar ends at the first ": ",
+      # which the JS below contains on its final line. That truncated the
+      # script mid-statement and made the file unparseable, so GitHub produced
+      # no jobs at all: this workflow never ran once. `<<'NODE'` also stops the
+      # shell touching the script (no $ or backtick expansion).
       - name: Check syntax (require() resolution)
-        run: node -e "
+        run: |
+          node <<'NODE'
           const files = [
             'src/config/database',
+            'src/config/demoMode',
             'src/middleware/auth.middleware',
             'src/middleware/errorHandler.middleware',
             'src/middleware/rateLimiter.middleware',
             'src/middleware/role.middleware',
+            'src/services/demoReset.service',
             'src/utils/jwt',
             'src/utils/seed',
           ];
@@ -50,7 +65,7 @@ jobs:
             }
           }
           process.exit(ok ? 0 : 1);
-        "
+          NODE
         working-directory: backend
 
   test:

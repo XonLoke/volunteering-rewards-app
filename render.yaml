@@ -43,6 +43,17 @@ services:
         value: "1048576"
       - key: FRONTEND_URL
         value: https://volunteering-rewards-app.vercel.app
+      # ─── Public demo mode (10 Sep 2026) ───────────────────────
+      # The repo is public and the test accounts are intentionally shared
+      # (password123) so visitors can drive all four roles. PUBLIC_DEMO_MODE
+      # suppresses all outbound email, refuses the config writes that would
+      # permanently change programme economics, and self-heals the demo data.
+      # Set DEMO_RESET_INTERVAL_MINUTES to 0 for a boot-time reset only.
+      # Both are also set in the Render dashboard — keep the two in sync.
+      - key: PUBLIC_DEMO_MODE
+        value: "true"
+      - key: DEMO_RESET_INTERVAL_MINUTES
+        value: "60"
       # 🔴 EMAIL_USER and EMAIL_PASS must be set in Render Dashboard.
       #    Works with any SMTP provider. Optional overrides:
       #    SMTP_HOST (default: smtp.gmail.com), SMTP_PORT (default: 587),

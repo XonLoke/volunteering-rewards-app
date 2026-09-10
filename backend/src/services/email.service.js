@@ -15,6 +15,7 @@
 
 const https = require("https");
 const querystring = require("querystring");
+const { isPublicDemoMode } = require("../config/demoMode");
 
 //-----------------------------------------------------------------------
 // SECTION: Configuration Loading
@@ -22,6 +23,13 @@ const querystring = require("querystring");
 //-----------------------------------------------------------------------
 
 const DB_TABLE = "email_config";
+
+// 🔒 PUBLIC DEMO (10 Sep 2026): the repo is public and the test accounts are
+// intentionally shared (password123), so outbound mail is suppressed outright —
+// see the isPublicDemoMode guard at the top of sendEmail(). Without it, anyone
+// logged in as carol@test.com can repoint SMTP through the admin portal and use
+// the app as an open relay against the owner's sender reputation, which is the
+// one effect that survives a database reset.
 
 let cachedDbConfig = null;
 
@@ -249,6 +257,14 @@ function resetTransporter() {
 //          Returns { messageId } on success.
 //-----------------------------------------------------------------------
 async function sendEmail({ to, subject, text, html, replyTo }) {
+  // 🔒 PUBLIC DEMO: short-circuit before touching config, so this also works
+  // when the DB is unreachable. Every call site already tolerates the dry-run
+  // return shape (see the no-credentials branch below).
+  if (isPublicDemoMode()) {
+    console.log(`[email.service] DEMO MODE — suppressed mail to ${to}, subject: "${subject}"`);
+    return { messageId: "dry-run (public demo mode)" };
+  }
+
   const config = await getConfig();
 
   // Validate credentials

@@ -8,6 +8,8 @@
     "dev": "node --watch index.js",
     "migrate": "node src/utils/migrationRunner.js",
     "seed": "node src/utils/seed.js",
+    "demo:reset": "node scripts/reset_demo_data.js",
+    "demo:reset:apply": "node scripts/reset_demo_data.js --apply",
     "test": "node --test tests/unit/*.test.js",
     "test:unit": "node --test tests/unit/*.test.js",
     "test:smoke": "bash tests/integration/smoke_test.sh"
