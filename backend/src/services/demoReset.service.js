@@ -140,6 +140,27 @@ const DEMO_PINS = [
   { pin: "864209", couponIndex: 1 },
 ];
 
+// Past redemptions, so the merchant portal, the admin audit list and the
+// "Most Redeemed" leaderboard have something to show the moment the demo
+// resets. Without them the reset empties all three — which reads to a first-time
+// visitor as a broken feature rather than a clean slate.
+//
+// `cashier` is the account that performed the redemption; the coupon's business
+// comes from DEMO_COUPONS[couponIndex].merchant_name. The two are deliberately
+// NOT always the same business: a cashier can redeem any PIN, and merchant
+// history is scoped as the UNION of "coupons my business issued" and
+// "redemptions I performed" (see merchant.service.js). Keeping both cases in the
+// baseline is what makes that union visible instead of theoretical — e.g. eve's
+// Kopitiam coupon redeemed by the FairPrice cashier appears in BOTH merchants'
+// histories, for different reasons.
+const DEMO_REDEMPTIONS = [
+  { volunteer: "alice@test.com", couponIndex: 1, cashier: "diana@test.com", days_ago: 8, hour: 9, notes: "Cashier marked coupon as used" },
+  { volunteer: "alice@test.com", couponIndex: 0, cashier: "cheryl@test.com", days_ago: 6, hour: 11, notes: "Cashier marked coupon as used" },
+  { volunteer: "alice@test.com", couponIndex: 2, cashier: "frank@test.com", days_ago: 4, hour: 15, notes: "Cashier marked coupon as used" },
+  { volunteer: "eve@test.com", couponIndex: 2, cashier: "frank@test.com", days_ago: 5, hour: 14, notes: "Cashier marked coupon as used" },
+  { volunteer: "eve@test.com", couponIndex: 1, cashier: "cheryl@test.com", days_ago: 1, hour: 16, notes: "Cashier marked coupon as used" },
+];
+
 const DEMO_NOTIFICATIONS = [
   { email: "alice@test.com", title: "Welcome to Volunteering Rewards!", description: "Thank you for joining. Start browsing events to earn points.", icon: "happy-outline", color: "#10b981", is_read: false, hours_ago: 1 },
   { email: "alice@test.com", title: "Points Earned!", description: "You earned 20 points for attending Beach Cleanup @ East Coast.", icon: "star-outline", color: "#f59e0b", is_read: false, hours_ago: 2 },
@@ -496,6 +517,32 @@ async function runDemoReset({ apply = false, force = false, log = () => {} } = {
     } else {
       log("STEP 7 — skipped (no PIN_SECRET in production; seeded PINs would not verify)");
       steps.push({ label: "pre-issued coupon PINs", rows: null });
+    }
+
+    // ── STEP 7b: baseline redemption history ────────────────────────────
+    // Written in the CASHIER row shape deliberately: only `user_coupon_id` is
+    // set, with `user_id` and `coupon_id` left NULL — exactly as
+    // merchant.service.js writes them, which is why migration 019 made those two
+    // nullable. Seeding the other shape would let the demo look healthy while
+    // the cashier path stayed broken, which is the bug this baseline exists to
+    // keep visible. `pin_code`/`pin_hash` stay NULL: these coupons are already
+    // spent, and pin_code carries a UNIQUE index.
+    log("STEP 7b — baseline redemption history");
+    for (const r of DEMO_REDEMPTIONS) {
+      const cashierId = idOf(r.cashier);
+      const coupon = DEMO_COUPONS[r.couponIndex];
+      const redeemedAt = relativeDate(-r.days_ago, r.hour);
+
+      const held = await run(`redeemed coupon for ${r.volunteer}`, `
+        INSERT INTO user_coupons (user_id, coupon_id, pin_code, pin_hash, status, expiry_date, created_at, redeemed_at, verified_by)
+        VALUES ($1, $2, NULL, NULL, 'used', ${relativeDate(coupon.expiry_days)}, ${redeemedAt}, ${redeemedAt}, $3)
+        RETURNING id
+      `, [idOf(r.volunteer), couponIds[r.couponIndex], cashierId]);
+
+      await run(`redemption log for ${r.volunteer}`, `
+        INSERT INTO redemption_logs (user_coupon_id, points_spent, value_cents, action, action_by, created_at, notes)
+        VALUES ($1, $2, $3, 'used', $4, ${redeemedAt}, $5)
+      `, [held.rows[0].id, coupon.points_required, coupon.value_cents, cashierId, r.notes]);
     }
 
     // ── STEP 8: notifications ───────────────────────────────────────────

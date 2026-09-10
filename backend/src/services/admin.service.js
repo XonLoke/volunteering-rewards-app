@@ -158,7 +158,10 @@ async function getUserDetail(userId) {
             u.status, u.created_at,
             (SELECT COUNT(DISTINCT al.event_id) FROM attendance_logs al WHERE al.user_id = u.id) AS total_events_attended,
             (SELECT COALESCE(SUM(points_awarded), 0) FROM attendance_logs WHERE user_id = u.id) AS total_points_earned,
-            (SELECT COALESCE(SUM(rl.points_spent), 0) FROM redemption_logs rl WHERE rl.user_id = u.id) AS total_points_redeemed
+            (SELECT COALESCE(SUM(rl.points_spent), 0)
+               FROM redemption_logs rl
+               LEFT JOIN user_coupons uc ON uc.id = rl.user_coupon_id
+              WHERE COALESCE(rl.user_id, uc.user_id) = u.id) AS total_points_redeemed
      FROM users u
      JOIN roles r ON u.role_id = r.id
      WHERE u.id = $1`,
@@ -511,8 +514,19 @@ async function updateCoupon(couponId, data) {
 
 // ─── Delete Coupon ────────────────────────────────────────
 async function deleteCoupon(couponId) {
-  // Delete redemption_logs first: they reference user_coupons (user_coupon_id FK)
-  await pool.query("DELETE FROM redemption_logs WHERE coupon_id = $1", [couponId]);
+  // Delete redemption_logs first: they reference user_coupons (user_coupon_id FK).
+  // The predicate must match BOTH row shapes. Rows written by the volunteer
+  // redemption path (rewards.service.js) carry coupon_id directly, but the
+  // cashier path (merchant.service.js) writes only user_coupon_id — migration
+  // 019 made coupon_id nullable for exactly that reason. Matching on coupon_id
+  // alone silently skipped the cashier rows, so the user_coupons delete below
+  // then tripped the FK and the coupon could not be deleted at all.
+  await pool.query(
+    `DELETE FROM redemption_logs
+      WHERE coupon_id = $1
+         OR user_coupon_id IN (SELECT id FROM user_coupons WHERE coupon_id = $1)`,
+    [couponId]
+  );
   await pool.query("DELETE FROM user_coupons WHERE coupon_id = $1", [couponId]);
   const { rows } = await pool.query("DELETE FROM coupons WHERE id = $1 RETURNING id", [couponId]);
   if (rows.length === 0) throw createError(404, "not_found", "Coupon not found.");
@@ -547,8 +561,9 @@ async function listRedemptions({ page = 1, limit = 15, sort, order, from, to } =
             c.id AS coupon_id, c.title AS coupon_title, c.description AS coupon_description,
             COALESCE(rl.value_cents, c.value_cents, 0) AS value_cents
      FROM redemption_logs rl
-     LEFT JOIN users u ON rl.user_id = u.id
-     LEFT JOIN coupons c ON rl.coupon_id = c.id
+     LEFT JOIN user_coupons uc ON uc.id = rl.user_coupon_id
+     LEFT JOIN users   u ON u.id = COALESCE(rl.user_id, uc.user_id)
+     LEFT JOIN coupons c ON c.id = COALESCE(rl.coupon_id, uc.coupon_id)
      ${where}
      ORDER BY ${sortCol} ${sortDir}
      LIMIT $${limIdx} OFFSET $${offIdx}`,

@@ -14,6 +14,12 @@ env:
   # before a single test runs. Same throwaway values the test job already sets.
   JWT_ACCESS_SECRET: ci-test-access-secret
   JWT_REFRESH_SECRET: ci-test-refresh-secret
+  # Defensive, same one-level-down reasoning: src/services/rewards.service.js
+  # throws at module load when NODE_ENV=production and PIN_SECRET is unset, and
+  # merchant.service pulls it in. This job does not set NODE_ENV, so the throw
+  # cannot fire today — but a future `NODE_ENV: production` added here would
+  # otherwise break the lint job for a reason unrelated to the code under test.
+  PIN_SECRET: ci-test-pin-secret
 
 jobs:
   lint:
@@ -50,7 +56,10 @@ jobs:
             'src/middleware/errorHandler.middleware',
             'src/middleware/rateLimiter.middleware',
             'src/middleware/role.middleware',
+            'src/services/admin.service',
             'src/services/demoReset.service',
+            'src/services/leaderboard.service',
+            'src/services/merchant.service',
             'src/utils/jwt',
             'src/utils/seed',
           ];

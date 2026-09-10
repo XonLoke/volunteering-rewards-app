@@ -66,7 +66,8 @@ async function topByRedeemed(limit = 3) {
            COALESCE(SUM(rl.points_spent), 0)::int AS total_redeemed,
            ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(rl.points_spent), 0) DESC) AS rank
     FROM users u
-    LEFT JOIN redemption_logs rl ON rl.user_id = u.id
+    LEFT JOIN user_coupons uc ON uc.user_id = u.id
+    LEFT JOIN redemption_logs rl ON rl.user_coupon_id = uc.id
     WHERE u.role_id = (SELECT id FROM roles WHERE role_name = 'volunteer')
     GROUP BY u.id, u.name, u.points
     ORDER BY total_redeemed DESC

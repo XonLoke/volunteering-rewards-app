@@ -198,11 +198,24 @@ async function getRedemptionHistory({ page = 1, limit = 20, action, search } = {
 
   // 🔒 SECURITY (5 Aug audit #8): merchants see ONLY their own redemptions
   // (same scoping as listRedemptions); admins see everything.
+  //
+  // "Their own" is the UNION of two things: coupons issued by their business,
+  // and redemptions they performed themselves. `coupons.merchant_name` is free
+  // text and is NOT necessarily the business that redeemed — a cashier can
+  // redeem any PIN. Scoping on the coupon alone therefore hid real activity
+  // from the cashier who performed it, and showed an empty list whenever the
+  // two disagreed. `action_by` is the authoritative record of who did it
+  // (merchant.service.js writes it on every redemption).
   if (user && user.role !== "admin") {
     const merchant = await findMerchantByUserId(user.id);
-    if (!merchant) return { data: [], total: 0, page: safePage, limit: safeLimit, total_pages: 0 };
-    values.push(merchant.name, `%${merchant.name}%`);
-    where.push(`(c.merchant_name = $1 OR c.merchant_name ILIKE $2)`);
+    values.push(user.id);
+    const selfIdx = values.length;
+    const clauses = [`rl.action_by = $${selfIdx}`];
+    if (merchant) {
+      values.push(merchant.name, `%${merchant.name}%`);
+      clauses.push(`c.merchant_name = $${selfIdx + 1}`, `c.merchant_name ILIKE $${selfIdx + 2}`);
+    }
+    where.push(`(${clauses.join(" OR ")})`);
   }
 
   if (action) {
@@ -513,18 +526,23 @@ async function deleteProduct(userId, productId) {
  */
 async function listRedemptions(userId, { page = 1, limit = 20, date_from, date_to, search } = {}) {
   const merchant = await findMerchantByUserId(userId);
-  if (!merchant) return { data: [], total: 0, page, limit, total_pages: 0 };
 
   const safePage = toPositiveInt(page, 1);
   const safeLimit = Math.min(toPositiveInt(limit, 20), 100);
   const offset = (safePage - 1) * safeLimit;
 
-  const where = [
-    `rl.action = 'used'`,
-    `(c.merchant_name = $1 OR c.merchant_name ILIKE $2)`,
-  ];
-  const values = [merchant.name, `%${merchant.name}%`];
-  let idx = 2;
+  // Same union scoping as getRedemptionHistory — see the note there. Built from
+  // a list rather than inlined so the parameter indexes stay correct whether or
+  // not the user is linked to a merchant row.
+  const scope = [`rl.action_by = $1`];
+  const values = [userId];
+  if (merchant) {
+    values.push(merchant.name, `%${merchant.name}%`);
+    scope.push(`c.merchant_name = $2`, `c.merchant_name ILIKE $3`);
+  }
+
+  const where = [`rl.action = 'used'`, `(${scope.join(" OR ")})`];
+  let idx = values.length;
 
   if (date_from) {
     idx++;
